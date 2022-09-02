@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: <<<<< Install and configure nfs clients >>>>>
-  hosts: kubernetes_nodes
+  hosts: kubernetes_cluster
   become: yes
 
   tasks:
@@ -19,7 +19,6 @@
 - name: <<<<< Installs and configures NFS server >>>>>
   hosts: nfs_server
   become: yes
-  become_user: "{{ _kube.user }}"
   vars:
     repo_dir: "{{ _work_dir }}/nfs-provisioner"
     deploy_dir: "{{ repo_dir }}/deploy"
@@ -41,12 +40,12 @@
             state: directory
             mode: '0777'
 
-        - name: Export shared directory to kubernetes kubernetes_nodes
+        - name: Export shared directory to kubernetes cluster nodes
           lineinfile:
             path: /etc/exports
             line: "{{ _nfs.shared }} {{ hostvars[item]['ansible_host'] }}(rw,no_subtree_check,no_root_squash)"
           with_inventory_hostnames:
-            - kubernetes_nodes
+            - kubernetes_cluster
 
         - name: Enable nfs
           shell: |
@@ -78,46 +77,51 @@
 
       delegate_to: localhost
 
-    - name: Apply configuration changes
-      kubernetes.core.k8s:
-        apply: yes
-        force: yes
-        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
-      with_fileglob:
-        - "{{ deploy_dir }}/rbac.yaml"
-        - "{{ deploy_dir }}/class.yaml"
-        - "{{ deploy_dir }}/deployment.yaml"
+    - name: Configure nfs provisioner on kubernetes cluster
+      become_user: "{{ _kube.user }}"
+      block:
+        - name: Apply configuration changes
+          kubernetes.core.k8s:
+            apply: yes
+            force: yes
+            definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+          with_fileglob:
+            - "{{ deploy_dir }}/rbac.yaml"
+            - "{{ deploy_dir }}/class.yaml"
+            - "{{ deploy_dir }}/deployment.yaml"
 
-    - name: Set to default storage class to {{ _nfs.is_default }}
-      kubernetes.core.k8s:
-        state: patched
-        kind: StorageClass
-        name: "{{ _nfs.storage_name }}"
-        definition: |
-          metadata:
-            annotations:
-              storageclass.kubernetes.io/is-default-class: "true"
-      when: _nfs.is_default
+        - name: Set to default storage class to {{ _nfs.is_default }}
+          kubernetes.core.k8s:
+            state: patched
+            kind: StorageClass
+            name: "{{ _nfs.storage_name }}"
+            definition: |
+              metadata:
+                annotations:
+                  storageclass.kubernetes.io/is-default-class: "true"
+          when: _nfs.is_default
 
-    - name: Create persistent volume claims
-      kubernetes.core.k8s:
-        apply: yes
-        force: yes
-        namespace: "{{ _nfs.provisioner_namespace }}"
-        definition: |
-          apiVersion: v1
-          kind: PersistentVolumeClaim
-          metadata:
-            name: {{ _nfs.pvc.name }}
-            labels:
-              storage.k8s.io/name: nfs
-          spec:
-            accessModes:
-              - ReadWriteMany
-            storageClassName: {{ _nfs.storage_name }}
-            resources:
-              requests:
-                storage: {{ _nfs.pvc.size }}
+        - name: Create persistent volume claims
+          kubernetes.core.k8s:
+            apply: yes
+            force: yes
+            namespace: "{{ _nfs.provisioner_namespace }}"
+            definition: |
+              apiVersion: v1
+              kind: PersistentVolumeClaim
+              metadata:
+                name: {{ _nfs.pvc.name }}
+                labels:
+                  storage.k8s.io/name: nfs
+              spec:
+                accessModes:
+                  - ReadWriteMany
+                storageClassName: {{ _nfs.storage_name }}
+                resources:
+                  requests:
+                    storage: {{ _nfs.pvc.size }}
+    
+      delegate_to: "{{ groups['kubernetes_control_plane'].0 }}"
 
     - name: Cleanup directories
       become: yes

@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: <<<<< Installs and configures the kubernetes dashboard >>>>>
-  hosts: kubernetes_control_plane
+  hosts: kubernetes_control_plane[0]
   become: yes
   become_user: "{{ _kube.user }}"
 
@@ -98,13 +98,14 @@
           type: kubernetes.io/service-account-token
 
     - name: Get dashboard account token
-      shell: kubectl describe secret dashboard-admin -n kube-system
+      shell: | 
+               kubectl -n kube-system get secret dashboard-admin -o jsonpath="{['data']['token']}" | base64 --decode && echo
       register: kubernetes_dashboard_token
 
     - name: Copy token to Ansible host
       become_user: root
       copy:
-        content: "{{ kubernetes_dashboard_token.stdout_lines }}"
+        content: "{{ kubernetes_dashboard_token.stdout }}"
         dest: "{{ _work_dir }}/kubernetes_dashboard_token"
         mode: 0777
       delegate_to: localhost

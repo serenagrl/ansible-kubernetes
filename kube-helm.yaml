@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: <<<<< Install Helm >>>>>
-  hosts: kubernetes_control_plane
+  hosts: kubernetes_control_plane[0]
   become: yes
   become_user: root
 

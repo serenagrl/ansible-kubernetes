@@ -15,7 +15,7 @@ _pkg:
   metrics_server: latest #3.8.2
   kube_prometheus: latest #0.11.0
   nfs_provisioner: latest #4.0.17
-  rook_ceph: #latest 1.9.10
+  rook_ceph: latest 1.9.10
   harbor: latest #1.3.0
   cert_manager: latest #1.9.1
   istio: latest #1.14.3

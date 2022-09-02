@@ -132,28 +132,41 @@
     - name: Hold kubernetes
       shell: apt-mark hold kubelet kubeadm kubectl
 
-    - name: Installing containerd ({{ _pkg.containerd }})
-      vars:
-          release: "{% if _pkg.containerd is defined and _pkg.containerd and _pkg.containerd != 'latest' %}={{ _pkg.containerd }}{% endif %}"
-      apt:
-        pkg:
-          - "containerd.io{{ release }}"
-        state: latest
-        update_cache: true
+    - name: Install and configure containerd
+      block:
+        - name: Installing containerd ({{ _pkg.containerd }})
+          vars:
+              release: "{% if _pkg.containerd is defined and _pkg.containerd and _pkg.containerd != 'latest' %}={{ _pkg.containerd }}{% endif %}"
+          apt:
+            pkg:
+              - "containerd.io{{ release }}"
+            state: latest
+            update_cache: true
 
-    - name: Create containerd configuration file
-      shell: |
-              mkdir -p /etc/containerd
-              containerd config default | sudo tee /etc/containerd/config.toml
+        - name: Create containerd certificate directory
+          file:
+            path: "/etc/containerd/certs.d"
+            state: directory
+            mode: '0755'
 
-    - name: Turn on SystemdCgroup
-      replace:
-        path: /etc/containerd/config.toml
-        regexp: 'SystemdCgroup = false'
-        replace: 'SystemdCgroup = true'
+        - name: Create containerd configuration file
+          shell: |
+                  containerd config default | sudo tee /etc/containerd/config.toml
 
-    - name: Restart containerd
-      systemd:
-        name: containerd
-        state: restarted
-        enabled: yes
+        - name: Turn on SystemdCgroup
+          replace:
+            path: /etc/containerd/config.toml
+            regexp: 'SystemdCgroup = false'
+            replace: 'SystemdCgroup = true'
+
+        - name: Set the container certificates directory
+          replace:
+            path: /etc/containerd/config.toml
+            regexp: 'config_path = ""'
+            replace: 'config_path = "/etc/containerd/certs.d"'
+
+        - name: Restart containerd
+          systemd:
+            name: containerd
+            state: restarted
+            enabled: yes

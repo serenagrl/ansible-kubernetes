@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: <<<<< Create kubernetes cluster >>>>>
-  hosts: kubernetes_control_plane
+  hosts: kubernetes_control_plane[0]
   become: yes
   become_user: "{{ _kube.user }}"
 
@@ -71,10 +71,12 @@
               alias kclo='kubectl logs'
               alias kcde='kubectl describe'
               alias kcdepo='kubectl describe po'
+              alias kcdesv='kubectl describe svc'
               alias wkcpo='watch kubectl get po'
               alias wkcpoa='watch kubectl get po -A'
               alias wkcpon='watch kubectl get po -n'
               alias kcpow='kubectl get po -o wide'
+              alias kcpown='kubectl get po -o wide -n'
               alias kcnow='kubectl get no -o wide'
               alias kcsvw='kubectl get svc -o wide'
               complete -o default -F __start_kubectl kc
@@ -112,7 +114,7 @@
         - "{{ _work_dir }}/tigera-operator.yaml"
         - "{{ _work_dir }}/custom-resources.yaml"
 
-    - name: Get join token for kubernetes_nodes
+    - name: Get join token for nodes
       shell: kubeadm token create --print-join-command
       register: join_command
 
@@ -124,7 +126,7 @@
         mode: 0777
       delegate_to: localhost
 
-- name: Configure kubernetes kubernetes_nodes
+- name: Configure kubernetes nodes
   hosts: kubernetes_nodes
   become: yes
   vars:
@@ -141,15 +143,13 @@
       command: sh '/tmp/{{ cmd_file }}'
 
 - name: Waits for kubernetes cluster to be ready
-  hosts: kubernetes_control_plane
+  hosts: kubernetes_control_plane[0]
   become: yes
   become_user: "{{ _kube.user }}"
 
   tasks:
     - name: Waiting for kubernetes nodes to be ready
-      shell: kubectl wait --for=condition=Ready nodes --all --timeout=600s
+      shell: |
+             kubectl wait --for=condition=Ready nodes --all --timeout=600s
+             kubectl rollout status deployment/calico-kube-controllers -n calico-system
 
-    - import_tasks: ./tasks/task-wait-ready.yaml
-      vars:
-        namespace: calico-apiserver
-        name: calico-apiserver

@@ -16,7 +16,7 @@
         line: "{{ _kube.cluster.address }} core.{{ _harbor.domain }} notary.{{ _harbor.domain }}"
 
 - name: Install harbor container registry
-  hosts: kubernetes_control_plane
+  hosts: kubernetes_control_plane[0]
   become: yes
   become_user: "{{ _kube.user }}"
 
