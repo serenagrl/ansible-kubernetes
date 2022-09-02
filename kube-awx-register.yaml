@@ -59,6 +59,7 @@
             name: "{{ names.inventory }}"
             description: "Collection of hosts for {{ _awx.setup.name }}"
             organization: "{{ _awx.setup.organization.name }}"
+            variables: "{{ _awx.setup.inventory_vars if _awx.setup.inventory_vars else {} }}"
             state: present
             controller_oauthtoken: "{{ controller_token }}"
 
@@ -74,7 +75,7 @@
             state: present
             controller_oauthtoken: "{{ controller_token }}"
 
-        - name: Creating host for kubernetes_nodes
+        - name: Creating host for kubernetes nodes
           awx.awx.host:
             controller_host: "{{ awx_host }}"
             name: "{{ item }}"
@@ -112,7 +113,7 @@
           awx.awx.group:
             controller_host: "{{ awx_host }}"
             name: "kubernetes_cluster"
-            description: "{{ _awx.setup.name }} Kubernetes main group."
+            description: "{{ _awx.setup.name }} Kubernetes cluster main group."
             inventory: "{{ names.inventory }}"
             children:
               - "kubernetes_control_plane"
@@ -146,6 +147,7 @@
             credential: "{{ names.scm_credential }}"
             state: present
             controller_oauthtoken: "{{ controller_token }}"
+          ignore_errors: yes
 
         - name: Creating machine credential
           awx.awx.credential:
@@ -156,21 +158,6 @@
             credential_type: Machine
             inputs:
               ssh_key_data: "{{ lookup('file', '/root/.ssh/id_rsa') }}"
-            state: present
-            controller_oauthtoken: "{{ controller_token }}"
-
-        - name: Creating job template '{{ names.job_template }}'
-          awx.awx.job_template:
-            controller_host: "{{ awx_host }}"
-            name: "{{ names.job_template }}"
-            description: "Deploys applications to the kubernetes cluster"
-            organization: "{{ _awx.setup.organization.name }}"
-            inventory: "{{ names.inventory }}"
-            project: "{{ names.project }}"
-            job_type: "run"
-            playbook: "{{ _awx.setup.playbook }}"
-            credentials:
-              - "{{ names.host_credential }}"
             state: present
             controller_oauthtoken: "{{ controller_token }}"
 
@@ -203,6 +190,24 @@
               gitlab_api_token: "{{ _awx.setup.gitlab.api_token }}"
             state: present
             controller_oauthtoken: "{{ controller_token }}"
+
+        - name: Creating job template '{{ names.job_template }}'
+          awx.awx.job_template:
+            controller_host: "{{ awx_host }}"
+            name: "{{ names.job_template }}"
+            description: "Deploys applications to the kubernetes cluster"
+            organization: "{{ _awx.setup.organization.name }}"
+            inventory: "{{ names.inventory }}"
+            project: "{{ names.project }}"
+            job_type: "run"
+            playbook: "{{ _awx.setup.playbook }}"
+            extra_vars: "{{ _awx.setup.job_template_vars if _awx.setup.job_template_vars else {} }}"
+            credentials:
+              - "{{ names.host_credential }}"
+              - "{{ names.api_credential }}"
+            state: present
+            controller_oauthtoken: "{{ controller_token }}"
+          ignore_errors: yes
 
       rescue:
         - name: Delete authentication token

@@ -20,7 +20,7 @@
       with_inventory_hostnames:
         - kubernetes_nodes
 
-- hosts: kubernetes_control_plane
+- hosts: kubernetes_control_plane[0]
   become: yes
   become_user: "{{ _kube.user }}"
   vars:
