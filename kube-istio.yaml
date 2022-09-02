@@ -1,0 +1,187 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Install and configure istio >>>>>
+  hosts: kubernetes_control_plane
+  become: yes
+  become_user: "{{ _kube.user }}"
+
+  tasks:
+    - name: Get latest istio release
+      shell: |
+              curl -s https://api.github.com/repos/istio/istio/releases/latest | grep tag_name | cut -d '"' -f 4
+      register: release_tag
+      when: _pkg.istio is undefined or not _pkg.istio or _pkg.istio == "latest"
+
+    - name: Install and configure istioctl
+      vars:
+        release: "{% if _pkg.istio is defined and _pkg.istio and _pkg.istio != 'latest' %}{{ _pkg.istio }}{% else %}{{ release_tag.stdout }}{% endif %}"
+      block:
+        - name: Install istioctl
+          become: yes
+          become_user: root
+          shell: | 
+                  curl -L https://istio.io/downloadIstio | ISTIO_VERSION={{ release }} sh -
+          args:
+            chdir: "{{ _work_dir }}"
+
+          delegate_to: localhost
+
+        - name: Copy istioctl from Ansible host to the control plane
+          become: yes
+          become_user: root
+          vars:
+            istio_dir: "istio-{{ release }}"
+          copy:
+            src: "{{ _work_dir }}/{{ istio_dir }}/bin/istioctl"
+            dest: "{{ _istio.istioctl_dir }}"
+            mode: 0777
+
+        - name: Install istio
+          shell: |
+                  istioctl install --set profile={{ _istio.profile }} -y
+
+        - name: Waiting for istiod to be ready
+          kubernetes.core.k8s_info:
+            namespace: istio-system
+            name: istiod
+            kind: Deployment
+            wait: yes
+            wait_condition:
+              reason: MinimumReplicasAvailable
+              status: True
+              type: Available
+
+        - name: Expose istio ingress gateway
+          block:
+            - name: Patch istio ingress gateway to use NodePort
+              kubernetes.core.k8s:
+                state: patched
+                namespace: istio-system
+                kind: Service
+                name: istio-ingressgateway
+                definition: |
+                  spec:
+                    type: NodePort
+                    ports:
+                    - nodePort: {{ _istio.addons.nodeports.gateway.http }}
+                      port: 80
+                    - nodePort: {{ _istio.addons.nodeports.gateway.https }}
+                      port: 443
+
+        - name: Labeling namespaces for istio injection (if any)
+          kubernetes.core.k8s:
+            state: patched
+            kind: Namespace
+            name: "{{ item }}"
+            definition: |
+              metadata:
+                labels:
+                  istio-injection: enabled
+          loop: "{{ _istio.inject if _istio.inject is iterable else [] }}"
+
+        - name: Install and configure add-ons
+          block:
+            - name: Install istio addons
+              vars:
+                istio_dir: "istio-{{ release }}"
+                addons_dir: "{{ _work_dir }}/{{ istio_dir }}/samples/addons"
+              kubernetes.core.k8s:
+                definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+              with_fileglob:
+                - "{{ addons_dir }}/*.yaml"
+
+            - name: Waiting kiali deployment to complete
+              kubernetes.core.k8s_info:
+                namespace: istio-system
+                name: kiali
+                kind: Deployment
+                wait: yes
+                wait_condition:
+                  reason: MinimumReplicasAvailable
+                  status: True
+                  type: Available
+
+            - name: Patch kiali service to use NodePort {{ _istio.addons.nodeports.kiali }}
+              kubernetes.core.k8s:
+                state: patched
+                namespace: istio-system
+                kind: Service
+                name: kiali
+                definition: |
+                  spec:
+                    type: NodePort
+                    ports:
+                    - nodePort: {{ _istio.addons.nodeports.kiali }}
+                      port: 20001
+
+            - name: Waiting grafana deployment to complete
+              kubernetes.core.k8s_info:
+                namespace: istio-system
+                name: grafana
+                kind: Deployment
+                wait: yes
+                wait_condition:
+                  reason: MinimumReplicasAvailable
+                  status: True
+                  type: Available
+
+            - name: Patch grafana service to use NodePort {{ _istio.addons.nodeports.grafana }}
+              kubernetes.core.k8s:
+                state: patched
+                namespace: istio-system
+                kind: Service
+                name: grafana
+                definition: |
+                  spec:
+                    type: NodePort
+                    ports:
+                    - nodePort: {{ _istio.addons.nodeports.grafana }}
+                      port: 3000
+
+            - name: Check for ingress availability
+              kubernetes.core.k8s_info:
+                kind: IngressClass
+              register: ingress_class
+
+            - name: Create ingress for kiali 
+              vars:
+                ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+              kubernetes.core.k8s:
+                apply: yes
+                force: yes
+                definition: |
+                  apiVersion: networking.k8s.io/v1
+                  kind: Ingress
+                  metadata:
+                    name: kiali-ingress
+                    namespace: istio-system
+                  spec:
+                    ingressClassName: {{ ingress_name }}
+                    rules:
+                      - host: {{ _ingress.host }}
+                        http:
+                          paths:
+                            - path: /kiali
+                              pathType: Prefix
+                              backend:
+                                service:
+                                  name: kiali
+                                  port:
+                                    number: 20001
+
+          when: _istio.addons.install
+
+        - name: Cleanup directories
+          become: yes
+          become_user: root
+          vars:
+            istio_dir: "{{ _work_dir }}/istio-{{ release }}"
+          file:
+            path: "{{ istio_dir }}"
+            state: absent
+          delegate_to: localhost
+          when: _istio.cleanup

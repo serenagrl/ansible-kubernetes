@@ -1,0 +1,155 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Create kubernetes cluster >>>>>
+  hosts: kubernetes_control_plane
+  become: yes
+  become_user: "{{ _kube.user }}"
+
+  tasks:
+    - name: Installing python kubernetes module and dependencies for Ansible
+      pip:
+        name:
+          - pyyaml
+          - kubernetes
+          - jsonpatch
+
+    - name: Initializing kubernetes cluster
+      become_user: root
+      vars:
+        release: "{% if _kube.release is defined and _kube.release and _kube.release != 'latest' %}--kubernetes-version {{ _kube.release }}{% endif %}"
+      shell: |
+              kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }}/16 \
+              --upload-certs --cri-socket /run/containerd/containerd.sock \
+              --apiserver-advertise-address {{ _kube.cluster.address }} \
+              --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}
+
+    - name: Create .kube in home directory
+      file:
+        path: $HOME/.kube
+        state: directory
+        mode: 0755
+
+    - name: Copy admin.conf to home directory kube config
+      become_user: root
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "/home/{{ _kube.user }}/.kube/config"
+        remote_src: yes
+        owner: "{{ _kube.user }}"
+
+    - name: Configure autocomplete and aliases
+      block:
+        - name: Add autocomplete and aliases to shell
+          blockinfile:
+            path: ~/.bashrc
+            block: |
+              source <(kubectl completion bash)
+              alias kc=kubectl
+              alias kcaf='kubectl apply -f'
+              alias kcd='kubectl delete'
+              alias kcdf='kubectl delete -f'
+              alias kcpo='kubectl get po'
+              alias kcpoa='kubectl get po -A'
+              alias kcpon='kubectl get po -n'
+              alias kcsv='kubectl get svc'
+              alias kcsva='kubectl get svc -A'
+              alias kcsvn='kubectl get svc -n'
+              alias kcdp='kubectl get deploy'
+              alias kcdpa='kubectl get deploy -A'
+              alias kcdpn='kubectl get deploy -n'
+              alias kcse='kubectl get secrets'
+              alias kcsen='kubectl get secrets -n'
+              alias kcsc='kubectl get sc'
+              alias kcpv='kubectl get pv'
+              alias kcpvc='kubectl get pvc'
+              alias kcpvcn='kubectl get pvc -n'
+              alias kcno='kubectl get no'
+              alias kclo='kubectl logs'
+              alias kcde='kubectl describe'
+              alias kcdepo='kubectl describe po'
+              alias wkcpo='watch kubectl get po'
+              alias wkcpoa='watch kubectl get po -A'
+              alias wkcpon='watch kubectl get po -n'
+              alias kcpow='kubectl get po -o wide'
+              alias kcnow='kubectl get no -o wide'
+              alias kcsvw='kubectl get svc -o wide'
+              complete -o default -F __start_kubectl kc
+
+        - name: Apply changes
+          shell: . ~/.bashrc
+
+    - name: Install and configure calico
+      become_user: root
+      block:
+        - include_tasks: ./tasks/task-get-manifest.yaml
+          vars:
+            name: "calico"
+            repo_path: "projectcalico/calico"
+            pkg_version: "{{ _pkg.calico | default }}"
+            version_prefix: "v"
+            dest: "{{_work_dir}}" 
+            manifest_url: "https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/manifests"
+            urls:
+              - "{{ manifest_url }}/tigera-operator.yaml"
+              - "{{ manifest_url }}/custom-resources.yaml" 
+          
+        - name: Set CIDR network
+          replace:
+            path: "{{ _work_dir }}/custom-resources.yaml"
+            regexp: '192.168.0.0'
+            replace: '{{ _kube.cluster.cidr_network }}'
+      
+      delegate_to: localhost
+
+    - name: Installing calico
+      kubernetes.core.k8s:
+        definition: "{{ lookup('file', item) | from_yaml_all }}"
+      loop:
+        - "{{ _work_dir }}/tigera-operator.yaml"
+        - "{{ _work_dir }}/custom-resources.yaml"
+
+    - name: Get join token for kubernetes_nodes
+      shell: kubeadm token create --print-join-command
+      register: join_command
+
+    - name: Copy join command for nodes to Ansible host
+      become_user: root
+      copy:
+        content: "{{ join_command.stdout_lines[0] }}"
+        dest: "{{ _work_dir  }}/join_cluster_command"
+        mode: 0777
+      delegate_to: localhost
+
+- name: Configure kubernetes kubernetes_nodes
+  hosts: kubernetes_nodes
+  become: yes
+  vars:
+    cmd_file: join_cluster_command
+
+  tasks:
+    - name: Copy join command from Ansible host to the nodes
+      copy:
+        src: "{{ _work_dir }}/{{ cmd_file }}"
+        dest: "/tmp/{{ cmd_file }}"
+        mode: 0777
+
+    - name: Joining kubernetes cluster
+      command: sh '/tmp/{{ cmd_file }}'
+
+- name: Waits for kubernetes cluster to be ready
+  hosts: kubernetes_control_plane
+  become: yes
+  become_user: "{{ _kube.user }}"
+
+  tasks:
+    - name: Waiting for kubernetes nodes to be ready
+      shell: kubectl wait --for=condition=Ready nodes --all --timeout=600s
+
+    - import_tasks: ./tasks/task-wait-ready.yaml
+      vars:
+        namespace: calico-apiserver
+        name: calico-apiserver

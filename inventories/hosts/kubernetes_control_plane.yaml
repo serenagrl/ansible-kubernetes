@@ -1,0 +1,5 @@
+kubernetes_control_plane:
+  hosts: # Only 1 host is supported
+    k8s-cp:
+      ansible_host: 192.168.0.200
+      ansible_user: root

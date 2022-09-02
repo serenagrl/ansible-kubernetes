@@ -1,0 +1,125 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Installs and configures the kubernetes dashboard >>>>>
+  hosts: kubernetes_control_plane
+  become: yes
+  become_user: "{{ _kube.user }}"
+
+  vars:
+    manifest_file: "{{ _work_dir }}/dashboard.yaml"  
+
+  tasks:
+    - import_tasks: ./tasks/task-get-manifest.yaml
+      become_user: root
+      vars:
+        name: "kubernetes dashboard"
+        repo_path: "kubernetes/dashboard"
+        pkg_version: "{{ _pkg.dashboard | default }}"
+        version_prefix: "v"
+        dest: "{{ manifest_file }}"
+        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/aio/deploy/recommended.yaml"]
+      delegate_to: localhost
+
+    - name: Installing kubernetes dashboard
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: "{{ lookup('file', manifest_file) | from_yaml_all }}"
+
+    - name: Cleanup manifest file
+      become_user: root
+      file:
+        path: "{{ manifest_file }}"
+        state: absent
+      delegate_to: localhost
+
+    - name: Patch dashboard service to NodePort {{ _dashboard.nodeport }}
+      block:
+        - name: Patch dashboard service to use NodePort
+          kubernetes.core.k8s:
+            state: patched
+            namespace: kubernetes-dashboard
+            kind: Service
+            name: kubernetes-dashboard
+            definition: |
+              spec:
+                type: NodePort
+                ports:
+                - nodePort: {{ _dashboard.nodeport }}
+                  port: 443
+                  protocol: TCP
+                  targetPort: 8443
+
+    - name: Create dashboard ServiceAccount
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: dashboard-admin
+            namespace: kube-system
+
+    - name: Create dashboard ClusterRoleBinding
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            name: dashboard-admin
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: cluster-admin
+          subjects:
+            - kind: ServiceAccount
+              name: dashboard-admin
+              namespace: kube-system
+
+    - name: Create dashboard Secret
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: dashboard-admin
+            namespace: kube-system
+            annotations:
+              kubernetes.io/service-account.name: dashboard-admin
+          type: kubernetes.io/service-account-token
+
+    - name: Get dashboard account token
+      shell: kubectl describe secret dashboard-admin -n kube-system
+      register: kubernetes_dashboard_token
+
+    - name: Copy token to Ansible host
+      become_user: root
+      copy:
+        content: "{{ kubernetes_dashboard_token.stdout_lines }}"
+        dest: "{{ _work_dir }}/kubernetes_dashboard_token"
+        mode: 0777
+      delegate_to: localhost
+
+    - import_tasks: ./tasks/task-wait-ready.yaml
+      vars:
+        namespace: kubernetes-dashboard
+        name: kubernetes-dashboard
+
+    - import_tasks: ./tasks/task-create-ingress-route.yaml
+      vars:
+        namespace: kubernetes-dashboard
+        name: kubernetes-dashboard-ingress
+        protocol: HTTPS
+        route: dashboard
+        service_name: kubernetes-dashboard
+        port: 443
+

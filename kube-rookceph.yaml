@@ -1,0 +1,206 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Install and configure Rook-Ceph >>>>>
+  hosts: winrm
+
+  tasks:
+    # You need to remove the disks manually if you wish to rerun this.
+    - name: Create Hyper-V virtual disks and attach them to the kubernetes_nodes
+      vars:
+        vhd_disk: "{{ _rook_ceph.disk.dir }}\\{{ item }}\\Virtual Hard Disks\\{{ _rook_ceph.disk.name }}.vhdx"
+      ansible.windows.win_powershell:
+        script: |
+          New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ _rook_ceph.disk.size }} -Dynamic
+          Add-VMHardDiskDrive {{ item }} -Path "{{ vhd_disk }}"
+        creates: "{{ vhd_disk }}"
+      with_inventory_hostnames:
+        - kubernetes_nodes
+
+- hosts: kubernetes_control_plane
+  become: yes
+  become_user: "{{ _kube.user }}"
+  vars:
+    repo_dir: "{{ _work_dir }}/rook"
+    deploy_dir: "{{ repo_dir }}/deploy/examples"
+
+  tasks:
+    - name: Download and configure rook-ceph
+      become_user: root
+      block:
+        - import_tasks: ./tasks/task-git-clone.yaml
+          vars:
+            name: "rook ceph"
+            repo_path: "rook/rook"
+            pkg_version: "{{ _pkg.rook_ceph | default }}"
+            version_prefix: "v"
+            url: "https://github.com/rook/rook.git"
+            dest: "{{ repo_dir }}"
+
+        - name: Scale down the pods for lesser than 3 kubernetes_nodes configuration
+          shell: |
+                  sed -i 's/count: 2$/count: 1/g' cluster.yaml
+                  sed -i 's/count: 3$/count: 2/g' cluster.yaml
+          args:
+            chdir: "{{ deploy_dir }}"
+          when: (groups['kubernetes_nodes'] | length) < 3
+
+      delegate_to: localhost
+
+    - name: Installing rook-ceph cluster
+      kubernetes.core.k8s:
+        force: yes
+        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+        wait: yes
+      with_fileglob:
+        - "{{ deploy_dir }}/crds.yaml"
+        - "{{ deploy_dir }}/common.yaml"
+        - "{{ deploy_dir }}/operator.yaml"
+        - "{{ deploy_dir }}/cluster.yaml"
+
+    - name: Waiting for ceph cluster to be ready (may take a while)
+      shell: |
+              kubectl wait --for=jsonpath={.status.phase}=Ready cephclusters rook-ceph -n rook-ceph --timeout=900s
+
+    - name: Installing rook-ceph cluster
+      kubernetes.core.k8s:
+        force: yes
+        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+        wait: yes
+      with_fileglob:
+        - "{{ deploy_dir }}/toolbox.yaml"
+
+    - name: Get ceph toolbox pod information
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: rook-ceph
+        label_selectors:
+          - app = rook-ceph-tools
+      register: pod_info
+
+    - name: Create new storage pool
+      vars:
+        pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
+        num_kubernetes_nodes: "{{ groups['kubernetes_nodes'] | length }}"
+
+      kubernetes.core.k8s_exec:
+        namespace: rook-ceph
+        pod: '{{ pod_name }}'
+        command: '{{ item }}'
+
+      register: output
+      when: num_kubernetes_nodes | int > 1
+
+      loop:
+        - "ceph osd pool create {{ _rook_ceph.pool_name }} 128"
+        - "ceph osd pool set {{ _rook_ceph.pool_name }} min_size {{ num_kubernetes_nodes }}"
+        - "ceph osd pool set {{ _rook_ceph.pool_name }} size {{ num_kubernetes_nodes }}"
+
+    - name: Configure file system and storage class
+      become_user: root
+      block:
+        - name: Set filesystem name and pvc sizes
+          shell: |
+                  sed -i 's/name: myfs$/name: {{ _rook_ceph.fs_name }}/g' filesystem.yaml
+                  sed -i 's/myfs/{{ _rook_ceph.fs_name }}/g' ./csi/cephfs/storageclass.yaml
+                  sed -i 's/storage: 1Gi$/storage: {{ _rook_ceph.pvc.fs_size }}/g' ./csi/cephfs/pvc.yaml
+                  sed -i 's/storage: 1Gi$/storage: {{ _rook_ceph.pvc.rbd_size }}/g' ./csi/rbd/pvc.yaml
+          args:
+            chdir: "{{ deploy_dir }}"
+
+        - name: Scale down replicas for lesser than 3 kubernetes_nodes configuration
+          shell: |
+                  sed -i 's/size: 3$/size: 2/g' filesystem.yaml
+          args:
+            chdir: "{{ deploy_dir }}"
+          when: (groups['kubernetes_nodes'] | length) < 3
+
+      delegate_to: localhost
+
+    - name: Create ceph fs and rbd storage classes
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+        wait: yes
+      with_fileglob:
+        - "{{ deploy_dir }}/filesystem.yaml"
+        - "{{ deploy_dir }}/csi/cephfs/storageclass.yaml"
+        - "{{ deploy_dir }}/csi/rbd/storageclass.yaml"
+
+    - name: Create ceph fs and rbd pvcs
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        namespace: "{{ _rook_ceph.pvc.namespace }}"
+        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+        wait: yes
+      with_fileglob:
+        - "{{ deploy_dir }}/csi/cephfs/pvc.yaml"
+        - "{{ deploy_dir }}/csi/rbd/pvc.yaml"
+
+    - name: Expose ceph dashboard
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: |
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: rook-ceph-mgr-dashboard-external-https
+            namespace: rook-ceph
+            labels:
+              app: rook-ceph-mgr
+              rook_cluster: rook-ceph
+          spec:
+            ports:
+            - name: dashboard
+              nodePort: {{ _rook_ceph.nodeport }}
+              port: 8443
+              protocol: TCP
+              targetPort: 8443
+            selector:
+              app: rook-ceph-mgr
+              rook_cluster: rook-ceph
+            sessionAffinity: None
+            type: NodePort
+
+    - name: Reset ceph dashboard service
+      kubernetes.core.k8s:
+        state: absent
+        kind: Service
+        namespace: rook-ceph
+        name: rook-ceph-mgr-dashboard
+
+    - name: Get ceph dashboard password
+      shell: |
+              kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo
+      register: ceph_password
+
+    - name: Copy deph dashboard password to Ansible host
+      become_user: root
+      copy:
+        content: "{{ ceph_password.stdout }}"
+        dest: "{{ _work_dir }}/ceph_dashboard_password"
+        mode: 0777
+      delegate_to: localhost
+
+    - import_tasks: ./tasks/task-create-ingress-route.yaml
+      vars:
+        namespace: rook-ceph
+        name: ceph-dashboard-ingress
+        protocol: HTTPS
+        route: ceph
+        service_name: rook-ceph-mgr-dashboard
+        port: 8443
+
+    - name: Cleanup directories
+      become_user: root
+      file:
+        path: "{{ repo_dir }}"
+        state: absent
+      delegate_to: localhost
+      when: _rook_ceph.cleanup

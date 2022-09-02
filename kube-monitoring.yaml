@@ -1,0 +1,198 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Install and configure kube prometheus >>>>>
+  hosts: kubernetes_control_plane
+  become: yes
+  become_user: "{{ _kube.user }}"
+  vars:
+    repo_dir: "{{ _work_dir }}/kube-prometheus"
+    manifest_dir: "{{ repo_dir }}/manifests"
+    setup_dir: "{{ manifest_dir  }}/setup"
+
+  tasks:
+    - name: Download and configure kube prometheus
+      become_user: root
+      block:
+        - import_tasks: ./tasks/task-git-clone.yaml
+          vars:
+            name: "kube prometheus"
+            repo_path: "prometheus-operator/kube-prometheus"
+            pkg_version: "{{ _pkg.kube_prometheus | default }}"
+            version_prefix: "v"
+            url: "https://github.com/prometheus-operator/kube-prometheus.git"
+            dest: "{{ repo_dir }}"
+
+        - name: Fix malformed enum in 0alertmanagerConfigCustomResourceDefinition.yaml
+          shell: |
+                  sed -i "s/- =$/- '='/g" 0alertmanagerConfigCustomResourceDefinition.yaml
+          args:
+            chdir: "{{ setup_dir }}"
+
+        - name: Scale down the pods for lesser than 3 kubernetes_nodes configuration
+          shell: |
+                  sed -i 's/replicas: 2/replicas: 1/g' prometheus-prometheus.yaml
+                  sed -i 's/replicas: 2/replicas: 1/g' prometheusAdapter-deployment.yaml
+                  sed -i 's/replicas: 3/replicas: 1/g' alertmanager-alertmanager.yaml
+          args:
+            chdir: "{{ manifest_dir }}"
+          when: (groups['kubernetes_nodes'] | length) < 3
+
+      delegate_to: localhost
+
+    - name: Install kube prometheus custom resources
+      kubernetes.core.k8s:
+        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+      with_fileglob:
+        - "{{ setup_dir }}/*.yaml"
+
+    - name: Install kube prometheus
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+      loop: "{{ q('fileglob', manifest_dir + '/*.yaml') | sort | difference(_monitoring.excludes)  }}"
+
+    - name: Change grafana services to use NodePort {{ _monitoring.nodeports.grafana }}
+      kubernetes.core.k8s:
+        state: patched
+        namespace: monitoring
+        kind: Service
+        name: grafana
+        definition: |
+          spec:
+            type: NodePort
+            ports:
+            - nodePort: {{ _monitoring.nodeports.grafana }}
+              port: 3000
+
+    - name: Change prometheus services to use NodePort {{ _monitoring.nodeports.prometheus }}
+      kubernetes.core.k8s:
+        state: patched
+        namespace: monitoring
+        kind: Service
+        name: prometheus-k8s
+        definition: |
+          spec:
+            type: NodePort
+            ports:
+            - nodePort: {{ _monitoring.nodeports.prometheus }}
+              port: 9090
+
+    - name: Change alertmanagers services to use NodePort {{ _monitoring.nodeports.alertmanager }}
+      kubernetes.core.k8s:
+        state: patched
+        namespace: monitoring
+        kind: Service
+        name: alertmanager-main
+        definition: |
+          spec:
+            type: NodePort
+            ports:
+            - nodePort: {{ _monitoring.nodeports.alertmanager }}
+              port: 9093
+
+    - name: Check for ingress availability
+      kubernetes.core.k8s_info:
+        kind: IngressClass
+      register: ingress_class
+
+    - name: Configure ingress
+      vars:
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+      block:
+        - name: Create ingress for grafana and prometheus
+          kubernetes.core.k8s:
+            apply: yes
+            force: yes
+            definition: |
+              apiVersion: networking.k8s.io/v1
+              kind: Ingress
+              metadata:
+                name: monitoring-ingress
+                namespace: monitoring
+              spec:
+                ingressClassName: {{ ingress_name }}
+                rules:
+                  - host: {{ _ingress.host }}
+                    http:
+                      paths:
+                        - path: /grafana
+                          pathType: Prefix
+                          backend:
+                            service:
+                              name: grafana
+                              port:
+                                number: 3000
+                        - path: /prometheus
+                          pathType: Prefix
+                          backend:
+                            service:
+                              name: prometheus-k8s
+                              port:
+                                number: 9090
+
+        - name: Patch kube prometheus configurations to support ingress
+          become: yes
+          become_user: root
+          block:
+            - name: Edit grafana configuration
+              blockinfile:
+                path: "{{ manifest_dir }}/grafana-config.yaml"
+                insertafter: "default_timezone = UTC"
+                marker: "    # ANSIBLE MAMANAGED BLOCK"
+                block: |2
+                      [server]
+                      domain = my.kubernetes.local
+                      root_url = %(protocol)s://%(domain)s:%(http_port)s/grafana/
+                      serve_from_sub_path = true
+
+            - name: Edit prometheus configuration
+              blockinfile:
+                path: "{{ manifest_dir }}/prometheus-prometheus.yaml"
+                insertbefore: "enableFeatures:"
+                marker: "  # ANSIBLE MAMANAGED BLOCK"
+                block: |2
+                    externalUrl: /prometheus
+                    routePrefix: /prometheus
+
+            - name: Patch grafana datasource url
+              replace:
+                path: "{{ manifest_dir }}/grafana-dashboardDatasources.yaml"
+                regexp: 'http://prometheus-k8s.monitoring.svc:9090'
+                replace: 'http://prometheus-k8s.monitoring.svc:9090/prometheus'
+
+          delegate_to: localhost
+
+        - name: Apply configuration changes
+          kubernetes.core.k8s:
+            apply: yes
+            force: yes
+            definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+          with_fileglob:
+            - "{{ manifest_dir }}/grafana-config.yaml"
+            - "{{ manifest_dir }}/prometheus-prometheus.yaml"
+            - "{{ manifest_dir }}/grafana-dashboardDatasources.yaml"
+
+        - name: Restart grafana 
+          shell: |
+                  kubectl rollout restart deployment grafana -n monitoring
+
+        - import_tasks: ./tasks/task-wait-ready.yaml
+          vars:
+            namespace: monitoring
+            name: grafana
+
+      when: ingress_name != ""
+
+    - name: Cleanup directories
+      become: yes
+      become_user: root
+      file:
+        path: "{{ repo_dir }}"
+        state: absent
+      delegate_to: localhost
+      when: _monitoring.cleanup

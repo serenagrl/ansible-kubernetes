@@ -1,0 +1,4 @@
+**/certs/
+**/.vs
+**/.vscode
+test*

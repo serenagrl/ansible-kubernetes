@@ -1,0 +1,33 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Install Helm >>>>>
+  hosts: kubernetes_control_plane
+  become: yes
+  become_user: root
+
+  tasks:
+    - name: Get helm gpg
+      get_url:
+        url: https://baltocdn.com/helm/signing.asc
+        dest: /tmp/helm.gpg
+        mode: '0644'
+        force: true
+
+    - name: De-armor helm gpg
+      shell: gpg --dearmor < /tmp/helm.gpg > /usr/share/keyrings/helm.gpg
+
+    - name: Register helm repository
+      apt_repository:
+        filename: helm
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+
+    - name: Installing helm
+      apt:
+        pkg:
+          - helm
+        state: latest
+        update_cache: true

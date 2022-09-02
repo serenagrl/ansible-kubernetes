@@ -1,0 +1,25 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Creating post-installation checkpoints
+  hosts: kubernetes_cluster
+  gather_facts: no
+
+  tasks:
+    - name: Run on Winrm
+      block:
+        - name: Creating Checkpoint {{ checkpoint_name }} for Hyper-V Virtual Machines
+          ansible.windows.win_powershell:
+            script: |
+              Checkpoint-VM -Name {{ inventory_hostname }} -SnapshotName "{{ checkpoint_name }}"
+
+        - name: Wait for Virtual Machines to be ready
+          ansible.windows.win_powershell:
+            script: |
+              Wait-VM -Name {{ inventory_hostname }} -For Heartbeat
+
+      when: checkpoint_name is defined
+      delegate_to: winrm_host
