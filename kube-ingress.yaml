@@ -1,0 +1,114 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Install and configure Ingress Nginx >>>>>
+  hosts: kubernetes_control_plane
+  become: yes
+  become_user: "{{ _kube.user }}"
+
+  vars:
+    manifest_file: "{{ _work_dir }}/ingress-nginx-deployment.yaml"
+    
+  tasks:
+    - import_tasks: ./tasks/task-get-manifest.yaml
+      become_user: root
+      vars:
+        name: "ingress nginx"
+        repo_path: "kubernetes/ingress-nginx"
+        pkg_version: "{{ _pkg.ingress_nginx | default }}"
+        version_prefix: "helm-chart-"
+        dest: "{{ manifest_file }}"
+        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/deploy/static/provider/baremetal/deploy.yaml"]
+      delegate_to: localhost
+
+    - name: Installing ingress nginx
+      kubernetes.core.k8s:
+        state: present
+        apply: yes
+        force: yes
+        definition: "{{ lookup('file', manifest_file) | from_yaml_all }}"
+
+    - name: Cleanup manifest file
+      become: yes
+      become_user: root
+      file:
+        path: "{{ manifest_file }}"
+        state: absent
+      delegate_to: localhost
+
+    - import_tasks: ./tasks/task-wait-ready.yaml
+      vars:
+        namespace: ingress-nginx
+        name: ingress-nginx-controller
+
+    - name: Patch ExternalIPs
+      kubernetes.core.k8s:
+        state: patched
+        namespace: ingress-nginx
+        kind: Service
+        name: ingress-nginx-controller
+        definition:
+          spec:
+            externalIPs: "[ '{{ _kube.cluster.address }}' ]"
+
+    - name: Add label to control plane
+      kubernetes.core.k8s:
+        state: patched
+        kind: Node
+        name: "{{ ansible_hostname }}"
+        definition:
+          metadata:
+            labels:
+              runingress: nginx
+
+    - name: Patch ingress nginx controller
+      kubernetes.core.k8s:
+        state: patched
+        namespace: ingress-nginx
+        kind: Deployment
+        name: ingress-nginx-controller
+        definition: 
+          spec:
+            template:
+              spec:
+                nodeSelector:
+                  runingress: nginx
+                tolerations:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Equal
+                    value: "true"
+                    effect: NoSchedule
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Equal
+                    effect: NoSchedule
+                  - key: node-role.kubernetes.io/master
+                    operator: Equal
+                    value: "true"
+                    effect: NoSchedule
+                  - key: node-role.kubernetes.io/master
+                    operator: Equal
+                    effect: NoSchedule
+
+    - name: Configure default ingress nginx class
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: networking.k8s.io/v1
+          kind: IngressClass
+          metadata:
+            name: nginx
+            annotations:
+              ingressclass.kubernetes.io/is-default-class: "true"
+          spec:
+            controller: k8s.io/ingress-nginx
+
+    - import_tasks: ./tasks/task-wait-ready.yaml
+      vars:
+        namespace: ingress-nginx
+        name: ingress-nginx-controller
+
+

@@ -1,0 +1,135 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- import_playbook: kube-helm.yaml
+
+- name: <<<<< Install and configure Harbor container registry >>>>>
+  hosts: kubernetes_cluster
+  become: yes
+  become_user: root
+
+  tasks:
+    - name: Add harbor portal DNS entries to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        insertafter: "127.0.1.1 {{ ansible_hostname }}"
+        line: "{{ _kube.cluster.address }} core.{{ _harbor.domain  }} notary.{{ _harbor.domain  }}"
+
+- name: Install harbor container registry
+  hosts: kubernetes_control_plane
+  become: yes
+  become_user: "{{ _kube.user }}"
+  vars:
+    values_file: "{{ _work_dir }}/harbor-values.yaml"
+
+  tasks:
+    - name: Create harbor system namespace
+      kubernetes.core.k8s:
+        kind: Namespace
+        name: harbor-system
+
+    - name: Check for ingress availability
+      kubernetes.core.k8s_info:
+        kind: IngressClass
+      register: ingress_class
+
+    - name: Create helm values file
+      become_user: root
+      vars:
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+      blockinfile:
+        create: yes
+        path: "{{ values_file }}"
+        block: |
+          expose:
+            type: ingress
+            tls:
+              enabled: true
+              certSource: auto
+
+            ingress:
+              hosts:
+                core: core.{{ _harbor.domain }}
+                notary: notary.{{ _harbor.domain }}
+              controller: default
+              className: "{{ ingress_name }}"
+              annotations:
+                ingress.kubernetes.io/ssl-redirect: "true"
+                ingress.kubernetes.io/proxy-body-size: "0"
+                nginx.ingress.kubernetes.io/ssl-redirect: "true"
+                nginx.ingress.kubernetes.io/proxy-body-size: "0"
+
+          externalURL: https://{{ _harbor.domain }}
+
+          persistence:
+            enabled: true
+
+      delegate_to: localhost
+
+    - name: Install harbor
+      block:
+        - name: Add harbor chart repo
+          kubernetes.core.helm_repository:
+            name: harbor
+            repo_url: "https://helm.goharbor.io"
+
+        - name: Deploy harbor
+          kubernetes.core.helm:
+            name: harbor
+            chart_ref: harbor/harbor
+            release_namespace: harbor-system
+            values: "{{ lookup('file', values_file) | from_yaml }}"
+
+        - import_tasks: ./tasks/task-wait-ready.yaml
+          vars:
+            namespace: harbor-system
+            name: harbor-jobservice
+
+        - name: Waiting for Harbor api to be up
+          uri:
+            url: "https://core.{{ _harbor.domain }}/api/v2.0/systeminfo/getcert"
+            validate_certs: no
+          register: result
+          until: result.status == 200
+          retries: 15
+          delay: 30
+
+    - name: Get harbor registry certificate
+      become_user: root
+      block:
+        - name: Get harbor registry certificate
+          get_url:
+            url: https://core.{{ _harbor.domain }}/api/v2.0/systeminfo/getcert
+            dest: "{{ _work_dir }}/harbor-ca.crt"
+            mode: '0644'
+            force: true
+            validate_certs: no
+
+      delegate_to: localhost
+
+- name: Configure kubernetes nodes to trust registry certificate
+  hosts: kubernetes_nodes
+  become: yes
+  become_user: root
+  vars:
+    cert_dir: "/usr/local/share/ca-certificates"
+
+  tasks:
+    - name: Copy registry certificate to shared certificate directory
+      copy:
+        src: "{{ _work_dir }}/harbor-ca.crt"
+        dest: "{{ cert_dir }}/harbor-ca.crt"
+        mode: 0777
+
+    - name: Update certificates
+      shell: update-ca-certificates
+
+    - name: Restart containerd to recognize the cert
+      systemd:
+        state: restarted
+        name: containerd
+

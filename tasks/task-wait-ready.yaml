@@ -1,0 +1,14 @@
+- name: Waiting for {{ name }} to be ready
+  kubernetes.core.k8s_info:
+    namespace: "{{ namespace }}"
+    name: "{{ name }}"
+    kind: Deployment
+    wait: yes
+    wait_timeout: 300
+    wait_condition:
+      reason: MinimumReplicasAvailable
+      status: True
+      type: Available
+  when: 
+    - name is defined
+    - namespace is defined

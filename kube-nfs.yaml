@@ -1,0 +1,129 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Install and configure nfs clients >>>>>
+  hosts: kubernetes_nodes
+  become: yes
+
+  tasks:
+    - name: Installing nfs client package
+      apt:
+        pkg:
+          - nfs-common
+        state: latest
+        update_cache: true
+
+- name: <<<<< Installs and configures NFS server >>>>>
+  hosts: nfs_server
+  become: yes
+  become_user: "{{ _kube.user }}"
+  vars:
+    repo_dir: "{{ _work_dir }}/nfs-provisioner"
+    deploy_dir: "{{ repo_dir }}/deploy"
+
+  tasks:
+    - name: Install and enable nfs server
+      become_user: root
+      block:
+        - name: Installing nfs server package
+          apt:
+            pkg:
+              - nfs-server
+            state: latest
+            update_cache: true
+
+        - name: Create shared directory
+          file:
+            path: "{{ _nfs.shared }}"
+            state: directory
+            mode: '0777'
+
+        - name: Export shared directory to kubernetes kubernetes_nodes
+          lineinfile:
+            path: /etc/exports
+            line: "{{ _nfs.shared }} {{ hostvars[item]['ansible_host'] }}(rw,no_subtree_check,no_root_squash)"
+          with_inventory_hostnames:
+            - kubernetes_nodes
+
+        - name: Enable nfs
+          shell: |
+                  sudo systemctl enable --now nfs-server
+                  sudo exportfs -ar
+
+    - name: Download and configure nfs provisioner
+      become_user: root
+      block:
+        - import_tasks: ./tasks/task-git-clone.yaml
+          vars:
+            name: "nfs provisioner"
+            repo_path: "kubernetes-sigs/nfs-subdir-external-provisioner"
+            pkg_version: "{{ _pkg.nfs_provisioner | default }}"
+            version_prefix: "nfs-subdir-external-provisioner-"
+            url: "https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/"
+            dest: "{{ repo_dir }}"
+            
+        - name: Configure nfs provisioner
+          shell: |
+                  sed -i 's/nfs-subdir-external-provisioner$/nfs-provisioner/g' deployment.yaml
+                  sed -i "s/10.3.243.101$/{{ hostvars[groups['nfs_server'][0]]['ansible_host'] }}/g" deployment.yaml
+                  sed -i "s/\/ifs\/kubernetes$/\{{ _nfs.shared }}/g" deployment.yaml
+                  sed -i 's/nfs-subdir-external-provisioner/nfs-provisioner/g' class.yaml
+                  sed -i 's/nfs-client/{{ _nfs.storage_name }}/g' class.yaml
+                  sed -i "s/namespace:.*/namespace: {{ _nfs.provisioner_namespace }}/g" rbac.yaml deployment.yaml
+          args:
+            chdir: "{{ deploy_dir }}"
+
+      delegate_to: localhost
+
+    - name: Apply configuration changes
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+      with_fileglob:
+        - "{{ deploy_dir }}/rbac.yaml"
+        - "{{ deploy_dir }}/class.yaml"
+        - "{{ deploy_dir }}/deployment.yaml"
+
+    - name: Set to default storage class to {{ _nfs.is_default }}
+      kubernetes.core.k8s:
+        state: patched
+        kind: StorageClass
+        name: "{{ _nfs.storage_name }}"
+        definition: |
+          metadata:
+            annotations:
+              storageclass.kubernetes.io/is-default-class: "true"
+      when: _nfs.is_default
+
+    - name: Create persistent volume claims
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        namespace: "{{ _nfs.provisioner_namespace }}"
+        definition: |
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: {{ _nfs.pvc.name }}
+            labels:
+              storage.k8s.io/name: nfs
+          spec:
+            accessModes:
+              - ReadWriteMany
+            storageClassName: {{ _nfs.storage_name }}
+            resources:
+              requests:
+                storage: {{ _nfs.pvc.size }}
+
+    - name: Cleanup directories
+      become: yes
+      become_user: root
+      file:
+        path: "{{ repo_dir }}"
+        state: absent
+      delegate_to: localhost
+      when: _nfs.cleanup

@@ -1,0 +1,5 @@
+# The kubernetes kubernetes_nodes to provision.
+kubernetes_cluster:
+  children:
+    kubernetes_control_plane:
+    kubernetes_nodes:

@@ -1,0 +1,59 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+  # Prepare environment and install prerequisites
+- import_playbook: kube-prepare.yaml
+
+  # Configure Kubernetes cluster
+- import_playbook: kube-cluster.yaml
+
+  # Create checkpoints for satefy reasons. You can delete the checkpoints later.
+- import_playbook: checkpoint-vm.yaml
+  vars:
+    checkpoint_name: "Kubernetes ready."
+  when: _checkpoint
+
+  # Install Ingress nginx controller
+- import_playbook: kube-ingress.yaml
+  when: _kube.install.ingress
+
+  # Install Kubernetes Dashboard
+- import_playbook: kube-dashboard.yaml
+  when: _kube.install.dashboard
+
+  # Install Kube-Prometheus
+- import_playbook: kube-monitoring.yaml
+  when: _kube.install.monitoring
+
+  # Install Metrics Server
+- import_playbook: kube-metrics.yaml
+  when: _kube.install.metrics
+
+  # Install and configure NFS
+- import_playbook: kube-nfs.yaml
+  when: _kube.install.nfs
+
+  # Install and configure Rook-Ceph
+- import_playbook: kube-rookceph.yaml
+  when: _kube.install.rookceph
+
+  # Install and configure Harbor registry
+- import_playbook: kube-harbor.yaml
+  when: _kube.install.harbor
+
+  # Install and configure Istio
+- import_playbook: kube-istio.yaml
+  when: _kube.install.istio
+
+  # Install and configure AWX
+- import_playbook: kube-awx.yaml
+  when: _kube.install.awx
+
+  # Create checkpoints for satefy reasons. You can delete the checkpoints later.
+- import_playbook: checkpoint-vm.yaml
+  vars:
+    checkpoint_name: "Installation completed."
+  when: _checkpoint

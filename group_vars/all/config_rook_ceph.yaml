@@ -1,0 +1,15 @@
+# Rook-ceph settings.
+_rook_ceph:
+  disk:
+    name: CephStorage
+    dir: "D:\\Virtual Machines\\Kubernetes"
+    size: 20GB
+  pool_name: storage-pool
+  fs_name: k8sfs
+  pvc:
+    namespace: default
+    fs_size: 2Gi
+    rbd_size: 2Gi
+  nodeport: 32004
+
+  cleanup: yes

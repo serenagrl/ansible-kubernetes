@@ -1,0 +1,47 @@
+- name: Check for ingress availability
+  kubernetes.core.k8s_info:
+    kind: IngressClass
+  register: ingress_class
+
+- name: Create ingress for dashboard
+  vars:
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: |
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: {{ name }}
+        namespace: {{ namespace }}
+        labels:
+          app.kubernetes.io/name: {{ name }}
+        annotations:
+          nginx.ingress.kubernetes.io/backend-protocol: {{ protocol }}
+          nginx.ingress.kubernetes.io/configuration-snippet: |
+            proxy_set_header Accept-Encoding "";
+            sub_filter '<base href="/">' '<base href="/{{ route }}/">';
+            sub_filter_once on;
+          nginx.ingress.kubernetes.io/rewrite-target: /$2
+      spec:
+        ingressClassName: {{ ingress_name }}
+        rules:
+          - host: {{ _ingress.host }}
+            http:
+              paths:
+              - path: /{{ route }}(/|$)(.*)
+                pathType: Prefix
+                backend:
+                  service:
+                    name: {{ service_name }}
+                    port:
+                      number: {{ port }}
+  when: 
+    - ingress_name != ""
+    - name is defined
+    - namespace is defined
+    - protocol is defined
+    - route is defined
+    - service_name is defined
+    - port is defined

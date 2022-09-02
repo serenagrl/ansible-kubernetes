@@ -1,0 +1,5 @@
+# The VM specifications for the control plane
+spec:
+  ram_size: 8GB
+  disk_size: 127GB
+  v_cpu: 4

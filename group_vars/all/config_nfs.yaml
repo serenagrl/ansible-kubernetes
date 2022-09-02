@@ -1,0 +1,11 @@
+# Nfs settings.
+_nfs:
+  shared: /data
+  provisioner_namespace: default
+  storage_name: nfs-storage
+  is_default: yes
+  pvc:
+    name: nfs-pvc
+    size: 10Gi
+
+  cleanup: yes

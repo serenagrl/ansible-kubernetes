@@ -1,0 +1,21 @@
+# Istio settings.
+_istio:
+  istioctl_dir: /usr/local/bin/
+
+  # The profile to install. Currently set to 'demo' for testing. Use 'default' for production.
+  profile: demo
+
+  # List of namespaces to inject istio
+  inject:
+    - default
+
+  addons:
+    install: yes
+    nodeports:
+      gateway:
+        http: 32007
+        https: 32008
+      kiali: 32009
+      grafana: 32010
+
+  cleanup: yes

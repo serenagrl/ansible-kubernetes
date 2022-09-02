@@ -1,0 +1,22 @@
+# Kubernetes configuration settings.
+# The user account to create. This account will be used to setup kubernetes.
+_kube:
+  user: k8s-admin
+  # Passwoid is p@ssw0rd
+  pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
+  cluster:
+    name: k8s-cluster
+    address: 192.168.0.200
+    cidr_network: 10.1.0.0
+
+  # Which add-on to install. You will need a lot of server resources to install all.
+  install:
+    ingress: yes
+    dashboard: yes
+    metrics: yes
+    monitoring: no
+    nfs: yes
+    rookceph: no
+    harbor: no
+    istio: no
+    awx: no

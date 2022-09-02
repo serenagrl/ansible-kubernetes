@@ -1,0 +1,21 @@
+- name: Clone {{ name }} repository
+  vars:
+    release: "{% if pkg_version is defined and pkg_version and pkg_version != 'latest' %}{{ version_prefix | default() }}{{ pkg_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
+  block:
+    - name: Delete existing repository directory (if any)
+      file:
+        state: absent
+        path: "{{ repo_dir }}"
+
+    - name: Get latest {{ name }} release tag
+      shell: |
+          curl -s "https://api.github.com/repos/{{ repo_path }}/releases/latest" | grep tag_name | cut -d '"' -f 4
+      register: release_tag
+      when: pkg_version is undefined or not pkg_version or pkg_version == "latest"
+
+    - name: Git clone {{ name }} ({{ release }}) repository
+      git:
+        repo: "{{ url }}"
+        dest: "{{ dest }}"
+        version: "{{ release }}"
+        depth: 1

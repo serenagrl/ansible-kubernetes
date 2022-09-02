@@ -1,0 +1,115 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Installs and configures AWX >>>>>
+  hosts: kubernetes_control_plane
+  become: yes
+  become_user: "{{ _kube.user }}"
+  vars:
+    repo_dir: "~/awx-operator"
+
+  tasks:
+    - import_tasks: ./tasks/task-git-clone.yaml
+      vars:
+        name: "awx operator"
+        repo_path: "ansible/awx-operator"
+        pkg_version: "{{ _pkg.awx | default }}"
+        url: "https://github.com/ansible/awx-operator.git"
+        dest: "{{ repo_dir }}"
+
+    - name: Create awx namespace
+      kubernetes.core.k8s:
+        kind: Namespace
+        name: awx
+
+    - name: Deploy awx operator
+      shell: |
+               export NAMESPACE=awx
+               make deploy
+      args:
+        chdir: "{{ repo_dir }}"
+
+    - import_tasks: ./tasks/task-wait-ready.yaml
+      vars:
+        namespace: awx
+        name: awx-operator-controller-manager
+
+    - name: Create persistent volume claim
+      kubernetes.core.k8s:
+        definition: |
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: awx-data-pvc
+            namespace: awx
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            storageClassName:
+            resources:
+              requests:
+                storage: 5Gi
+
+    - name: Deploy awx
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: |
+          apiVersion: awx.ansible.com/v1beta1
+          kind: AWX
+          metadata:
+            namespace: awx
+            name: awx
+          spec:
+            service_type: nodeport
+            projects_persistence: true
+            projects_storage_access_mode: ReadWriteOnce
+            web_extra_volume_mounts: |
+              - name: data
+                mountPath: /var/lib/projects
+            extra_volumes: |
+              - name: data
+                persistentVolumeClaim:
+                  claimName: awx-data-pvc
+        wait: yes
+
+    - include_tasks: ./tasks/task-wait-ready.yaml
+      vars:
+        namespace: awx
+        name: "{{ item }}"
+      loop:
+        - awx
+        - awx-operator-controller-manager
+
+    - name: Get generated default password
+      shell: |
+              kubectl get secret -n awx awx-admin-password -o jsonpath="{.data.password}" | base64 --decode
+      register: result
+
+    - name: Copy generated default password to Ansible host
+      become_user: root
+      copy:
+        content: "{{ result.stdout }}"
+        dest: "{{ _work_dir  }}/awx_password"
+        mode: 0777
+      delegate_to: localhost
+
+    - name: Cleanup repository directory
+      file:
+        state: absent
+        path: "{{ repo_dir }}"
+
+    - import_tasks: ./tasks/task-create-ingress-route.yaml
+      vars:
+        namespace: awx
+        name: awx-ingress
+        protocol: HTTP
+        route: awx
+        service_name: awx-service
+        port: 80
+
+- import_playbook: kube-awx-register.yaml
+  when: _awx.auto_setup

@@ -1,0 +1,20 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+  # Prepares the ubuntu auto install iso for all the servers
+- import_playbook: provision-iso.yaml
+
+  # Creates the Hyper-V Virtual Machines
+- import_playbook: provision-vm.yaml
+
+  # Setup up ssh to allow management from Ansible host
+- import_playbook: provision-ssh.yaml
+
+  # Create checkpoints for satefy reasons. You can delete the checkpoints later.
+- import_playbook: checkpoint-vm.yaml
+  vars:
+    checkpoint_name: "Ubuntu ready."
+  when: _checkpoint
