@@ -84,10 +84,8 @@
             release_namespace: harbor-system
             values: "{{ lookup('file', values_file) | from_yaml }}"
 
-        - import_tasks: ./tasks/task-wait-ready.yaml
-          vars:
-            namespace: harbor-system
-            name: harbor-jobservice
+        - name: Waiting for harbor-jobservice to be ready
+          shell: kubectl rollout status -n harbor-system deployment/harbor-jobservice
 
         - name: Waiting for Harbor api to be up
           uri:

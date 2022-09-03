@@ -32,10 +32,8 @@
       args:
         chdir: "{{ repo_dir }}"
 
-    - import_tasks: ./tasks/task-wait-ready.yaml
-      vars:
-        namespace: awx
-        name: awx-operator-controller-manager
+    - name: Waiting for awx-operator-controller-manager to be ready
+      shell: kubectl rollout status -n awx deployment/awx-operator-controller-manager 
 
     - name: Create persistent volume claim
       kubernetes.core.k8s:
@@ -76,13 +74,18 @@
                   claimName: awx-data-pvc
         wait: yes
 
-    - include_tasks: ./tasks/task-wait-ready.yaml
-      vars:
-        namespace: awx
-        name: "{{ item }}"
-      loop:
-        - awx
-        - awx-operator-controller-manager
+    - name: Waiting for awx deployments to be ready
+      shell: |
+               kubectl rollout status -n awx deployment/awx
+               kubectl rollout status -n awx deployment/awx-operator-controller-manager
+
+    - name: Waiting for awx host to be up
+      uri:
+        url: "http://{{ hostvars[groups['kubernetes_control_plane'].0].ansible_host }}:30080"
+      register: result
+      until: result.status == 200
+      retries: 15
+      delay: 30
 
     - name: Get generated default password
       shell: |
@@ -112,4 +115,4 @@
         port: 80
 
 - import_playbook: kube-awx-register.yaml
-  when: _awx.auto_setup
+  when: _awx.auto_register

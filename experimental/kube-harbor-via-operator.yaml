@@ -76,35 +76,28 @@
       kubernetes.core.k8s:
         definition: "{{ lookup('file', '{{ manifest.cert_mgr }}') | from_yaml_all }}"
 
-    - include_tasks: ./tasks/task-wait-ready.yaml
-      vars:
-        namespace: cert-manager
-        name: "{{ item }}"
-      loop:
-        - "cert-manager-webhook"
-        - "cert-manager"
-        - "cert-manager-cainjector"  
+
+    - name: Waiting for cert manager deployments to be ready
+      shell: |
+               kubectl rollout status -n cert-manager deployment/cert-manager 
+               kubectl rollout status -n cert-manager deployment/cert-manager-webhook 
+               kubectl rollout status -n cert-manager deployment/cert-manager-cainjector 
 
     - name: Installing harbor operator
       kubernetes.core.k8s:
         definition: "{{ lookup('file', '{{ manifest.operator }}') | from_yaml_all }}"
 
-    - import_tasks: ./tasks/task-wait-ready.yaml
-      vars:
-        namespace: harbor-operator
-        name: harbor-operator
+    - name: Waiting for harbor operator to be ready
+      shell: kubectl rollout status -n harbor-operator deployment/harbor-operator
 
     - name: Installing harbor
       kubernetes.core.k8s:
         definition: "{{ lookup('file', '{{ manifest.harbor }}') | from_yaml_all }}"
 
-    - include_tasks: ./tasks/task-wait-ready.yaml
-      vars:
-        namespace: harbor-system
-        name: "{{ item }}"
-      loop:
-        - "harbor-cluster-harbor-harbor-jobservice"
-        - "harbor-cluster-harbor-harbor-portal"  
+    - name: Waiting for harbor deployments to be ready
+      shell: |
+               kubectl rollout status -n harbor-system deployment/harbor-cluster-harbor-harbor-jobservice
+               kubectl rollout status -n harbor-system deployment/harbor-cluster-harbor-harbor-portal
 
     - name: Waiting for Harbor api to be up
       uri:
@@ -134,8 +127,21 @@
   become_user: root
   vars:
     cert_dir: "/usr/local/share/ca-certificates"
+    cr_cert_dir: "/etc/containerd/certs.d/core.{{ _harbor.domain }}"
 
   tasks:
+    - name: Create a directory if it does not exist
+      file:
+        path: "{{ cr_cert_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy registry certificate to containerd certificate directory
+      copy:
+        src: "{{ _work_dir }}/harbor-ca.crt"
+        dest: "{{ cr_cert_dir }}/harbor-ca.crt"
+        mode: 0777
+
     - name: Copy registry certificate to shared certificate directory
       copy:
         src: "{{ _work_dir }}/harbor-ca.crt"
@@ -144,8 +150,3 @@
 
     - name: Update certificates
       shell: update-ca-certificates
-
-    - name: Restart containerd to recognize the cert
-      systemd:
-        state: restarted
-        name: containerd

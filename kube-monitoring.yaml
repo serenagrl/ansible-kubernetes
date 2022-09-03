@@ -177,14 +177,10 @@
             - "{{ manifest_dir }}/prometheus-prometheus.yaml"
             - "{{ manifest_dir }}/grafana-dashboardDatasources.yaml"
 
-        - name: Restart grafana 
+        - name: Waiting for grafana to be ready
           shell: |
                   kubectl rollout restart deployment grafana -n monitoring
-
-        - import_tasks: ./tasks/task-wait-ready.yaml
-          vars:
-            namespace: monitoring
-            name: grafana
+                  kubectl rollout status -n monitoring deployment/grafana
 
       when: ingress_name != ""
 

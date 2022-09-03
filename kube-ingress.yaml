@@ -39,10 +39,8 @@
         state: absent
       delegate_to: localhost
 
-    - import_tasks: ./tasks/task-wait-ready.yaml
-      vars:
-        namespace: ingress-nginx
-        name: ingress-nginx-controller
+    - name: Waiting for ingress-nginx-controller to be ready
+      shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller
 
     - name: Patch ExternalIPs
       kubernetes.core.k8s:
@@ -106,9 +104,5 @@
           spec:
             controller: k8s.io/ingress-nginx
 
-    - import_tasks: ./tasks/task-wait-ready.yaml
-      vars:
-        namespace: ingress-nginx
-        name: ingress-nginx-controller
-
-
+    - name: Waiting for ingress-nginx-controller to be ready
+      shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller

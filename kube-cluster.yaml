@@ -142,14 +142,13 @@
     - name: Joining kubernetes cluster
       command: sh '/tmp/{{ cmd_file }}'
 
-- name: Waits for kubernetes cluster to be ready
-  hosts: kubernetes_control_plane[0]
+- hosts: kubernetes_control_plane[0]
   become: yes
   become_user: "{{ _kube.user }}"
 
   tasks:
-    - name: Waiting for kubernetes nodes to be ready
+    - name: Waiting for kubernetes cluster to be ready
       shell: |
              kubectl wait --for=condition=Ready nodes --all --timeout=600s
-             kubectl rollout status deployment/calico-kube-controllers -n calico-system
+             kubectl rollout status -n calico-system deployment/calico-kube-controllers
 

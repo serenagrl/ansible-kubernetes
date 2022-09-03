@@ -1,9 +1,9 @@
 # AWX settings
 _awx:
-  auto_setup: yes
+  auto_register: yes
 
   setup:
-    name: "(Auto Setup)"
+    name: "(Pre-registered)"
     organization:
       name: "My Organization"
       desc: "Edit and enter details of your organization."
@@ -14,6 +14,7 @@ _awx:
       user: yourusername@gitlab.local # Your local gitlab user name
       token: "<Gitlab Personal Access Token>" # Gitlab PAT for you user
       api_token: "<Gitlab Personal Access Token>" # Gitlab PAT for accessing Gitlab API
+
 
     # Automation will fail if this does not exist in the scm_url repo.
     playbook: "hello_world.yml"
