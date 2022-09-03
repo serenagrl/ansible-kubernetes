@@ -99,7 +99,7 @@
           ansible.windows.win_powershell:
             script: |
               multipass stop {{ inventory_hostname }}
-              Set-VMMemory {{ inventory_hostname }} -MinimumBytes {{ spec.ram_size }} -DynamicMemoryEnabled 1
+              Set-VMMemory {{ inventory_hostname }} -MinimumBytes {{ spec.min_ram_size }} -DynamicMemoryEnabled 1
               multipass start {{ inventory_hostname }}
 
         - name: Wait for Virtual Machines to be ready
