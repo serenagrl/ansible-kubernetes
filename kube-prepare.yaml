@@ -49,6 +49,10 @@
           with_inventory_hostnames:
             - kubernetes_cluster
 
+    - name: sudo apt update and upgrade
+      shell: |
+              apt update && apt full-upgrade -y
+              
     - name: Disable swap
       shell: |
               swapoff -a

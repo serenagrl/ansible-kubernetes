@@ -5,6 +5,7 @@ _kube:
   # Passwoid is p@ssw0rd
   pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
   cluster:
+    # You need to point this to a load balancer domain name and ip if you are running multiple control planes.
     name: k8s-cluster
     address: 192.168.0.200
     cidr_network: 10.1.0.0
