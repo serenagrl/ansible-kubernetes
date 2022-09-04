@@ -21,7 +21,6 @@
         release: "{% if _pkg.istio is defined and _pkg.istio and _pkg.istio != 'latest' %}{{ _pkg.istio }}{% else %}{{ release_tag.stdout }}{% endif %}"
       block:
         - name: Install istioctl
-          become: yes
           become_user: root
           shell: | 
                   curl -L https://istio.io/downloadIstio | ISTIO_VERSION={{ release }} sh -
@@ -31,7 +30,6 @@
           delegate_to: localhost
 
         - name: Copy istioctl from Ansible host to the control plane
-          become: yes
           become_user: root
           vars:
             istio_dir: "istio-{{ release }}"
@@ -40,37 +38,25 @@
             dest: "{{ _istio.istioctl_dir }}"
             mode: 0777
 
-        - name: Install istio
+        - name: Installing istio
           shell: |
                   istioctl install --set profile={{ _istio.profile }} -y
+                  kubectl rollout status -n istio-system deployment/istiod
 
-        - name: Waiting for istiod to be ready
-          kubernetes.core.k8s_info:
+        - name: Patch istio ingress gateway to use NodePort
+          kubernetes.core.k8s:
+            state: patched
             namespace: istio-system
-            name: istiod
-            kind: Deployment
-            wait: yes
-            wait_condition:
-              reason: MinimumReplicasAvailable
-              status: True
-              type: Available
-
-        - name: Expose istio ingress gateway
-          block:
-            - name: Patch istio ingress gateway to use NodePort
-              kubernetes.core.k8s:
-                state: patched
-                namespace: istio-system
-                kind: Service
-                name: istio-ingressgateway
-                definition: |
-                  spec:
-                    type: NodePort
-                    ports:
-                    - nodePort: {{ _istio.addons.nodeports.gateway.http }}
-                      port: 80
-                    - nodePort: {{ _istio.addons.nodeports.gateway.https }}
-                      port: 443
+            kind: Service
+            name: istio-ingressgateway
+            definition: |
+              spec:
+                type: NodePort
+                ports:
+                - nodePort: {{ _istio.addons.nodeports.gateway.http }}
+                  port: 80
+                - nodePort: {{ _istio.addons.nodeports.gateway.https }}
+                  port: 443
 
         - name: Labeling namespaces for istio injection (if any)
           kubernetes.core.k8s:
@@ -94,16 +80,8 @@
               with_fileglob:
                 - "{{ addons_dir }}/*.yaml"
 
-            - name: Waiting kiali deployment to complete
-              kubernetes.core.k8s_info:
-                namespace: istio-system
-                name: kiali
-                kind: Deployment
-                wait: yes
-                wait_condition:
-                  reason: MinimumReplicasAvailable
-                  status: True
-                  type: Available
+            - name: Waiting for kiali deployment to complete
+              shell: kubectl rollout status -n istio-system deployment/kiali
 
             - name: Patch kiali service to use NodePort {{ _istio.addons.nodeports.kiali }}
               kubernetes.core.k8s:
@@ -118,16 +96,8 @@
                     - nodePort: {{ _istio.addons.nodeports.kiali }}
                       port: 20001
 
-            - name: Waiting grafana deployment to complete
-              kubernetes.core.k8s_info:
-                namespace: istio-system
-                name: grafana
-                kind: Deployment
-                wait: yes
-                wait_condition:
-                  reason: MinimumReplicasAvailable
-                  status: True
-                  type: Available
+            - name: Waiting for grafana deployment to complete
+              shell: kubectl rollout status -n istio-system deployment/grafana
 
             - name: Patch grafana service to use NodePort {{ _istio.addons.nodeports.grafana }}
               kubernetes.core.k8s:
@@ -176,7 +146,6 @@
           when: _istio.addons.install
 
         - name: Cleanup directories
-          become: yes
           become_user: root
           vars:
             istio_dir: "{{ _work_dir }}/istio-{{ release }}"

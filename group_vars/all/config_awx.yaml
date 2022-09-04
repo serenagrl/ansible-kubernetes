@@ -15,7 +15,6 @@ _awx:
       token: "<Gitlab Personal Access Token>" # Gitlab PAT for you user
       api_token: "<Gitlab Personal Access Token>" # Gitlab PAT for accessing Gitlab API
 
-
     # Automation will fail if this does not exist in the scm_url repo.
     playbook: "hello_world.yml"
 

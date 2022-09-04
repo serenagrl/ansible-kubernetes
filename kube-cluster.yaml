@@ -7,6 +7,85 @@
 - name: <<<<< Create kubernetes cluster >>>>>
   hosts: kubernetes_control_plane[0]
   become: yes
+  become_user: root
+
+  tasks:
+    - name: Initializing kubernetes cluster (primary control plane)
+      vars:
+        release: "{% if _kube.release is defined and _kube.release and _kube.release != 'latest' %}--kubernetes-version {{ _kube.release }}{% endif %}"
+      shell: |
+              kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }}/16 \
+              --upload-certs --cri-socket unix:///var/run/containerd/containerd.sock \
+              --apiserver-advertise-address {{ _kube.cluster.address }} \
+              --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}  
+
+    - name: Get join token for nodes
+      shell: kubeadm token create --print-join-command
+      register: join_node_command
+
+    - name: Get certificate key for secondary control planes
+      shell: |
+        echo --control-plane --certificate-key $(sudo kubeadm init phase upload-certs --upload-certs | grep -vw -e certificate -e Namespace)
+      register: join_control_plane_command
+
+    - block:
+        - name: Copy join command for nodes to Ansible host
+          become_user: root
+          copy:
+            content: "{{ join_node_command.stdout_lines[0] }}"
+            dest: "{{ _work_dir  }}/join_node_command"
+            mode: 0777
+
+        - name: Copy join command for control planes to Ansible host
+          become_user: root
+          copy:
+            content: "{{ join_node_command.stdout_lines[0] }} {{ join_control_plane_command.stdout_lines[0] }}"
+            dest: "{{ _work_dir  }}/join_control_plane_command"
+            mode: 0777
+
+        - include_tasks: ./tasks/task-get-manifest.yaml
+          vars:
+            name: "calico"
+            repo_path: "projectcalico/calico"
+            pkg_version: "{{ _pkg.calico | default }}"
+            version_prefix: "v"
+            dest: "{{_work_dir}}" 
+            manifest_url: "https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/manifests"
+            urls:
+              - "{{ manifest_url }}/tigera-operator.yaml"
+              - "{{ manifest_url }}/custom-resources.yaml" 
+          
+        - name: Set CIDR network
+          replace:
+            path: "{{ _work_dir }}/custom-resources.yaml"
+            regexp: '192.168.0.0'
+            replace: '{{ _kube.cluster.cidr_network }}'
+      
+      delegate_to: localhost
+
+  # Join other control planes if configured.
+- hosts: kubernetes_control_plane[1:99]
+  become: yes
+  become_user: root
+  vars:
+    cmd_file: join_control_plane_command
+
+  tasks:
+    - block: 
+        - name: Initializing other control planes (if available)
+          copy:
+            src: "{{ _work_dir }}/{{ cmd_file }}"
+            dest: "/tmp/{{ cmd_file }}"
+            mode: 0777
+
+        - name: Joining other control planes to cluster
+          command: sh '/tmp/{{ cmd_file }}'
+
+      when: (groups['kubernetes_control_plane'] | length) > 1 
+
+- name: <<<<< Create kubernetes cluster >>>>>
+  hosts: kubernetes_control_plane
+  become: yes
   become_user: "{{ _kube.user }}"
 
   tasks:
@@ -16,16 +95,6 @@
           - pyyaml
           - kubernetes
           - jsonpatch
-
-    - name: Initializing kubernetes cluster
-      become_user: root
-      vars:
-        release: "{% if _kube.release is defined and _kube.release and _kube.release != 'latest' %}--kubernetes-version {{ _kube.release }}{% endif %}"
-      shell: |
-              kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }}/16 \
-              --upload-certs --cri-socket /run/containerd/containerd.sock \
-              --apiserver-advertise-address {{ _kube.cluster.address }} \
-              --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}
 
     - name: Create .kube in home directory
       file:
@@ -84,29 +153,6 @@
         - name: Apply changes
           shell: . ~/.bashrc
 
-    - name: Install and configure calico
-      become_user: root
-      block:
-        - include_tasks: ./tasks/task-get-manifest.yaml
-          vars:
-            name: "calico"
-            repo_path: "projectcalico/calico"
-            pkg_version: "{{ _pkg.calico | default }}"
-            version_prefix: "v"
-            dest: "{{_work_dir}}" 
-            manifest_url: "https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/manifests"
-            urls:
-              - "{{ manifest_url }}/tigera-operator.yaml"
-              - "{{ manifest_url }}/custom-resources.yaml" 
-          
-        - name: Set CIDR network
-          replace:
-            path: "{{ _work_dir }}/custom-resources.yaml"
-            regexp: '192.168.0.0'
-            replace: '{{ _kube.cluster.cidr_network }}'
-      
-      delegate_to: localhost
-
     - name: Installing calico
       kubernetes.core.k8s:
         definition: "{{ lookup('file', item) | from_yaml_all }}"
@@ -114,23 +160,21 @@
         - "{{ _work_dir }}/tigera-operator.yaml"
         - "{{ _work_dir }}/custom-resources.yaml"
 
-    - name: Get join token for nodes
-      shell: kubeadm token create --print-join-command
-      register: join_command
-
-    - name: Copy join command for nodes to Ansible host
+    - name: Cleanup manifest files
       become_user: root
-      copy:
-        content: "{{ join_command.stdout_lines[0] }}"
-        dest: "{{ _work_dir  }}/join_cluster_command"
-        mode: 0777
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ _work_dir }}/tigera-operator.yaml"
+        - "{{ _work_dir }}/custom-resources.yaml"
       delegate_to: localhost
 
 - name: Configure kubernetes nodes
   hosts: kubernetes_nodes
   become: yes
   vars:
-    cmd_file: join_cluster_command
+    cmd_file: join_node_command
 
   tasks:
     - name: Copy join command from Ansible host to the nodes
