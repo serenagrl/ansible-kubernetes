@@ -5,18 +5,18 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: <<<<< Create kubernetes cluster >>>>>
-  hosts: kubernetes_control_plane[0]
-  become: yes
-  become_user: root
+  hosts: kubernetes_control_planes[0]
 
   tasks:
+    # Remove the --apiserver-advertise-address if you are pointing to a load balancer.
     - name: Initializing kubernetes cluster (primary control plane)
       vars:
+        ad_address: "{% if _kube.cluster.balancer is defined and _kube.cluster.balancer %}--apiserver-advertise-address {{ _kube.cluster.address }} \\{% endif %}"
         release: "{% if _kube.release is defined and _kube.release and _kube.release != 'latest' %}--kubernetes-version {{ _kube.release }}{% endif %}"
       shell: |
               kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }}/16 \
               --upload-certs --cri-socket unix:///var/run/containerd/containerd.sock \
-              --apiserver-advertise-address {{ _kube.cluster.address }} \
+              {{ ad_address }} \
               --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}  
 
     - name: Get join token for nodes
@@ -28,16 +28,15 @@
         echo --control-plane --certificate-key $(sudo kubeadm init phase upload-certs --upload-certs | grep -vw -e certificate -e Namespace)
       register: join_control_plane_command
 
-    - block:
+    - become_user: root
+      block:
         - name: Copy join command for nodes to Ansible host
-          become_user: root
           copy:
             content: "{{ join_node_command.stdout_lines[0] }}"
             dest: "{{ _work_dir  }}/join_node_command"
             mode: 0777
 
         - name: Copy join command for control planes to Ansible host
-          become_user: root
           copy:
             content: "{{ join_node_command.stdout_lines[0] }} {{ join_control_plane_command.stdout_lines[0] }}"
             dest: "{{ _work_dir  }}/join_control_plane_command"
@@ -63,10 +62,8 @@
       
       delegate_to: localhost
 
-  # Join other control planes if configured.
-- hosts: kubernetes_control_plane[1:99]
-  become: yes
-  become_user: root
+- name: Join other control planes
+  hosts: kubernetes_control_planes[1:99]
   vars:
     cmd_file: join_control_plane_command
 
@@ -81,11 +78,10 @@
         - name: Joining other control planes to cluster
           command: sh '/tmp/{{ cmd_file }}'
 
-      when: (groups['kubernetes_control_plane'] | length) > 1 
+      when: (groups['kubernetes_control_planes'] | length) > 1 
 
-- name: <<<<< Create kubernetes cluster >>>>>
-  hosts: kubernetes_control_plane
-  become: yes
+- name: Configuring kubernetes control planes
+  hosts: kubernetes_control_planes
   become_user: "{{ _kube.user }}"
 
   tasks:
@@ -145,34 +141,20 @@
               alias wkcpoa='watch kubectl get po -A'
               alias wkcpon='watch kubectl get po -n'
               alias kcpow='kubectl get po -o wide'
+              alias kcpowa='kubectl get po -o wide -A'
               alias kcpown='kubectl get po -o wide -n'
               alias kcnow='kubectl get no -o wide'
               alias kcsvw='kubectl get svc -o wide'
+              alias kctpoa='kubectl top po -A'
+              alias kctpon='kubectl top po -n'
+              alias kctno='kubectl top no'
               complete -o default -F __start_kubectl kc
 
         - name: Apply changes
           shell: . ~/.bashrc
 
-    - name: Installing calico
-      kubernetes.core.k8s:
-        definition: "{{ lookup('file', item) | from_yaml_all }}"
-      loop:
-        - "{{ _work_dir }}/tigera-operator.yaml"
-        - "{{ _work_dir }}/custom-resources.yaml"
-
-    - name: Cleanup manifest files
-      become_user: root
-      file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - "{{ _work_dir }}/tigera-operator.yaml"
-        - "{{ _work_dir }}/custom-resources.yaml"
-      delegate_to: localhost
-
 - name: Configure kubernetes nodes
   hosts: kubernetes_nodes
-  become: yes
   vars:
     cmd_file: join_node_command
 
@@ -186,13 +168,42 @@
     - name: Joining kubernetes cluster
       command: sh '/tmp/{{ cmd_file }}'
 
-- hosts: kubernetes_control_plane[0]
-  become: yes
+- name: Finalizing installation
+  hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
 
   tasks:
+    - name: Installing calico
+      kubernetes.core.k8s:
+        definition: "{{ lookup('file', item) | from_yaml_all }}"
+        wait: yes
+      loop:
+        - "{{ _work_dir }}/tigera-operator.yaml"
+        - "{{ _work_dir }}/custom-resources.yaml"
+
+    - name: Remove taint to allow scheduling on control plane nodes (if no nodes were defined)
+      shell: kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+      when: (groups['kubernetes_nodes'] | length) < 1 
+
     - name: Waiting for kubernetes cluster to be ready
       shell: |
              kubectl wait --for=condition=Ready nodes --all --timeout=600s
-             kubectl rollout status -n calico-system deployment/calico-kube-controllers
+             for d in $(kubectl -n calico-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-system deployment/$d; done;
 
+    - name: Wait for calico-apiserver deployment to start
+      wait_for:
+        timeout: 30
+      delegate_to: localhost
+
+    - name: Waiting for calico-apiserver to be ready
+      shell: |
+             for d in $(kubectl -n calico-apiserver get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-apiserver deployment/$d; done;
+
+    - name: Cleanup manifest files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ _work_dir }}/tigera-operator.yaml"
+        - "{{ _work_dir }}/custom-resources.yaml"
+      delegate_to: localhost

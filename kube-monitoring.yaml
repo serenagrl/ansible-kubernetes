@@ -5,9 +5,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: <<<<< Install and configure kube prometheus >>>>>
-  hosts: kubernetes_control_plane[0]
-  become: yes
+  hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
+
   vars:
     repo_dir: "{{ _work_dir }}/kube-prometheus"
     manifest_dir: "{{ repo_dir }}/manifests"
@@ -136,7 +136,6 @@
                                 number: 9090
 
         - name: Patch kube prometheus configurations to support ingress
-          become: yes
           become_user: root
           block:
             - name: Edit grafana configuration
@@ -185,7 +184,6 @@
       when: ingress_name != ""
 
     - name: Cleanup directories
-      become: yes
       become_user: root
       file:
         path: "{{ repo_dir }}"

@@ -6,14 +6,14 @@
 #
 - name: <<<<< Install dependencies, Kubernetes and Containerd runtime >>>>>
   hosts: kubernetes_cluster
-  become: yes
+
   vars:
     node: "{{ hostvars[item] }}"
 
   tasks:
     - name: Configure the user to be used for kubernetes commands
       block:
-        - name: Allow {{ _kube_user }} to use sudo without password
+        - name: Allow {{ _kube.user }} to use sudo without password
           lineinfile:
             dest: /etc/sudoers
             line: '{{ _kube.user }} ALL=(ALL) NOPASSWD: ALL'
@@ -25,7 +25,6 @@
             - ~/.ssh/id_rsa.pub
 
     - name: Create working directory
-      become: yes
       become_user: root
       file:
         path: "{{ _work_dir }}"
@@ -90,6 +89,7 @@
           - ca-certificates
           - software-properties-common
           - python3-pip
+          - jq
         state: latest
         update_cache: true
 

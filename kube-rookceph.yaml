@@ -9,20 +9,20 @@
 
   tasks:
     # You need to remove the disks manually if you wish to rerun this.
-    - name: Create Hyper-V virtual disks and attach them to the kubernetes_nodes
+    - name: Create Hyper-V virtual disks and attach them to the nodes
       vars:
+        hostnames: "{% if (groups['kubernetes_nodes'] | length > 0) %}kubernetes_nodes{% else %}kubernetes_control_planes{% endif %}"
         vhd_disk: "{{ _rook_ceph.disk.dir }}\\{{ item }}\\Virtual Hard Disks\\{{ _rook_ceph.disk.name }}.vhdx"
       ansible.windows.win_powershell:
         script: |
           New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ _rook_ceph.disk.size }} -Dynamic
           Add-VMHardDiskDrive {{ item }} -Path "{{ vhd_disk }}"
         creates: "{{ vhd_disk }}"
-      with_inventory_hostnames:
-        - kubernetes_nodes
+      loop: "{{ q('inventory_hostnames', hostnames) }}"
 
-- hosts: kubernetes_control_plane[0]
-  become: yes
+- hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
+  
   vars:
     repo_dir: "{{ _work_dir }}/rook"
     deploy_dir: "{{ repo_dir }}/deploy/examples"
@@ -84,7 +84,7 @@
     - name: Create new storage pool
       vars:
         pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
-        num_kubernetes_nodes: "{{ groups['kubernetes_nodes'] | length }}"
+        num: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length}}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
 
       kubernetes.core.k8s_exec:
         namespace: rook-ceph
@@ -92,12 +92,12 @@
         command: '{{ item }}'
 
       register: output
-      when: num_kubernetes_nodes | int > 1
+      when: num | int > 1
 
       loop:
         - "ceph osd pool create {{ _rook_ceph.pool_name }} 128"
-        - "ceph osd pool set {{ _rook_ceph.pool_name }} min_size {{ num_kubernetes_nodes }}"
-        - "ceph osd pool set {{ _rook_ceph.pool_name }} size {{ num_kubernetes_nodes }}"
+        - "ceph osd pool set {{ _rook_ceph.pool_name }} min_size {{ num }}"
+        - "ceph osd pool set {{ _rook_ceph.pool_name }} size {{ num }}"
 
     - name: Configure file system and storage class
       become_user: root

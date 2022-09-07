@@ -1,6 +1,6 @@
 _setup:
   # install - Installs the servers the old fashion way.
-  # multipass - Use multipass to the servers up quick.
+  # multipass - Use multipass to up the servers quick.
   type: multipass
 
   # The root password (this is because of using ssh later for Ansible) - Password is p@ssw0rd

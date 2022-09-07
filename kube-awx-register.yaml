@@ -6,15 +6,14 @@
 #
 - name: <<<<< Registers the created kubernetes environment to AWX >>>>>
   hosts: localhost
-  become: yes
   
   vars:
     names:
-      cp: "{{ groups['kubernetes_control_plane'].0 }}"
+      cp: "{{ groups['kubernetes_control_planes'].0 }}"
       inventory: "{{ _awx.setup.name }} Inventory"
       project: "{{ _awx.setup.name }} Project"
       job_template: "{{ _awx.setup.name }} Job Template"
-      host_credential: "{{ _awx.setup.name }} {{ groups['kubernetes_control_plane'].0 }} Host Credential"
+      host_credential: "{{ _awx.setup.name }} {{ groups['kubernetes_control_planes'].0 }} Host Credential"
       scm_credential: "{{ _awx.setup.name }} Source Control Credential"
       api_credential: "{{ _awx.setup.name }} Gitlab API Access Token"
     awx_username: admin
@@ -48,24 +47,25 @@
         - name: Creating organization '{{ _awx.setup.organization.name }}'
           awx.awx.organization:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "{{ _awx.setup.organization.name }}"
             description: "{{ _awx.setup.organization.desc }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating inventory '{{ names.inventory }}'
           awx.awx.inventory:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "{{ names.inventory }}"
             description: "Collection of hosts for {{ _awx.setup.name }}"
             organization: "{{ _awx.setup.organization.name }}"
             variables: "{{ _awx.setup.inventory_vars if _awx.setup.inventory_vars else {} }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating host '{{ names.cp }}'
           awx.awx.host:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "{{ names.cp }}"
             description: "{{ _awx.setup.name }} Kubernetes Control Plane."
             inventory: "{{ names.inventory }}"
@@ -73,11 +73,11 @@
               ansible_host: "{{ hostvars[names.cp].ansible_host }}"
               ansible_user: "{{ hostvars[names.cp].ansible_user }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating host for kubernetes nodes
           awx.awx.host:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "{{ item }}"
             description: "{{ _awx.setup.name }} Kubernetes node."
             inventory: "{{ names.inventory }}"
@@ -85,45 +85,45 @@
               ansible_host: "{{ hostvars[item].ansible_host }}"
               ansible_user: "{{ hostvars[item].ansible_user }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
           loop: "{{ groups['kubernetes_nodes'] }}"
 
-        - name: Creating group 'kubernetes_control_plane'
+        - name: Creating group 'kubernetes_control_planes'
           awx.awx.group:
             controller_host: "{{ awx_host }}"
-            name: "kubernetes_control_plane"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "kubernetes_control_planes"
             description: "{{ _awx.setup.name }} Kubernetes control plane group."
             inventory: "{{ names.inventory }}"
             hosts:
               - "{{ names.cp }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating group 'kubernetes_nodes'
           awx.awx.group:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "kubernetes_nodes"
             description: "{{ _awx.setup.name }} Kubernetes kubernetes_nodes group."
             inventory: "{{ names.inventory }}"
             hosts: "{{ groups['kubernetes_nodes'] }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating group 'kubernetes_cluster'
           awx.awx.group:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "kubernetes_cluster"
             description: "{{ _awx.setup.name }} Kubernetes cluster main group."
             inventory: "{{ names.inventory }}"
             children:
-              - "kubernetes_control_plane"
+              - "kubernetes_control_planes"
               - "kubernetes_nodes"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating source control credential
           awx.awx.credential:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "{{ names.scm_credential }}"
             description: "Source control credential for {{ names.project }}"
             organization: "{{ _awx.setup.organization.name }}"
@@ -132,11 +132,11 @@
               username: "{{ _awx.setup.gitlab.user  }}"
               password: "{{ _awx.setup.gitlab.token }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating project '{{ names.project }}'
           awx.awx.project:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "{{ names.project }}"
             description: "Collection of playbooks for {{ _awx.setup.name }}"
             organization: "{{ _awx.setup.organization.name }}"
@@ -146,12 +146,12 @@
             scm_delete_on_update: yes
             credential: "{{ names.scm_credential }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
           ignore_errors: yes
 
         - name: Creating machine credential
           awx.awx.credential:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "{{ names.host_credential }}"
             description: "Credentials for {{ names.cp }}"
             organization: "{{ _awx.setup.organization.name }}"
@@ -159,11 +159,11 @@
             inputs:
               ssh_key_data: "{{ lookup('file', '/root/.ssh/id_rsa') }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating new credential type
           awx.awx.credential_type:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "Gitlab API Access Token (Custom)"
             description: "Used for accessing Gitlab API."
             kind: cloud
@@ -177,11 +177,11 @@
               extra_vars:
                 gitlab_pat: "{%raw%}{{ gitlab_api_token }}{%endraw%}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating gitlab credential
           awx.awx.credential:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "{{ names.api_credential }}"
             description: "Credentials used for assessing Gitlab API"
             organization: "{{ _awx.setup.organization.name }}"
@@ -189,11 +189,11 @@
             inputs:
               gitlab_api_token: "{{ _awx.setup.gitlab.api_token }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
 
         - name: Creating job template '{{ names.job_template }}'
           awx.awx.job_template:
             controller_host: "{{ awx_host }}"
+            controller_oauthtoken: "{{ controller_token }}"
             name: "{{ names.job_template }}"
             description: "Deploys applications to the kubernetes cluster"
             organization: "{{ _awx.setup.organization.name }}"
@@ -206,7 +206,6 @@
               - "{{ names.host_credential }}"
               - "{{ names.api_credential }}"
             state: present
-            controller_oauthtoken: "{{ controller_token }}"
           ignore_errors: yes
 
       rescue:

@@ -5,10 +5,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: <<<<< Installs and configures the kubernetes dashboard >>>>>
-  hosts: kubernetes_control_plane[0]
-  become: yes
+  hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
-
+  
   vars:
     manifest_file: "{{ _work_dir }}/dashboard.yaml"  
 
