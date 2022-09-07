@@ -5,8 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: <<<<< Install and configure istio >>>>>
-  hosts: kubernetes_control_plane[0]
-  become: yes
+  hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
 
   tasks:

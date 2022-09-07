@@ -6,7 +6,6 @@
 #
 - name: <<<<< Install and configure nfs clients >>>>>
   hosts: kubernetes_cluster
-  become: yes
 
   tasks:
     - name: Installing nfs client package
@@ -18,14 +17,13 @@
 
 - name: <<<<< Installs and configures NFS server >>>>>
   hosts: nfs_server
-  become: yes
+
   vars:
     repo_dir: "{{ _work_dir }}/nfs-provisioner"
     deploy_dir: "{{ repo_dir }}/deploy"
 
   tasks:
     - name: Install and enable nfs server
-      become_user: root
       block:
         - name: Installing nfs server package
           apt:
@@ -121,10 +119,9 @@
                   requests:
                     storage: {{ _nfs.pvc.size }}
     
-      delegate_to: "{{ groups['kubernetes_control_plane'].0 }}"
+      delegate_to: "{{ groups['kubernetes_control_planes'].0 }}"
 
     - name: Cleanup directories
-      become: yes
       become_user: root
       file:
         path: "{{ repo_dir }}"

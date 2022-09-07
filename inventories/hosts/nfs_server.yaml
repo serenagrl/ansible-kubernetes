@@ -1,7 +1,0 @@
-# The nfs server to use. For this example, I just use the control plane because
-# I don't have enough server resources. Don't do this for production.
-nfs_server:
-  hosts: # Only 1 host is supported
-    k8s-cp:
-      ansible_host: 192.168.0.200
-      ansible_user: root

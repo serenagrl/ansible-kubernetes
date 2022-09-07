@@ -5,9 +5,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: <<<<< Installs and configures AWX >>>>>
-  hosts: kubernetes_control_plane[0]
-  become: yes
+  hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
+
   vars:
     repo_dir: "~/awx-operator"
 
@@ -75,13 +75,12 @@
         wait: yes
 
     - name: Waiting for awx deployments to be ready
-      shell: |
-               kubectl rollout status -n awx deployment/awx
-               kubectl rollout status -n awx deployment/awx-operator-controller-manager
+      shell: | 
+               for d in $(kubectl -n awx get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx deployment/$d; done;
 
-    - name: Waiting for awx host to be up
+    - name: Waiting for awx controller host to be up
       uri:
-        url: "http://{{ hostvars[groups['kubernetes_control_plane'].0].ansible_host }}:30080"
+        url: "http://{{ hostvars[groups['kubernetes_control_planes'].0].ansible_host }}:30080"
       register: result
       until: result.status == 200
       retries: 15

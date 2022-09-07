@@ -38,6 +38,7 @@
                     port:
                       number: {{ port }}
   when: 
+    - (ingress_class.resources | length > 0)
     - ingress_name != ""
     - name is defined
     - namespace is defined

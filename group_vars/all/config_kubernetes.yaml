@@ -9,6 +9,7 @@ _kube:
     name: k8s-cluster
     address: 192.168.0.200
     cidr_network: 10.1.0.0
+    balancer: no
 
   # Which add-on to install. You will need a lot of server resources to install all.
   install:
