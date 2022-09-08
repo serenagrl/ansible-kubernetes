@@ -4,19 +4,176 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: <<<<< Creates Hyper-V Virtual Machines >>>>>
+- name: <<<<< Creates Ubuntu Hyper-V Virtual Machines >>>>>
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Installing dependency packages (may take a while)
+      apt:
+        pkg:
+          - libarchive-tools
+          - xorriso
+        state: latest
+        update_cache: true
+
+    - name: Create working directory
+      file:
+        path: "{{ _work_dir }}"
+        state: directory
+
+    - name: Download ubuntu iso
+      get_url:
+        url: "{{ _setup.ubuntu_iso_url }}"
+        dest: "{{ _work_dir }}/ubuntu-base.iso"
+
+    - name: Unpack iso
+      vars:
+        iso_folder: ./ubuntu-iso
+      shell: |
+              rm -Rf {{ iso_folder }}
+              mkdir {{ iso_folder }}
+              bsdtar -C {{ iso_folder }} -xf ./ubuntu-base.iso
+              mkdir -p "{{ _vm.iso.ubuntu }}"
+      args:
+        chdir: "{{ _work_dir }}"
+        creates: "{{ iso_folder }}"
+
+    - name: Generate ssh keys for Ansible host (if required)
+      shell: |
+              ssh-keygen -t rsa -q -f "/root/.ssh/id_rsa" -N ""
+      args:
+        creates: /root/.ssh/id_rsa
+
+- name: Create installation iso for each Ubuntu Hyper-V Virtual Machine
   hosts: kubernetes_cluster
   gather_facts: no
 
   tasks:
-    - name: Run on Winrm
+    - block:
+        - name: Create iso source 
+          vars:
+            target_dir: "{{ _work_dir }}/{{ inventory_hostname }}-iso"
+          shell: |
+                  rm -Rf {{ target_dir }}
+                  cp -r {{ _work_dir }}/ubuntu-iso {{ target_dir }}
+
+        - name: Prepare metadata
+          vars:
+            target_dir: "{{ _work_dir }}/{{ inventory_hostname }}-iso/server"
+          block:
+            - name: Create server metadata directory
+              file:
+                path: "{{ target_dir }}"
+                state: directory
+
+            - name: Create meta-data file
+              file:
+                path: "{{ target_dir }}/meta-data"
+                state: touch
+
+        - name: Edit grub settings
+          block:
+            - name: Edit grub timeout
+              replace:
+                path: "{{ _work_dir }}/{{ inventory_hostname }}-iso/boot/grub/grub.cfg"
+                regexp: 'set timeout=30'
+                replace: 'set timeout=1'
+
+            - name: Insert new menu entry to grub
+              blockinfile:
+                path: "{{ _work_dir }}/{{ inventory_hostname }}-iso/boot/grub/grub.cfg"
+                insertafter: "/menu_color_highlight"
+                marker: ""
+                block: |
+                        menuentry "autoinstall" {
+                                set gfxpayload=keep
+                                linux   /casper/vmlinuz quiet autoinstall ds=nocloud\;s=/cdrom/server/ ---
+                                initrd  /casper/initrd
+                        }
+
+        - name: Create user-data
+          vars:
+            id_rsa_pub: "{{ lookup('file','/root/.ssh/id_rsa.pub') }}"
+          blockinfile:
+            path: "{{ _work_dir }}/{{ inventory_hostname }}-iso/server/user-data"
+            create: yes
+            marker: ""
+            block: |
+                    #cloud-config
+                    autoinstall:
+                      version: 1
+                      locale: en_US
+                      network:
+                        network:
+                          version: 2
+                          ethernets:
+                            eth0:
+                              dhcp4: false
+                              addresses:
+                                - {{ ansible_host }}/{{ _setup.network.cidr }}
+                              nameservers:
+                                addresses: [{{ _setup.network.dns }}]
+                              routes:
+                                - to: default
+                                  via: {{ _setup.network.gateway }}
+                      identity:
+                        hostname: {{ inventory_hostname }}
+                        username: {{ _kube.user }}
+                        password: {{ _kube.pwd }}
+                      ssh:
+                        install-server: yes
+                        allow-pw: yes
+                      user-data:
+                        runcmd:
+                          - sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
+                          - systemctl restart ssh
+                          - usermod --password '{{ _setup.root_pwd }}' root
+                      late-commands:
+                        - mkdir /target/root/.ssh
+                        - echo '{{ id_rsa_pub }}' >> /target/root/.ssh/authorized_keys
+
+        - name: Ccreate installation .iso file
+          vars:
+            xorriso_command: "{{ _work_dir }}/xorriso-command-{{ inventory_hostname }}"
+          block:
+            - name: Prepare xorriso command file
+              shell: |
+                      xorriso -indev "{{ _work_dir }}/ubuntu-base.iso" -report_el_torito as_mkisofs >| {{ xorriso_command }}
+                      sed -i "/-V/c\-V '{{ inventory_hostname }} Ubuntu autoinstall'" {{ xorriso_command }}
+                      echo -o '"{{ _vm.iso.ubuntu }}/{{ inventory_hostname }}-ubuntu.iso"' >> {{ xorriso_command }}
+                      sed -i '1i -as mkisofs' {{ xorriso_command }}
+                      sed -i 's/$/ \\/g' {{ xorriso_command }}
+                      echo '{{ _work_dir }}/{{ inventory_hostname }}-iso/' >> {{ xorriso_command }}
+
+            - name: Create .iso file
+              shell: |
+                      xorriso -options_from_file {{ xorriso_command }}
+
+            - name: Cleanup xorriso command files
+              file:
+                path: "{{ xorriso_command }}"
+                state: absent
+              when: _setup.cleanup
+
+        - name: Cleanup iso source directories
+          vars:
+            target_dir: "{{ _work_dir }}/{{ inventory_hostname }}-iso"
+          file:
+            path: "{{ target_dir }}"
+            state: absent
+          when: _setup.cleanup
+          
+      delegate_to: localhost
+
+    - name: Create and Launch Virtual Machines
       block:
         - name: Provisioning Hyper-V Virtual Machines
           vars:
             vhd_disk: "{{ _vm.dir.windows}}\\{{ inventory_hostname }}\\Virtual Hard Disks\\{{ inventory_hostname }}.vhdx"
           ansible.windows.win_powershell:
             script: |
-              New-VM -Name {{ inventory_hostname }} -Generation 2 -MemoryStartupBytes {{ spec.ram_size }} -SwitchName {{ _vm.switch }} -Path "{{ _vm.dir.windows }}" -BootDevice CD
+              New-VM -Name {{ inventory_hostname }} -Generation 2 -MemoryStartupBytes {{ spec.ram_size }} -SwitchName "{{ _vm.switch }}" -Path "{{ _vm.dir.windows }}" -BootDevice CD
               New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ spec.disk_size }} -Dynamic
               Add-VMHardDiskDrive {{ inventory_hostname }} -Path "{{ vhd_disk }}"
               Set-VMDvdDrive {{ inventory_hostname }} -Path "{{ _vm.iso.windows }}\\{{ inventory_hostname }}-ubuntu.iso"
