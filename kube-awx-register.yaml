@@ -62,17 +62,18 @@
             variables: "{{ _awx.setup.inventory_vars if _awx.setup.inventory_vars else {} }}"
             state: present
 
-        - name: Creating host '{{ names.cp }}'
+        - name: Creating host for kubernetes control planes
           awx.awx.host:
             controller_host: "{{ awx_host }}"
             controller_oauthtoken: "{{ controller_token }}"
-            name: "{{ names.cp }}"
+            name: "{{ item }}"
             description: "{{ _awx.setup.name }} Kubernetes Control Plane."
             inventory: "{{ names.inventory }}"
             variables:
-              ansible_host: "{{ hostvars[names.cp].ansible_host }}"
-              ansible_user: "{{ hostvars[names.cp].ansible_user }}"
+              ansible_host: "{{ hostvars[item].ansible_host }}"
+              ansible_user: "{{ hostvars[item].ansible_user }}"
             state: present
+          loop: "{{ groups['kubernetes_control_planes'] }}"
 
         - name: Creating host for kubernetes nodes
           awx.awx.host:

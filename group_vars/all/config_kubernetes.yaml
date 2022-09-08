@@ -15,6 +15,7 @@ _kube:
   install:
     ingress: yes
     dashboard: yes
+    cert_mgr: yes
     metrics: yes
     monitoring: no
     nfs: yes

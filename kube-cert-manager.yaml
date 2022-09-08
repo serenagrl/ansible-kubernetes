@@ -1,0 +1,43 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Install and configure cert manager >>>>>
+  hosts: kubernetes_control_planes[0]
+  become_user: "{{ _kube.user }}"
+
+  vars:
+    manifest_file: "{{ _work_dir }}/cert-manager.yaml"
+
+  tasks:
+    - name: Download manifests
+      become_user: root
+      block:
+        - import_tasks: ./tasks/task-get-manifest.yaml
+          vars:
+            name: "cert manager"
+            repo_path: "cert-manager/cert-manager"
+            pkg_version: "{{ _pkg.cert_manager | default }}"
+            version_prefix: "v"
+            dest: "{{ manifest_file }}"
+            urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cert-manager.yaml"]
+
+      delegate_to: localhost
+
+    - name: Installing cert manager
+      kubernetes.core.k8s:
+        definition: "{{ lookup('file', '{{ manifest_file }}') | from_yaml_all }}"
+
+    - name: Cleanup manifest file
+      become_user: root
+      file:
+        path: "{{ manifest_file }}"
+        state: absent
+      delegate_to: localhost
+
+    - name: Waiting for cert manager deployments to be ready
+      shell: |
+        for d in $(kubectl -n cert-manager get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n cert-manager deployment/$d; done;
+

@@ -3,7 +3,7 @@
     kind: IngressClass
   register: ingress_class
 
-- name: Create ingress for dashboard
+- name: Create ingress for {{ service_name }}
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
   kubernetes.core.k8s:

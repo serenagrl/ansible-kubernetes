@@ -24,6 +24,10 @@
 - import_playbook: kube-dashboard.yaml
   when: _kube.install.dashboard
 
+  # Install Cert Managers
+- import_playbook: kube-cert-manager.yaml
+  when: _kube.install.cert_mgr
+
   # Install Kube-Prometheus
 - import_playbook: kube-monitoring.yaml
   when: _kube.install.monitoring

@@ -1,7 +1,7 @@
 kubernetes_control_planes:
   hosts: 
     # The recommended configuration is to run 1 control plane and 3 nodes.
-    k8s-cp1: 
+    k8s-cp: 
       ansible_host: 192.168.0.200
 
     # Uncomment these if you need redundant control planes. You will need to setup your Load balancer
@@ -16,7 +16,6 @@ kubernetes_nodes:
   hosts:
     # You can comment out these nodes if you just want to run control planes but please make sure you 
     # have atleast 3 control plane hosts defined above. 
-    
     k8s-01: 
       ansible_host: 192.168.0.203
     k8s-02: 
@@ -37,7 +36,7 @@ kubernetes_cluster:
 # I don't have enough server resources. Don't do this for production.
 nfs_server:
   hosts: # Only 1 host is supported
-    k8s-cp1:
+    k8s-infra:
       ansible_host: 192.168.0.200
       ansible_user: root 
 
@@ -51,7 +50,7 @@ winrm:
       ansible_winrm_cert_key_pem: ./certs/cert_key.pem
       # You can use username and password if you do not want to use cert.
       # ansible_user: ansible            # Create a user in your Windows
-      # ansible_password: Ans1bl3h       # Provide the password for the user
+      # ansible_password: p@ssw0rd       # Provide the password for the user
       ansible_become_method: runas
       ansible_become_user: ansible       # Must set this to the user you created
       ansible_connection: winrm

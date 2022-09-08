@@ -41,12 +41,14 @@
             dest: "{{ repo_dir }}"
 
         - name: Scale down the pods for lesser than 3 kubernetes_nodes configuration
+          vars:
+            node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length}}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
           shell: |
                   sed -i 's/count: 2$/count: 1/g' cluster.yaml
                   sed -i 's/count: 3$/count: 2/g' cluster.yaml
           args:
             chdir: "{{ deploy_dir }}"
-          when: (groups['kubernetes_nodes'] | length) < 3
+          when: node_count | int < 3
 
       delegate_to: localhost
 
@@ -84,7 +86,7 @@
     - name: Create new storage pool
       vars:
         pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
-        num: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length}}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
+        node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length}}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
 
       kubernetes.core.k8s_exec:
         namespace: rook-ceph
@@ -92,12 +94,12 @@
         command: '{{ item }}'
 
       register: output
-      when: num | int > 1
+      when: node_count | int > 1
 
       loop:
         - "ceph osd pool create {{ _rook_ceph.pool_name }} 128"
-        - "ceph osd pool set {{ _rook_ceph.pool_name }} min_size {{ num }}"
-        - "ceph osd pool set {{ _rook_ceph.pool_name }} size {{ num }}"
+        - "ceph osd pool set {{ _rook_ceph.pool_name }} min_size {{ node_count }}"
+        - "ceph osd pool set {{ _rook_ceph.pool_name }} size {{ node_count }}"
 
     - name: Configure file system and storage class
       become_user: root
