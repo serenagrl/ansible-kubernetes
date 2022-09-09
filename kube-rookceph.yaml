@@ -67,7 +67,7 @@
       shell: |
               kubectl wait --for=jsonpath={.status.phase}=Ready cephclusters rook-ceph -n rook-ceph --timeout=900s
 
-    - name: Installing rook-ceph cluster
+    - name: Installing rook-ceph toolbox
       kubernetes.core.k8s:
         force: yes
         definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"

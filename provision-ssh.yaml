@@ -4,26 +4,25 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: <<<<< Configures the servers to allow ssh from Ansible host  >>>>>
-  hosts: localhost
-  become: yes
-  become_user: root
-  vars:
-    node: "{{ hostvars[item] }}"
-
+- name: <<<<< Configures ssh connectivity for Ansible host  >>>>>
+  hosts: kubernetes_cluster
+  gather_facts: no
+  
   tasks:
-    - name: Checking ssh port availability
-      wait_for:
-        host: "{{ node.ansible_host }}"
-        port: 22
-      loop: "{{ groups['kubernetes_cluster'] }}"
+    - name: Configure ssh connectivity for Ansible host
+      become_user: root
+      block:
+        - name: Checking ssh port availability
+          wait_for:
+            host: "{{ ansible_host }}"
+            port: 22
 
-    - name: Remove known_host entries from Ansible host (if exist)
-      shell: |
-              ssh-keygen -f /root/.ssh/known_hosts -R {{ node.ansible_host }}
-      loop: "{{ groups['kubernetes_cluster'] }}"
+        - name: Remove known_host entries from Ansible host (if exist)
+          shell: |
+                  ssh-keygen -f /root/.ssh/known_hosts -R {{ ansible_host }}
 
-    - name: Register servers as known hosts to Ansible hosts
-      shell: |
-              ssh-keyscan -H {{ node.ansible_host }} >> /root/.ssh/known_hosts
-      loop: "{{ groups['kubernetes_cluster'] }}"
+        - name: Register servers as known hosts to Ansible hosts
+          shell: |
+                  ssh-keyscan -H {{ ansible_host }} >> /root/.ssh/known_hosts
+
+      delegate_to: localhost
