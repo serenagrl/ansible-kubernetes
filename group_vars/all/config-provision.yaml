@@ -1,0 +1,29 @@
+_vm:
+
+  # The root password (this is because of using ssh later for Ansible) - Password is p@ssw0rd
+  root_pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
+
+  # The url to download the ubuntu cloud image file. You may need to change this when new release is available.
+  ubuntu_img_url: https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img
+
+  network:
+    # The ipv4 of the gateway.
+    gateway: 192.168.0.1
+    dns: "8.8.8.8, 1.1.1.1"
+    cidr: 24
+
+  # The location where the seed isos will be placed
+  iso:
+    ubuntu: "/mnt/d/Installation Files/Ubuntu"
+    windows: "D:\\Installation Files\\Ubuntu"
+
+  # The location where the VMs will be created
+  dir:
+    ubuntu: "/mnt/d/Virtual Machines/Kubernetes"
+    windows: "D:\\Virtual Machines\\Kubernetes"
+
+  # The hyper-v switch to use
+  switch: LAN
+
+  # Disable this for debugging
+  cleanup: yes

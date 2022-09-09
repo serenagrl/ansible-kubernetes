@@ -16,10 +16,10 @@ _kube:
     ingress: yes
     dashboard: yes
     cert_mgr: yes
+    monitoring: yes
     metrics: yes
-    monitoring: no
     nfs: yes
-    rookceph: no
-    harbor: no
-    istio: no
-    awx: no
+    rookceph: yes
+    harbor: yes
+    istio: yes
+    awx: yes

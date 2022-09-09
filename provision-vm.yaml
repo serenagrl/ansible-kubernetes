@@ -8,36 +8,34 @@
   hosts: localhost
   gather_facts: no
 
+  vars:
+    image: "{{ _work_dir }}/ubuntu-cloud.img"
+
   tasks:
-    - name: Installing dependency packages (may take a while)
+    - name: Installing iso and image tools
       apt:
         pkg:
-          - libarchive-tools
-          - xorriso
+          - qemu-utils
+          - genisoimage
         state: latest
         update_cache: true
 
     - name: Create working directory
       file:
         path: "{{ _work_dir }}"
-        state: directory
+        state: directory        
 
-    - name: Download ubuntu iso
+    - name: Downloading ubuntu cloud image 
       get_url:
-        url: "{{ _setup.ubuntu_iso_url }}"
-        dest: "{{ _work_dir }}/ubuntu-base.iso"
+        url: "{{ _vm.ubuntu_img_url }}"
+        dest: "{{ image }}"        
 
-    - name: Unpack iso
-      vars:
-        iso_folder: ./ubuntu-iso
+    - name: Convert image to vhdx format
       shell: |
-              rm -Rf {{ iso_folder }}
-              mkdir {{ iso_folder }}
-              bsdtar -C {{ iso_folder }} -xf ./ubuntu-base.iso
-              mkdir -p "{{ _vm.iso.ubuntu }}"
+              qemu-img convert -f qcow2 "{{ image }}" -O vhdx -o subformat=dynamic "{{ _work_dir }}/ubuntu-cloud.vhdx"
       args:
         chdir: "{{ _work_dir }}"
-        creates: "{{ iso_folder }}"
+        creates: "{{ _work_dir }}/ubuntu-cloud.vhdx"
 
     - name: Generate ssh keys for Ansible host (if required)
       shell: |
@@ -45,160 +43,133 @@
       args:
         creates: /root/.ssh/id_rsa
 
-- name: Create installation iso for each Ubuntu Hyper-V Virtual Machine
-  hosts: kubernetes_cluster
+- hosts: kubernetes_cluster
   gather_facts: no
 
   tasks:
-    - block:
-        - name: Create iso source 
-          vars:
-            target_dir: "{{ _work_dir }}/{{ inventory_hostname }}-iso"
-          shell: |
-                  rm -Rf {{ target_dir }}
-                  cp -r {{ _work_dir }}/ubuntu-iso {{ target_dir }}
+    - name: Prepare the installation source and media
+      vars:
+        metadata_dir: "{{ _work_dir }}/{{ inventory_hostname }}-metadata"
+      block:
+        - name: Remove previous metadata directory (if any)
+          file:
+            path: "{{ metadata_dir }}"
+            state: absent
 
-        - name: Prepare metadata
-          vars:
-            target_dir: "{{ _work_dir }}/{{ inventory_hostname }}-iso/server"
-          block:
-            - name: Create server metadata directory
-              file:
-                path: "{{ target_dir }}"
-                state: directory
+        - name: Create meta-data file
+          blockinfile:
+            path: "{{ metadata_dir }}/meta-data"
+            create: yes
+            block: |
+              instance-id: "{{ inventory_hostname }}-id"
+              local-hostname: "{{ inventory_hostname }}"
 
-            - name: Create meta-data file
-              file:
-                path: "{{ target_dir }}/meta-data"
-                state: touch
-
-        - name: Edit grub settings
-          block:
-            - name: Edit grub timeout
-              replace:
-                path: "{{ _work_dir }}/{{ inventory_hostname }}-iso/boot/grub/grub.cfg"
-                regexp: 'set timeout=30'
-                replace: 'set timeout=1'
-
-            - name: Insert new menu entry to grub
-              blockinfile:
-                path: "{{ _work_dir }}/{{ inventory_hostname }}-iso/boot/grub/grub.cfg"
-                insertafter: "/menu_color_highlight"
-                marker: ""
-                block: |
-                        menuentry "autoinstall" {
-                                set gfxpayload=keep
-                                linux   /casper/vmlinuz quiet autoinstall ds=nocloud\;s=/cdrom/server/ ---
-                                initrd  /casper/initrd
-                        }
-
-        - name: Create user-data
+        - name: Create user-data file
           vars:
             id_rsa_pub: "{{ lookup('file','/root/.ssh/id_rsa.pub') }}"
           blockinfile:
-            path: "{{ _work_dir }}/{{ inventory_hostname }}-iso/server/user-data"
+            path: "{{ metadata_dir }}/user-data"
             create: yes
-            marker: ""
+            marker: ''
             block: |
                     #cloud-config
-                    autoinstall:
-                      version: 1
-                      locale: en_US
-                      network:
-                        network:
-                          version: 2
-                          ethernets:
-                            eth0:
-                              dhcp4: false
-                              addresses:
-                                - {{ ansible_host }}/{{ _setup.network.cidr }}
-                              nameservers:
-                                addresses: [{{ _setup.network.dns }}]
-                              routes:
-                                - to: default
-                                  via: {{ _setup.network.gateway }}
-                      identity:
-                        hostname: {{ inventory_hostname }}
-                        username: {{ _kube.user }}
-                        password: {{ _kube.pwd }}
-                      ssh:
-                        install-server: yes
-                        allow-pw: yes
-                      user-data:
-                        runcmd:
-                          - sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
-                          - systemctl restart ssh
-                          - usermod --password '{{ _setup.root_pwd }}' root
-                      late-commands:
-                        - mkdir /target/root/.ssh
-                        - echo '{{ id_rsa_pub }}' >> /target/root/.ssh/authorized_keys
+                    passwd: '{{ _vm.root_pwd }}'
+                    chpasswd: { expire: False }
+                    ssh_pwauth: True
 
-        - name: Ccreate installation .iso file
-          vars:
-            xorriso_command: "{{ _work_dir }}/xorriso-command-{{ inventory_hostname }}"
-          block:
-            - name: Prepare xorriso command file
-              shell: |
-                      xorriso -indev "{{ _work_dir }}/ubuntu-base.iso" -report_el_torito as_mkisofs >| {{ xorriso_command }}
-                      sed -i "/-V/c\-V '{{ inventory_hostname }} Ubuntu autoinstall'" {{ xorriso_command }}
-                      echo -o '"{{ _vm.iso.ubuntu }}/{{ inventory_hostname }}-ubuntu.iso"' >> {{ xorriso_command }}
-                      sed -i '1i -as mkisofs' {{ xorriso_command }}
-                      sed -i 's/$/ \\/g' {{ xorriso_command }}
-                      echo '{{ _work_dir }}/{{ inventory_hostname }}-iso/' >> {{ xorriso_command }}
+                    users:
+                      - default
+                      - name: {{ _kube.user }}
+                        gecos: K8s Admin
+                        groups: users, admin
+                        sudo: ALL=(ALL) NOPASSWD:ALL
+                        shell: /bin/bash
+                        passwd: '{{ _kube.pwd }}'
+                        lock_passwd: false
 
-            - name: Create .iso file
-              shell: |
-                      xorriso -options_from_file {{ xorriso_command }}
+                    write_files:
+                      - path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+                        content: |
+                          network: {config: disabled}
+                      - path: /etc/netplan/99-custom.yaml      
+                        content: |
+                          network:
+                            version: 2
+                            ethernets:
+                              eth0:
+                                dhcp4: false
+                                addresses: 
+                                  - {{ ansible_host }}/{{ _vm.network.cidr }}
+                                nameservers:
+                                  addresses: [{{ _vm.network.dns }}]
+                                routes:
+                                  - to: default
+                                    via: {{ _vm.network.gateway }}           
 
-            - name: Cleanup xorriso command files
-              file:
-                path: "{{ xorriso_command }}"
-                state: absent
-              when: _setup.cleanup
+                    runcmd:
+                      - sudo netplan apply   
+                      - sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
+                      - systemctl restart ssh
+                      - usermod --password '{{ _vm.root_pwd }}' root
+                      - echo '{{ id_rsa_pub }}' > /root/.ssh/authorized_keys  
+                      - reboot -f
 
-        - name: Cleanup iso source directories
-          vars:
-            target_dir: "{{ _work_dir }}/{{ inventory_hostname }}-iso"
+        - name: Create Seed iso
+          shell: |
+                  genisoimage -output "{{ _vm.iso.ubuntu }}/{{ inventory_hostname }}-seed.iso" -volid cidata -joliet -rock {{ metadata_dir }}
+
+        - name: Remove metadata directory 
           file:
-            path: "{{ target_dir }}"
+            path: "{{ metadata_dir }}"
             state: absent
-          when: _setup.cleanup
-          
+          when: _vm.cleanup
+
+        - name: Create Virtual Hard Disks directory
+          file:
+            path: "{{ _vm.dir.ubuntu }}/{{ inventory_hostname }}/Virtual Hard Disks"
+            state: directory    
+
+        - name: Preparing vhdx files for the Virtual Machines
+          vars:
+            vhd_disk: "{{ _vm.dir.ubuntu }}/{{ inventory_hostname }}/Virtual Hard Disks/{{ inventory_hostname }}.vhdx"
+          copy:
+            src: "{{ _work_dir }}/ubuntu-cloud.vhdx"
+            dest: "{{ vhd_disk }}"
+
       delegate_to: localhost
 
     - name: Create and Launch Virtual Machines
       block:
         - name: Provisioning Hyper-V Virtual Machines
           vars:
-            vhd_disk: "{{ _vm.dir.windows}}\\{{ inventory_hostname }}\\Virtual Hard Disks\\{{ inventory_hostname }}.vhdx"
+            vhd_disk: "{{ _vm.dir.windows }}\\{{ inventory_hostname }}\\Virtual Hard Disks\\{{ inventory_hostname }}.vhdx"
           ansible.windows.win_powershell:
             script: |
-              New-VM -Name {{ inventory_hostname }} -Generation 2 -MemoryStartupBytes {{ spec.ram_size }} -SwitchName "{{ _vm.switch }}" -Path "{{ _vm.dir.windows }}" -BootDevice CD
-              New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ spec.disk_size }} -Dynamic
-              Add-VMHardDiskDrive {{ inventory_hostname }} -Path "{{ vhd_disk }}"
-              Set-VMDvdDrive {{ inventory_hostname }} -Path "{{ _vm.iso.windows }}\\{{ inventory_hostname }}-ubuntu.iso"
+              Resize-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ spec.disk_size }}
+              New-VM -Name {{ inventory_hostname }} -Generation 2 -MemoryStartupBytes {{ spec.ram_size }} -Path "{{ _vm.dir.windows }}" -VHDPath "{{ vhd_disk }}" -SwitchName "{{ _vm.switch }}" 
+              Add-VMDvdDrive {{ inventory_hostname }} -Path "{{ _vm.iso.windows }}\\{{ inventory_hostname }}-seed.iso"
               Set-VMProcessor {{ inventory_hostname }} -Count {{ spec.v_cpu }}
-              Set-VMFirmware -VMName {{ inventory_hostname }} -EnableSecureBoot Off
+              Set-VMFirmware -VMName {{ inventory_hostname }} -EnableSecureBoot Off 
               Set-VMMemory {{ inventory_hostname }} -MinimumBytes {{ spec.min_ram_size }}
               Start-VM {{ inventory_hostname }}
 
-        - name: Waiting for ubuntu installations to complete
+        - name: Waiting for ubuntu configuration to complete
           ansible.windows.win_powershell:
             script: |
               Wait-VM -Name {{ inventory_hostname }} -For Reboot
 
-        - name: Wait for Virtual Machines to be ready
+        - name: Waiting for Virtual Machines to be ready
           ansible.windows.win_powershell:
             script: |
               Wait-VM -Name {{ inventory_hostname }} -For Heartbeat
 
-        - name: Removing .iso files to save space
+        - name: Unmount and remove seed.iso 
           ansible.windows.win_powershell:
             script: |
-              rm {{ inventory_hostname }}-ubuntu.iso
+              Get-VMDvdDrive -VMName "{{ inventory_hostname }}" | Remove-VMDvdDrive
+              rm {{ inventory_hostname }}-seed.iso
 
             chdir: "{{ _vm.iso.windows }}"
           when: _vm.cleanup
 
-      delegate_to: winrm_host
-
+      delegate_to: winrm_host      

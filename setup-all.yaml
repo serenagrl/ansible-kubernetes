@@ -7,11 +7,6 @@
 
   # Setup virtual environment in Hyper-V by installing from scratch
 - import_playbook: setup-servers.yaml
-  when: _setup.type == "install"
-
-  # Setup virtual environment in Hyper-V by using multipass
-- import_playbook: setup-via-multipass.yaml
-  when: _setup.type == "multipass"
 
   # Setup an entire kubernetes cluster (with some add-ons)
 - import_playbook: setup-kubernetes.yaml
