@@ -11,11 +11,12 @@ _istio:
 
   addons:
     install: yes
+
     nodeports:
       gateway:
-        http: 32007
-        https: 32008
-      kiali: 32009
-      grafana: 32010
+        http: 32005
+        https: 32006
+      kiali: 32007
+      grafana: 32008
 
   cleanup: yes

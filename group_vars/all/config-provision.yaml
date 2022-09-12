@@ -1,5 +1,13 @@
 _vm:
 
+  # The specification for each VM node.
+  # Note: These are the recommended specifications. Anything lower may cause unexpected errors.
+  specs:
+    ram_size: 8GB
+    min_ram_size: 4GB
+    disk_size: 127GB
+    v_cpu: 4
+
   # The root password (this is because of using ssh later for Ansible) - Password is p@ssw0rd
   root_pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
 

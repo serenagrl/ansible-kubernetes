@@ -56,6 +56,7 @@
                   port: 80
                 - nodePort: {{ _istio.addons.nodeports.gateway.https }}
                   port: 443
+          when: _kube.use_nodeport                  
 
         - name: Labeling namespaces for istio injection (if any)
           kubernetes.core.k8s:
@@ -94,6 +95,7 @@
                     ports:
                     - nodePort: {{ _istio.addons.nodeports.kiali }}
                       port: 20001
+              when: _kube.use_nodeport
 
             - name: Waiting for grafana deployment to complete
               shell: kubectl rollout status -n istio-system deployment/grafana
@@ -110,6 +112,7 @@
                     ports:
                     - nodePort: {{ _istio.addons.nodeports.grafana }}
                       port: 3000
+              when: _kube.use_nodeport
 
             - name: Check for ingress availability
               kubernetes.core.k8s_info:

@@ -1,0 +1,3 @@
+# MetalLB configuration settings
+_metallb:
+  addresses: [ 192.168.0.240-192.168.0.250 ]

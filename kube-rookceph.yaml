@@ -144,45 +144,49 @@
         - "{{ deploy_dir }}/csi/cephfs/pvc.yaml"
         - "{{ deploy_dir }}/csi/rbd/pvc.yaml"
 
-    - name: Expose ceph dashboard
-      kubernetes.core.k8s:
-        apply: yes
-        force: yes
-        definition: |
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: rook-ceph-mgr-dashboard-external-https
+    - name: Configure nodeport
+      block:
+        - name: Expose ceph dashboard
+          kubernetes.core.k8s:
+            apply: yes
+            force: yes
+            definition: |
+              apiVersion: v1
+              kind: Service
+              metadata:
+                name: rook-ceph-mgr-dashboard-external-https
+                namespace: rook-ceph
+                labels:
+                  app: rook-ceph-mgr
+                  rook_cluster: rook-ceph
+              spec:
+                ports:
+                - name: dashboard
+                  nodePort: {{ _rook_ceph.nodeport }}
+                  port: 8443
+                  protocol: TCP
+                  targetPort: 8443
+                selector:
+                  app: rook-ceph-mgr
+                  rook_cluster: rook-ceph
+                sessionAffinity: None
+                type: NodePort
+    
+        - name: Reset ceph dashboard service
+          kubernetes.core.k8s:
+            state: absent
+            kind: Service
             namespace: rook-ceph
-            labels:
-              app: rook-ceph-mgr
-              rook_cluster: rook-ceph
-          spec:
-            ports:
-            - name: dashboard
-              nodePort: {{ _rook_ceph.nodeport }}
-              port: 8443
-              protocol: TCP
-              targetPort: 8443
-            selector:
-              app: rook-ceph-mgr
-              rook_cluster: rook-ceph
-            sessionAffinity: None
-            type: NodePort
-
-    - name: Reset ceph dashboard service
-      kubernetes.core.k8s:
-        state: absent
-        kind: Service
-        namespace: rook-ceph
-        name: rook-ceph-mgr-dashboard
+            name: rook-ceph-mgr-dashboard
+      
+      when: _kube.use_nodeport
 
     - name: Get ceph dashboard password
       shell: |
               kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo
       register: ceph_password
 
-    - name: Copy deph dashboard password to Ansible host
+    - name: Copy ceph dashboard password to Ansible host
       become_user: root
       copy:
         content: "{{ ceph_password.stdout }}"

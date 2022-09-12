@@ -9,17 +9,19 @@ _kube:
     name: k8s-cluster
     address: 192.168.0.200
     cidr_network: 10.1.0.0
-    balancer: no
+  
+  use_nodeport: no
 
   # Which add-on to install. You will need a lot of server resources to install all.
   install:
+    metallb: yes
     ingress: yes
     dashboard: yes
-    cert_mgr: yes
-    monitoring: yes
+    cert_mgr: no
+    monitoring: no
     metrics: yes
     nfs: yes
-    rookceph: yes
-    harbor: yes
-    istio: yes
-    awx: yes
+    rookceph: no
+    harbor: no
+    istio: no
+    awx: no

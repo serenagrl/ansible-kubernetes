@@ -37,21 +37,20 @@
       delegate_to: localhost
 
     - name: Patch dashboard service to NodePort {{ _dashboard.nodeport }}
-      block:
-        - name: Patch dashboard service to use NodePort
-          kubernetes.core.k8s:
-            state: patched
-            namespace: kubernetes-dashboard
-            kind: Service
-            name: kubernetes-dashboard
-            definition: |
-              spec:
-                type: NodePort
-                ports:
-                - nodePort: {{ _dashboard.nodeport }}
-                  port: 443
-                  protocol: TCP
-                  targetPort: 8443
+      kubernetes.core.k8s:
+        state: patched
+        namespace: kubernetes-dashboard
+        kind: Service
+        name: kubernetes-dashboard
+        definition: |
+          spec:
+            type: NodePort
+            ports:
+            - nodePort: {{ _dashboard.nodeport }}
+              port: 443
+              protocol: TCP
+              targetPort: 8443
+      when: _kube.use_nodeport
 
     - name: Create dashboard ServiceAccount
       kubernetes.core.k8s:
