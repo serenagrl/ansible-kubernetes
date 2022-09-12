@@ -1,8 +1,0 @@
-# The VM specifications for the kubernetes_nodes
-# These are the recommended specifications. Anything lower may cause unexpected errors.
-spec:
-  ram_size: 8GB
-  min_ram_size: 4GB
-  disk_size: 127GB
-  v_cpu: 4
-

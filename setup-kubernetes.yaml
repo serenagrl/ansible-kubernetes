@@ -16,6 +16,10 @@
     checkpoint_name: "Kubernetes ready."
   when: _checkpoint
 
+  # Install MetalLB
+- import_playbook: kube-metallb.yaml
+  when: _kube.install.metallb
+
   # Install Ingress nginx controller
 - import_playbook: kube-ingress.yaml
   when: _kube.install.ingress

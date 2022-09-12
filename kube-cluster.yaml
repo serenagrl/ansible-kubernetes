@@ -11,12 +11,10 @@
     # Remove the --apiserver-advertise-address if you are pointing to a load balancer.
     - name: Initializing kubernetes cluster (primary control plane)
       vars:
-        ad_address: "{% if _kube.cluster.balancer is defined and _kube.cluster.balancer %}--apiserver-advertise-address {{ _kube.cluster.address }} \\{% endif %}"
         release: "{% if _kube.release is defined and _kube.release and _kube.release != 'latest' %}--kubernetes-version {{ _kube.release }}{% endif %}"
       shell: |
               kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }}/16 \
               --upload-certs --cri-socket unix:///var/run/containerd/containerd.sock \
-              {{ ad_address }} \
               --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}  
 
     - name: Get join token for nodes

@@ -36,7 +36,7 @@
         - name: Add kubernetes cluster DNS entry to /etc/hosts
           lineinfile:
             path: /etc/hosts
-            insertafter: "127.0.1.1 {{ ansible_hostname }}"
+            insertafter: "127.0.0.1 localhost"
             line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
 
         - name: Add kubernetes kubernetes_nodes DNS entries to /etc/hosts

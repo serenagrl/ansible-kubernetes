@@ -40,6 +40,24 @@
     - name: Waiting for ingress-nginx-controller to be ready
       shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller
 
+    - name: Scale ingress controller pods = {{ _ingress.scale }}
+      vars:
+        replicas: "{{ groups['kubernetes_control_planes'] | length }}"
+      shell: | 
+         kubectl scale deployment -n ingress-nginx ingress-nginx-controller --replicas={{ replicas }}
+      when: _ingress.scale
+
+    - name: Configure for load balancing = {{ _kube.install.metallb }}
+      kubernetes.core.k8s:
+        state: patched
+        namespace: ingress-nginx
+        kind: Service
+        name: ingress-nginx-controller
+        definition: |
+          spec:
+            type: LoadBalancer
+      when: _kube.install.metallb
+
     - name: Patch ExternalIPs
       kubernetes.core.k8s:
         state: patched
@@ -49,16 +67,18 @@
         definition:
           spec:
             externalIPs: "[ '{{ _kube.cluster.address }}' ]"
+      when: _kube.install.metallb is undefined or not _kube.install.metallb 
 
     - name: Add label to control plane
       kubernetes.core.k8s:
         state: patched
         kind: Node
-        name: "{{ ansible_hostname }}"
+        name: "{{ item }}"
         definition:
           metadata:
             labels:
               ansible.kubernetes/run: ingress-nginx
+      loop: "{{ groups['kubernetes_control_planes'] }}"
 
     - name: Patch ingress nginx controller
       kubernetes.core.k8s:

@@ -10,6 +10,7 @@ _pkg:
   kubernetes: latest #1.24.4
   containerd: latest #1.6.8
   calico: latest #3.24.0
+  metallb: latest #0.13.5
   ingress_nginx: latest #4.2.3
   dashboard: latest #2.6.1
   metrics_server: latest #3.8.2

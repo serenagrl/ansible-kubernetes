@@ -56,44 +56,48 @@
         definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
       loop: "{{ q('fileglob', manifest_dir + '/*.yaml') | sort | difference(_monitoring.excludes)  }}"
 
-    - name: Change grafana services to use NodePort {{ _monitoring.nodeports.grafana }}
-      kubernetes.core.k8s:
-        state: patched
-        namespace: monitoring
-        kind: Service
-        name: grafana
-        definition: |
-          spec:
-            type: NodePort
-            ports:
-            - nodePort: {{ _monitoring.nodeports.grafana }}
-              port: 3000
+    - name: Configure nodeports
+      block:
+        - name: Change grafana services to use NodePort {{ _monitoring.nodeports.grafana }}
+          kubernetes.core.k8s:
+            state: patched
+            namespace: monitoring
+            kind: Service
+            name: grafana
+            definition: |
+              spec:
+                type: NodePort
+                ports:
+                - nodePort: {{ _monitoring.nodeports.grafana }}
+                  port: 3000
 
-    - name: Change prometheus services to use NodePort {{ _monitoring.nodeports.prometheus }}
-      kubernetes.core.k8s:
-        state: patched
-        namespace: monitoring
-        kind: Service
-        name: prometheus-k8s
-        definition: |
-          spec:
-            type: NodePort
-            ports:
-            - nodePort: {{ _monitoring.nodeports.prometheus }}
-              port: 9090
+        - name: Change prometheus services to use NodePort {{ _monitoring.nodeports.prometheus }}
+          kubernetes.core.k8s:
+            state: patched
+            namespace: monitoring
+            kind: Service
+            name: prometheus-k8s
+            definition: |
+              spec:
+                type: NodePort
+                ports:
+                - nodePort: {{ _monitoring.nodeports.prometheus }}
+                  port: 9090
 
-    - name: Change alertmanagers services to use NodePort {{ _monitoring.nodeports.alertmanager }}
-      kubernetes.core.k8s:
-        state: patched
-        namespace: monitoring
-        kind: Service
-        name: alertmanager-main
-        definition: |
-          spec:
-            type: NodePort
-            ports:
-            - nodePort: {{ _monitoring.nodeports.alertmanager }}
-              port: 9093
+        - name: Change alertmanagers services to use NodePort {{ _monitoring.nodeports.alertmanager }}
+          kubernetes.core.k8s:
+            state: patched
+            namespace: monitoring
+            kind: Service
+            name: alertmanager-main
+            definition: |
+              spec:
+                type: NodePort
+                ports:
+                - nodePort: {{ _monitoring.nodeports.alertmanager }}
+                  port: 9093
+
+      when: _kube.use_nodeport
 
     - name: Check for ingress availability
       kubernetes.core.k8s_info:

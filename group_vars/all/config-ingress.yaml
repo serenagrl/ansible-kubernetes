@@ -1,3 +1,5 @@
 # Ingress settings.
 _ingress:
   host: serena.k8s.local
+  scale: yes
+  

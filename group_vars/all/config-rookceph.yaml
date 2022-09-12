@@ -12,6 +12,7 @@ _rook_ceph:
     namespace: default
     fs_size: 2Gi
     rbd_size: 2Gi
+
   nodeport: 32004
 
   cleanup: yes
