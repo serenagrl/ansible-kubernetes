@@ -42,7 +42,7 @@
 
         - name: Scale down the pods for lesser than 3 kubernetes_nodes configuration
           vars:
-            node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length}}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
+            node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length }}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
           shell: |
                   sed -i 's/count: 2$/count: 1/g' cluster.yaml
                   sed -i 's/count: 3$/count: 2/g' cluster.yaml
@@ -202,6 +202,40 @@
         route: ceph
         service_name: rook-ceph-mgr-dashboard
         port: 8443
+
+    - name: Configure prometheus to scrape ceph metrics endpoint
+      block:
+        - name: Create additional-scrape-config secret to scrape ceph endpoint
+          vars:
+            scrape_config: |
+              - job_name: 'ceph'
+                static_configs:
+                  - targets: ['rook-ceph-mgr.rook-ceph.svc:9283']
+
+          kubernetes.core.k8s:
+            state: present
+            definition: |
+              apiVersion: v1
+              kind: Secret
+              type: Opaque             
+              metadata:
+                name: "additional-scrape-configs"
+                namespace: "monitoring"     
+              data:
+                prometheus-additional.yaml: "{{ scrape_config | from_yaml | b64encode }}"
+
+        - name: Patch prometheus to include additional scrape configs          
+          kubernetes.core.k8s:
+            state: patched
+            namespace: monitoring
+            name: k8s
+            kind: Prometheus
+            definition: |
+              spec:
+                additionalScrapeConfigs:
+                  name: additional-scrape-configs
+                  key: prometheus-additional.yaml
+      when: _kube.install.monitoring
 
     - name: Cleanup directories
       become_user: root

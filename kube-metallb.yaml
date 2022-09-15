@@ -31,7 +31,7 @@
         definition: "{{ lookup('file', manifest_file) | from_yaml_all }}"
 
     - name: Waiting for metallb-system to be ready
-      shell: kubectl rollout status -n metallb-system deployment/controller
+      shell: for d in $(kubectl -n metallb-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n metallb-system deployment/$d; done;
 
     - name: Cleanup manifest file
       become_user: root

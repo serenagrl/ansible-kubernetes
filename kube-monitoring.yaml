@@ -33,13 +33,15 @@
             chdir: "{{ setup_dir }}"
 
         - name: Scale down the pods for lesser than 3 kubernetes_nodes configuration
+          vars:
+            node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length }}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
           shell: |
                   sed -i 's/replicas: 2/replicas: 1/g' prometheus-prometheus.yaml
                   sed -i 's/replicas: 2/replicas: 1/g' prometheusAdapter-deployment.yaml
                   sed -i 's/replicas: 3/replicas: 1/g' alertmanager-alertmanager.yaml
           args:
             chdir: "{{ manifest_dir }}"
-          when: (groups['kubernetes_nodes'] | length) < 3
+          when: node_count | int < 3
 
       delegate_to: localhost
 
@@ -56,47 +58,22 @@
         definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
       loop: "{{ q('fileglob', manifest_dir + '/*.yaml') | sort | difference(_monitoring.excludes)  }}"
 
-    - name: Configure nodeports
-      block:
-        - name: Change grafana services to use NodePort {{ _monitoring.nodeports.grafana }}
-          kubernetes.core.k8s:
-            state: patched
-            namespace: monitoring
-            kind: Service
-            name: grafana
-            definition: |
-              spec:
-                type: NodePort
-                ports:
-                - nodePort: {{ _monitoring.nodeports.grafana }}
-                  port: 3000
-
-        - name: Change prometheus services to use NodePort {{ _monitoring.nodeports.prometheus }}
-          kubernetes.core.k8s:
-            state: patched
-            namespace: monitoring
-            kind: Service
-            name: prometheus-k8s
-            definition: |
-              spec:
-                type: NodePort
-                ports:
-                - nodePort: {{ _monitoring.nodeports.prometheus }}
-                  port: 9090
-
-        - name: Change alertmanagers services to use NodePort {{ _monitoring.nodeports.alertmanager }}
-          kubernetes.core.k8s:
-            state: patched
-            namespace: monitoring
-            kind: Service
-            name: alertmanager-main
-            definition: |
-              spec:
-                type: NodePort
-                ports:
-                - nodePort: {{ _monitoring.nodeports.alertmanager }}
-                  port: 9093
-
+    - name: Configure NodePorts for kube prometheus services
+      kubernetes.core.k8s:
+        state: patched
+        namespace: monitoring
+        kind: Service
+        name: "{{ item.name }}"
+        definition: |
+          spec:
+            type: NodePort
+            ports:
+            - nodePort: {{ item.nodePort }}
+              port: {{ item.port }}
+      loop:
+        - { name: grafana, nodePort: '{{ _monitoring.nodeports.grafana }}', port: 3000 }
+        - { name: prometheus-k8s, nodePort: '{{ _monitoring.nodeports.prometheus }}', port: 9090 }
+        - { name: alertmanager-main, nodePort: '{{ _monitoring.nodeports.alertmanager }}', port: 9093 }
       when: _kube.use_nodeport
 
     - name: Check for ingress availability
@@ -108,7 +85,7 @@
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
       block:
-        - name: Create ingress for grafana and prometheus
+        - name: Create ingress for kube prometheus services
           kubernetes.core.k8s:
             apply: yes
             force: yes
@@ -138,6 +115,34 @@
                               name: prometheus-k8s
                               port:
                                 number: 9090
+                        - path: /alerts
+                          pathType: Prefix
+                          backend:
+                            service:
+                              name: alertmanager-main
+                              port:
+                                number: 9093
+
+        - name: Edit prometheus configuration
+          kubernetes.core.k8s:
+            state: patched
+            namespace: monitoring
+            kind: Prometheus
+            name: k8s
+            definition: |
+              spec:
+                externalUrl: /prometheus
+                routePrefix: /prometheus
+
+        - name: Edit alertmanager configuration
+          kubernetes.core.k8s:
+            state: patched
+            namespace: monitoring
+            kind: Alertmanager
+            name: main
+            definition: |
+              spec:
+                routePrefix: /alerts
 
         - name: Patch kube prometheus configurations to support ingress
           become_user: root
@@ -146,21 +151,12 @@
               blockinfile:
                 path: "{{ manifest_dir }}/grafana-config.yaml"
                 insertafter: "default_timezone = UTC"
-                marker: "    # ANSIBLE MAMANAGED BLOCK"
+                marker: "    # ANSIBLE MANAGED BLOCK"
                 block: |2
                       [server]
-                      domain = my.kubernetes.local
+                      domain = {{ _ingress.host }}
                       root_url = %(protocol)s://%(domain)s:%(http_port)s/grafana/
                       serve_from_sub_path = true
-
-            - name: Edit prometheus configuration
-              blockinfile:
-                path: "{{ manifest_dir }}/prometheus-prometheus.yaml"
-                insertbefore: "enableFeatures:"
-                marker: "  # ANSIBLE MAMANAGED BLOCK"
-                block: |2
-                    externalUrl: /prometheus
-                    routePrefix: /prometheus
 
             - name: Patch grafana datasource url
               replace:

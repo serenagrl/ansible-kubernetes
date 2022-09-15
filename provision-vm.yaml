@@ -101,6 +101,7 @@
                       - systemctl restart ssh
                       - usermod --password '{{ _vm.root_pwd }}' root
                       - echo '{{ id_rsa_pub }}' > /root/.ssh/authorized_keys  
+                      - sudo apt update && sudo apt full-upgrade -y
                       - reboot -f
 
         - name: Create Seed iso
