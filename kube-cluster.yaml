@@ -8,10 +8,9 @@
   hosts: kubernetes_control_planes[0]
 
   tasks:
-    # Remove the --apiserver-advertise-address if you are pointing to a load balancer.
     - name: Initializing kubernetes cluster (primary control plane)
       vars:
-        release: "{% if _kube.release is defined and _kube.release and _kube.release != 'latest' %}--kubernetes-version {{ _kube.release }}{% endif %}"
+        release: "{% if _pkg.kubernetes is defined and _pkg.kubernetes and _pkg.kubernetes != 'latest' %}--kubernetes-version {{ _pkg.kubernetes }}{% endif %}"
       shell: |
               kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }}/16 \
               --upload-certs --cri-socket unix:///var/run/containerd/containerd.sock \
@@ -196,6 +195,7 @@
     - name: Waiting for calico-apiserver to be ready
       shell: |
              for d in $(kubectl -n calico-apiserver get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-apiserver deployment/$d; done;
+             for d in $(kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n kube-system deployment/$d; done;
 
     - name: Cleanup manifest files
       file:

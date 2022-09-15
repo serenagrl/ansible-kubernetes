@@ -40,12 +40,12 @@
     - name: Waiting for ingress-nginx-controller to be ready
       shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller
 
-    - name: Scale ingress controller pods = {{ _ingress.scale }}
-      vars:
-        replicas: "{{ groups['kubernetes_control_planes'] | length }}"
-      shell: | 
-         kubectl scale deployment -n ingress-nginx ingress-nginx-controller --replicas={{ replicas }}
-      when: _ingress.scale
+    # - name: Scale ingress controller pods = {{ _ingress.scale }}
+    #   vars:
+    #     replicas: "{{ groups['kubernetes_control_planes'] | length }}"
+    #   shell: | 
+    #      kubectl scale deployment -n ingress-nginx ingress-nginx-controller --replicas={{ replicas }}
+    #   when: _ingress.scale
 
     - name: Configure for load balancing = {{ _kube.install.metallb }}
       kubernetes.core.k8s:
