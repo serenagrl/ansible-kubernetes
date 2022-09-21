@@ -12,30 +12,15 @@
     manifest_file: "{{ _work_dir }}/cert-manager.yaml"
 
   tasks:
-    - name: Download manifests
-      become_user: root
-      block:
-        - import_tasks: ./tasks/task-get-manifest.yaml
-          vars:
-            name: "cert manager"
-            repo_path: "cert-manager/cert-manager"
-            pkg_version: "{{ _pkg.cert_manager | default }}"
-            version_prefix: "v"
-            dest: "{{ manifest_file }}"
-            urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cert-manager.yaml"]
-
-      delegate_to: localhost
-
-    - name: Installing cert manager
-      kubernetes.core.k8s:
-        definition: "{{ lookup('file', '{{ manifest_file }}') | from_yaml_all }}"
-
-    - name: Cleanup manifest file
-      become_user: root
-      file:
-        path: "{{ manifest_file }}"
-        state: absent
-      delegate_to: localhost
+    - import_tasks: ./tasks/task-apply-manifest.yaml
+      vars:
+        name: "cert manager"
+        namespace: "cert-manager"
+        repo_path: "cert-manager/cert-manager"
+        pkg_version: "{{ _pkg.cert_manager | default }}"
+        version_prefix: "v"
+        dest: "{{ manifest_file }}"
+        urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cert-manager.yaml"]
 
     - name: Waiting for cert manager deployments to be ready
       shell: |

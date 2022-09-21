@@ -12,30 +12,15 @@
     manifest_file: "{{ _work_dir }}/ingress-nginx-deployment.yaml"
     
   tasks:
-    - import_tasks: ./tasks/task-get-manifest.yaml
-      become_user: root
+    - import_tasks: ./tasks/task-apply-manifest.yaml
       vars:
         name: "ingress nginx"
+        namespace: "ingress-nginx"
         repo_path: "kubernetes/ingress-nginx"
         pkg_version: "{{ _pkg.ingress_nginx | default }}"
         version_prefix: "helm-chart-"
         dest: "{{ manifest_file }}"
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/deploy/static/provider/baremetal/deploy.yaml"]
-      delegate_to: localhost
-
-    - name: Installing ingress nginx
-      kubernetes.core.k8s:
-        state: present
-        apply: yes
-        force: yes
-        definition: "{{ lookup('file', manifest_file) | from_yaml_all }}"
-
-    - name: Cleanup manifest file
-      become_user: root
-      file:
-        path: "{{ manifest_file }}"
-        state: absent
-      delegate_to: localhost
 
     - name: Waiting for ingress-nginx-controller to be ready
       shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller

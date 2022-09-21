@@ -17,7 +17,7 @@ A collection of Ansible playbooks for provisioning a bare metal Kubernetes clust
 * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
 * Version incompatibility may occur i.e. new Kubernetes version may break everything. Adjust the versions in `global.yaml` if needed.
 
-### Add-ons List
+### Add-ons stack
 * Ingress Nginx
 * Kubernetes Dashboard
 * Metrics Server
@@ -30,6 +30,7 @@ A collection of Ansible playbooks for provisioning a bare metal Kubernetes clust
 * Harbor
 * Istio
 * Ansible Tower (AWX)
+* ArgoCD
 
 ### Advice
 You are advised not to be so ambitious to run `setup-all.yaml` on your first try. Start with these in the following order:

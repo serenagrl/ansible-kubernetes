@@ -26,3 +26,4 @@ _kube:
     harbor: no
     istio: no
     awx: no
+    argocd: no
