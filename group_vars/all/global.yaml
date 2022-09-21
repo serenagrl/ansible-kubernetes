@@ -21,3 +21,5 @@ _pkg:
   cert_manager: latest #1.9.1
   istio: latest #1.14.3
   awx: latest #0.28.0
+  elasticsearch: latest
+  kibana: latest

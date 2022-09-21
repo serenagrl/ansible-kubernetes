@@ -21,6 +21,7 @@ _kube:
     monitoring: no
     metrics: yes
     nfs: yes
+    logging: no
     rookceph: no
     harbor: no
     istio: no

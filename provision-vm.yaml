@@ -106,6 +106,7 @@
 
         - name: Create Seed iso
           shell: |
+                  mkdir -p "{{ _vm.iso.ubuntu }}"
                   genisoimage -output "{{ _vm.iso.ubuntu }}/{{ inventory_hostname }}-seed.iso" -volid cidata -joliet -rock {{ metadata_dir }}
 
         - name: Remove metadata directory 

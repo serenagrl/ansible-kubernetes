@@ -12,15 +12,21 @@
     manifest_file: "{{ _work_dir }}/metallb.yaml"
     
   tasks:
-    - import_tasks: ./tasks/task-get-manifest.yaml
-      become_user: root
-      vars:
-        name: "metallb"
-        repo_path: "metallb/metallb"
-        pkg_version: "{{ _pkg.metallb | default }}"
-        version_prefix: "v"
-        dest: "{{ manifest_file }}"
-        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/config/manifests/metallb-native.yaml"]
+    - become_user: root
+      block:
+        - import_tasks: ./tasks/task-get-manifest.yaml
+          vars:
+            name: "metallb"
+            repo_path: "metallb/metallb"
+            pkg_version: "{{ _pkg.metallb | default }}"
+            version_prefix: "v"
+            dest: "{{ manifest_file }}"
+            urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/config/manifests/metallb-native.yaml"]
+
+        - name: Set metallb log level to reduce excessive logging
+          shell: |
+                  sed -i 's/- --log-level=info$/- --log-level=error/g' "{{ manifest_file }}"
+
       delegate_to: localhost
 
     - name: Installing metallb

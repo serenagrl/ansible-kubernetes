@@ -1,0 +1,121 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Install and configure Elasticsearch-Fluentd-Kibana stack >>>>>
+  hosts: kubernetes_control_planes[0]
+  become_user: "{{ _kube.user }}"
+
+  vars:
+    values_file: "{{ _work_dir }}/kibana-values.yaml"
+    manifest_file: "{{ _work_dir }}/fluentd.yaml"
+
+  tasks:
+    - name: Get ingress class
+      kubernetes.core.k8s_info:
+        kind: IngressClass
+      register: ingress_class
+
+    - name: Prepare manifest
+      become_user: root
+      block:
+        - name: Create kibana chart values file
+          vars:
+            ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+          blockinfile:
+            create: yes
+            path: "{{ values_file }}"
+            block: |
+              fullnameOverride: kibana
+              elasticsearchHosts: "http://elasticsearch-master:9200"
+
+              extraEnvs:
+                - name: SERVER_BASEPATH
+                  value: /kibana
+
+              ingress:
+                enabled: true
+                className: {{ ingress_name }}
+                annotations:
+                  nginx.ingress.kubernetes.io/rewrite-target: /$2
+                hosts:
+                  - host: {{ _ingress.host }}
+                    paths:
+                      - path: /kibana(/|$)(.*)
+
+        - name: Get fluentd kubernetes daemonset manifest
+          become_user: root
+          get_url:
+            url: "https://raw.githubusercontent.com/fluent/fluentd-kubernetes-daemonset/master/fluentd-daemonset-elasticsearch-rbac.yaml"
+            dest: "{{ manifest_file }}"
+
+        - name: Modify manifest values
+          shell: |
+                  sed -i 's/kube-system$/logging/g' {{ manifest_file }}
+                  sed -i 's/"elasticsearch-logging"/"elasticsearch-master"/g' {{ manifest_file }}
+
+        - name: Configure container environment variables
+          blockinfile:
+            path: "{{ manifest_file }}"
+            insertafter: 'value: "http"'
+            marker: "          # ANSIBLE MANAGED BLOCK"
+            block: |2
+                        - name: FLUENT_CONTAINER_TAIL_EXCLUDE_PATH
+                          value: /var/log/containers/fluent*
+                        - name: FLUENT_CONTAINER_TAIL_PARSER_TYPE
+                          value: /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+                        - name: K8S_NODE_NAME
+                          valueFrom:
+                            fieldRef:
+                              fieldPath: spec.nodeName
+      delegate_to: localhost
+
+    - name: Install Elastic stack
+      block:
+        - name: Add elastic chart repo
+          kubernetes.core.helm_repository:
+            name: elastic
+            repo_url: "https://helm.elastic.co"
+
+        - name: Installing elasticsearch
+          vars:
+            version: "{% if _pkg.elasticsearch is defined and _pkg.elasticsearch and _pkg.elasticsearch != 'latest' %}{{ _pkg.elasticsearch }}{% endif %}"
+          kubernetes.core.helm:
+            name: elasticsearch
+            namespace: logging
+            atomic: yes
+            chart_ref: elastic/elasticsearch
+            chart_version: "{{ version }}"
+            create_namespace: yes
+
+        - name: Installing kibana
+          vars:
+            version: "{% if _pkg.kibana is defined and _pkg.kibana and _pkg.kibana != 'latest' %}{{ _pkg.kibana }}{% endif %}"
+          kubernetes.core.helm:
+            name: kibana
+            namespace: logging
+            atomic: yes
+            chart_ref: elastic/kibana
+            chart_version: "{{ version }}"
+            create_namespace: yes
+            values: "{{ lookup('file', values_file) | from_yaml }}"            
+
+    - name: Installing fluentd
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: "{{ lookup('file', manifest_file) | from_yaml_all }}"
+
+    - name: Cleanup directories
+      become_user: root
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ manifest_file }}"
+        - "{{ values_file }}"
+
+      delegate_to: localhost
+      when: _logging.cleanup        

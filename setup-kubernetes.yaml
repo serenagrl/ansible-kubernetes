@@ -48,6 +48,10 @@
 - import_playbook: kube-rookceph.yaml
   when: _kube.install.rookceph
 
+  # Install and configure EFK
+- import_playbook: kube-logging.yaml
+  when: _kube.install.logging
+
   # Install and configure Harbor registry
 - import_playbook: kube-harbor.yaml
   when: _kube.install.harbor
