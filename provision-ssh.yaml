@@ -19,6 +19,7 @@
 
         - name: Remove known_host entries from Ansible host (if exist)
           shell: |
+                  touch /root/.ssh/known_hosts
                   ssh-keygen -f /root/.ssh/known_hosts -R {{ ansible_host }}
 
         - name: Register servers as known hosts to Ansible hosts

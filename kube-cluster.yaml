@@ -89,19 +89,45 @@
           - kubernetes
           - jsonpatch
 
-    - name: Create .kube in home directory
-      file:
-        path: $HOME/.kube
-        state: directory
-        mode: 0755
-
-    - name: Copy admin.conf to home directory kube config
+    - name: Install Helm
       become_user: root
-      copy:
-        src: /etc/kubernetes/admin.conf
-        dest: "/home/{{ _kube.user }}/.kube/config"
-        remote_src: yes
-        owner: "{{ _kube.user }}"
+      block:
+        - name: Get helm gpg
+          get_url:
+            url: https://baltocdn.com/helm/signing.asc
+            dest: /tmp/helm.gpg
+            mode: '0644'
+            force: true
+
+        - name: De-armor helm gpg
+          shell: gpg --dearmor < /tmp/helm.gpg > /usr/share/keyrings/helm.gpg
+
+        - name: Register helm repository
+          apt_repository:
+            filename: helm
+            repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+
+        - name: Installing helm
+          apt:
+            pkg:
+              - helm
+            state: latest
+            update_cache: true      
+
+    - name: Configure kube config
+      block:
+        - name: Create .kube in home directory
+          file:
+            path: $HOME/.kube
+            state: directory
+
+        - name: Copy admin.conf to home directory kube config
+          become_user: root
+          copy:
+            src: /etc/kubernetes/admin.conf
+            dest: "/home/{{ _kube.user }}/.kube/config"
+            remote_src: yes
+            owner: "{{ _kube.user }}"
 
     - name: Configure autocomplete and aliases
       block:
@@ -113,6 +139,7 @@
               alias kc=kubectl
               alias kcaf='kubectl apply -f'
               alias kcd='kubectl delete'
+              alias kcg='kubectl get'
               alias kcdf='kubectl delete -f'
               alias kcpo='kubectl get po'
               alias kcpoa='kubectl get po -A'
@@ -124,7 +151,11 @@
               alias kcdpa='kubectl get deploy -A'
               alias kcdpn='kubectl get deploy -n'
               alias kcse='kubectl get secrets'
+              alias kcsea='kubectl get secrets -A'
               alias kcsen='kubectl get secrets -n'
+              alias kcig='kubectl get ingress'
+              alias kciga='kubectl get ingress -A'
+              alias kcign='kubectl get ingress -n'
               alias kcsc='kubectl get sc'
               alias kcpv='kubectl get pv'
               alias kcpvc='kubectl get pvc'
@@ -134,6 +165,7 @@
               alias kcde='kubectl describe'
               alias kcdepo='kubectl describe po'
               alias kcdesv='kubectl describe svc'
+              alias kcdeno='kubectl describe node'
               alias wkcpo='watch kubectl get po'
               alias wkcpoa='watch kubectl get po -A'
               alias wkcpon='watch kubectl get po -n'
@@ -170,6 +202,10 @@
   become_user: "{{ _kube.user }}"
 
   tasks:
+    - name: Remove taint to allow scheduling on control plane nodes (if no nodes were defined)
+      shell: kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+      when: (groups['kubernetes_nodes'] | length) < 1 
+
     - name: Installing calico
       kubernetes.core.k8s:
         definition: "{{ lookup('file', item) | from_yaml_all }}"
@@ -178,11 +214,7 @@
         - "{{ _work_dir }}/tigera-operator.yaml"
         - "{{ _work_dir }}/custom-resources.yaml"
 
-    - name: Remove taint to allow scheduling on control plane nodes (if no nodes were defined)
-      shell: kubectl taint nodes --all node-role.kubernetes.io/control-plane-
-      when: (groups['kubernetes_nodes'] | length) < 1 
-
-    - name: Waiting for kubernetes cluster to be ready
+    - name: Waiting for calico to be ready
       shell: |
              kubectl wait --for=condition=Ready nodes --all --timeout=600s
              for d in $(kubectl -n calico-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-system deployment/$d; done;
@@ -192,7 +224,7 @@
         timeout: 30
       delegate_to: localhost
 
-    - name: Waiting for calico-apiserver to be ready
+    - name: Waiting for kubernetes cluster to be ready
       shell: |
              for d in $(kubectl -n calico-apiserver get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-apiserver deployment/$d; done;
              for d in $(kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n kube-system deployment/$d; done;
