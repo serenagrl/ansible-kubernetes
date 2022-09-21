@@ -1,0 +1,79 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: <<<<< Install and configure ArgoCD >>>>>
+  hosts: kubernetes_control_planes[0]
+  become_user: "{{ _kube.user }}"
+
+  vars:
+    manifest_file: "{{ _work_dir }}/argocd.yaml"
+
+  tasks:
+    - name: Create argocd namespace
+      kubernetes.core.k8s:
+        kind: Namespace
+        name: argocd
+
+    - import_tasks: ./tasks/task-apply-manifest.yaml
+      vars:
+        name: "argocd"
+        namespace: "argocd"
+        repo_path: "argoproj/argo-cd"
+        pkg_version: "{{ _pkg.argocd | default }}"
+        version_prefix: "v"
+        dest: "{{ manifest_file }}"
+        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/manifests/install.yaml"]
+
+    - name: Install argocd cli
+      block:
+        - name: Get latest argocd release
+          shell: |
+                  curl -s https://api.github.com/repos/argoproj/argo-cd/releases/latest | grep tag_name | cut -d '"' -f 4
+          register: release_tag
+          when: _pkg.argocd is undefined or not _pkg.argocd or _pkg.argocd == "latest"
+
+        - name: Download argocd cli
+          become_user: root
+          shell: |
+            curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+            chmod +x /usr/local/bin/argocd
+
+    - name: Get portal password
+      block:
+      - name: Get default portal password
+        shell: | 
+                kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode && echo
+        register: argocd_password
+
+      - name: Copy password to Ansible host
+        become_user: root
+        copy:
+          content: "{{ argocd_password.stdout }}"
+          dest: "{{ _work_dir }}/argocd_password"
+        delegate_to: localhost
+
+    - name: Patch argocd server to NodePort {{ _argocd.nodeport }}
+      kubernetes.core.k8s:
+        state: patched
+        namespace: argocd
+        kind: Service
+        name: argocd-server
+        definition: |
+          spec:
+            type: NodePort
+            ports:
+            - nodePort: {{ _argocd.nodeport }}
+              port: 443
+      when: _kube.use_nodeport
+
+    - import_tasks: ./tasks/task-create-ingress-route.yaml
+      vars:
+        namespace: argocd
+        name: argocd-server-ingress
+        protocol: HTTPS
+        route: argocd
+        service_name: argocd-server
+        port: 443

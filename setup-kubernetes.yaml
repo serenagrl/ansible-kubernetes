@@ -64,6 +64,10 @@
 - import_playbook: kube-awx.yaml
   when: _kube.install.awx
 
+  # Install and configure ArgoCD
+- import_playbook: kube-argocd.yaml
+  when: _kube.install.argocd  
+
   # Create checkpoints for satefy reasons. You can delete the checkpoints later.
 - import_playbook: checkpoint-vm.yaml
   vars:

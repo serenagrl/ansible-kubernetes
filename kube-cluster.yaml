@@ -45,7 +45,7 @@
             repo_path: "projectcalico/calico"
             pkg_version: "{{ _pkg.calico | default }}"
             version_prefix: "v"
-            dest: "{{_work_dir}}" 
+            dest: "{{ _work_dir }}" 
             manifest_url: "https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/manifests"
             urls:
               - "{{ manifest_url }}/tigera-operator.yaml"

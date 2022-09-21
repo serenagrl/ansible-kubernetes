@@ -1,0 +1,2 @@
+_argocd:
+  nodeport: 32010

@@ -96,7 +96,6 @@
       copy:
         content: "{{ result.stdout }}"
         dest: "{{ _work_dir  }}/awx_password"
-        mode: 0777
       delegate_to: localhost
 
     - name: Cleanup repository directory
