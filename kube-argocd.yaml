@@ -12,6 +12,24 @@
     manifest_file: "{{ _work_dir }}/argocd.yaml"
 
   tasks:
+    - name: Get ingress service information
+      kubernetes.core.k8s_info:
+        kind: Service
+        namespace: ingress-nginx
+        name: ingress-nginx-controller
+      register: ingress_service
+
+    - name: Add argocd portal DNS entries to /etc/hosts
+      become_user: root
+      vars:
+        address: "{% if _kube.install.metallb is defined and _kube.install.metallb %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ _kube.cluster.address }}{% endif %}"
+      lineinfile:
+        path: /etc/hosts
+        insertafter: "127.0.0.1 localhost"
+        line: "{{ address }} {{ _argocd.domain }}"
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['kubernetes_cluster'] }}"
+
     - name: Create argocd namespace
       kubernetes.core.k8s:
         kind: Namespace
@@ -69,11 +87,37 @@
               port: 443
       when: _kube.use_nodeport
 
-    - import_tasks: ./tasks/task-create-ingress-route.yaml
+    - name: Check for ingress availability
+      kubernetes.core.k8s_info:
+        kind: IngressClass
+      register: ingress_class
+
+    - name: Create ingress for argocd server
       vars:
-        namespace: argocd
-        name: argocd-server-ingress
-        protocol: HTTPS
-        route: argocd
-        service_name: argocd-server
-        port: 443
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: |
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: argocd-server-ingress
+            namespace: argocd
+            annotations:
+              nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+              nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+              nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+          spec:
+            ingressClassName: {{ ingress_name }}
+            rules:
+            - host: {{ _argocd.domain }}
+              http:
+                paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: argocd-server
+                      port:
+                        name: https
