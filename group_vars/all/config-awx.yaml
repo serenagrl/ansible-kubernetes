@@ -1,6 +1,7 @@
 # AWX settings
 _awx:
-  auto_register: yes
+  cleanup: yes
+  auto_register: no
 
   setup:
     name: "(Pre-registered)"

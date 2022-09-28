@@ -4,8 +4,9 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: <<<<< Install and configure Rook-Ceph >>>>>
+- name: Create Virtual Hard Disk and Attach to VMs
   hosts: winrm
+  gather_facts: no
 
   tasks:
     # You need to remove the disks manually if you wish to rerun this.
@@ -20,12 +21,14 @@
         creates: "{{ vhd_disk }}"
       loop: "{{ q('inventory_hostnames', hostnames) }}"
 
-- hosts: kubernetes_control_planes[0]
+- name: <<<<< Install and configure Rook-Ceph >>>>>
+  hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
   
   vars:
     repo_dir: "{{ _work_dir }}/rook"
     deploy_dir: "{{ repo_dir }}/deploy/examples"
+    config_file: "{{ _work_dir }}/rook-config-override.yaml"
 
   tasks:
     - name: Download and configure rook-ceph
@@ -50,17 +53,61 @@
             chdir: "{{ deploy_dir }}"
           when: node_count | int < 3
 
+        - name: Configure manifest values
+          shell: |
+                  sed -i 's/ROOK_LOG_LEVEL: "INFO"$/ROOK_LOG_LEVEL: "WARNING"/g' operator.yaml
+          args:
+            chdir: "{{ deploy_dir }}"
+
+        - name: Create rook config override 
+          blockinfile:
+            create: yes
+            path: "{{ config_file }}"
+            block: |
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: rook-config-override
+                namespace: rook-ceph
+              data:
+                config: |
+                  [global]
+                  clog_to_syslog = true
+                  clog_to_syslog_level = "warn"
+                  clog_to_syslog_facility = "daemon"
+                  mon_cluster_log_file_level = "warn"
+                  mon_cluster_log_to_stderr = false
+                  mon_cluster_log_to_syslog = true
+                  mon_cluster_log_to_syslog_level = "warn"
+                  mon_cluster_log_to_syslog_facility = "daemon"
+                  log_to_stderr = false
+                  log_to_syslog = true
+                  err_to_syslog = true
+
       delegate_to: localhost
+
+    - name: Installing rook-ceph custom resources and operator
+      kubernetes.core.k8s:
+        force: yes
+        definition: "{{ lookup('file', item) | from_yaml_all }}"
+        wait: yes
+        wait_timeout: 300
+      loop:
+        - "{{ deploy_dir }}/crds.yaml"
+        - "{{ deploy_dir }}/common.yaml"
+        - "{{ config_file }}"
+        - "{{ deploy_dir }}/operator.yaml"
+
+    - name: Waiting for rook-ceph operator to be ready
+      shell: kubectl rollout status -n rook-ceph deployment/rook-ceph-operator
 
     - name: Installing rook-ceph cluster
       kubernetes.core.k8s:
         force: yes
-        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+        definition: "{{ lookup('file', item) | from_yaml_all }}"
         wait: yes
-      with_fileglob:
-        - "{{ deploy_dir }}/crds.yaml"
-        - "{{ deploy_dir }}/common.yaml"
-        - "{{ deploy_dir }}/operator.yaml"
+        wait_timeout: 300
+      loop:
         - "{{ deploy_dir }}/cluster.yaml"
 
     - name: Waiting for ceph cluster to be ready (may take a while)
@@ -72,7 +119,7 @@
         force: yes
         definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
         wait: yes
-      with_fileglob:
+      loop:
         - "{{ deploy_dir }}/toolbox.yaml"
 
     - name: Get ceph toolbox pod information
@@ -92,13 +139,10 @@
         namespace: rook-ceph
         pod: '{{ pod_name }}'
         command: '{{ item }}'
-
-      register: output
       when: node_count | int > 1
-
       loop:
         - "ceph osd pool create {{ _rook_ceph.pool_name }} 128"
-        - "ceph osd pool set {{ _rook_ceph.pool_name }} min_size {{ node_count }}"
+        - "ceph osd pool set {{ _rook_ceph.pool_name }} min_size {{ (node_count | int) - 1 }}"
         - "ceph osd pool set {{ _rook_ceph.pool_name }} size {{ node_count }}"
 
     - name: Configure file system and storage class
@@ -128,7 +172,7 @@
         force: yes
         definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
         wait: yes
-      with_fileglob:
+      loop:
         - "{{ deploy_dir }}/filesystem.yaml"
         - "{{ deploy_dir }}/csi/cephfs/storageclass.yaml"
         - "{{ deploy_dir }}/csi/rbd/storageclass.yaml"
@@ -140,9 +184,20 @@
         namespace: "{{ _rook_ceph.pvc.namespace }}"
         definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
         wait: yes
-      with_fileglob:
+      loop:
         - "{{ deploy_dir }}/csi/cephfs/pvc.yaml"
         - "{{ deploy_dir }}/csi/rbd/pvc.yaml"
+
+    - name: Set to default storage class to {{ _rook_ceph.is_default }}
+      kubernetes.core.k8s:
+        state: patched
+        kind: StorageClass
+        name: "rook-cephfs"
+        definition: |
+          metadata:
+            annotations:
+              storageclass.kubernetes.io/is-default-class: "true"
+      when: _rook_ceph.is_default
 
     - name: Configure nodeport
       block:
@@ -181,18 +236,26 @@
       
       when: _kube.use_nodeport
 
-    - name: Get ceph dashboard password
-      shell: |
-              kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo
-      register: ceph_password
+    - name: Configure Ceph dashboard
+      vars:
+        pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
+      kubernetes.core.k8s_exec:
+        namespace: rook-ceph
+        pod: '{{ pod_name }}'
+        command: '{{ item }}'
+      loop:
+        - "ceph mgr module enable rook"
+        - "ceph orch set backend rook"
+        - "ceph dashboard set-alertmanager-api-host 'http://alertmanager-main.monitoring.svc:9093/alerts'"
+        - "ceph dashboard set-prometheus-api-host 'http://prometheus-k8s.monitoring.svc:9090/prometheus'"
+        - "ceph dashboard set-prometheus-api-ssl-verify False"
+        - "ceph dashboard set-alertmanager-api-ssl-verify False"
 
-    - name: Copy ceph dashboard password to Ansible host
-      become_user: root
-      copy:
-        content: "{{ ceph_password.stdout }}"
-        dest: "{{ _work_dir }}/ceph_dashboard_password"
-        mode: 0777
-      delegate_to: localhost
+    - import_tasks: ./tasks/task-get-secret.yaml
+      vars:
+        name: "ceph dashboard password"
+        command: "kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath='{.data.password}'"
+        filename: "ceph_dashboard_password"
 
     - import_tasks: ./tasks/task-create-ingress-route.yaml
       vars:
@@ -240,7 +303,10 @@
     - name: Cleanup directories
       become_user: root
       file:
-        path: "{{ repo_dir }}"
+        path: "{{ item }}"
         state: absent
+      loop:
+        - "{{ config_file }}"
+        - "{{ repo_dir }}"
       delegate_to: localhost
       when: _rook_ceph.cleanup

@@ -89,6 +89,8 @@
             chart_ref: elastic/elasticsearch
             chart_version: "{{ version }}"
             create_namespace: yes
+            timeout: 10m0s
+            wait: yes
 
         - name: Installing kibana
           vars:
@@ -101,6 +103,8 @@
             chart_version: "{{ version }}"
             create_namespace: yes
             values: "{{ lookup('file', values_file) | from_yaml }}"            
+            timeout: 10m0s
+            wait: yes
 
     - name: Installing fluentd
       kubernetes.core.k8s:

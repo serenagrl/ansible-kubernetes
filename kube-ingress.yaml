@@ -109,3 +109,21 @@
 
     - name: Waiting for ingress-nginx-controller to be ready
       shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller
+
+    - name: Get ingress service information
+      kubernetes.core.k8s_info:
+        kind: Service
+        namespace: ingress-nginx
+        name: ingress-nginx-controller
+      register: ingress_service
+
+    - name: Add host name into DNS entries
+      become_user: root
+      vars:
+        address: "{% if _kube.install.metallb is defined and _kube.install.metallb %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ _kube.cluster.address }}{% endif %}"
+      lineinfile:
+        path: /etc/hosts
+        insertafter: "127.0.0.1 localhost"
+        line: "{{ address }} {{ _ingress.host }}"
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['kubernetes_cluster'] }}"
