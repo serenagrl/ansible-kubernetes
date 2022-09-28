@@ -81,17 +81,11 @@
               kubernetes.io/service-account.name: dashboard-admin
           type: kubernetes.io/service-account-token
 
-    - name: Get dashboard account token
-      shell: | 
-               kubectl -n kube-system get secret dashboard-admin -o jsonpath="{['data']['token']}" | base64 --decode && echo
-      register: kubernetes_dashboard_token
-
-    - name: Copy token to Ansible host
-      become_user: root
-      copy:
-        content: "{{ kubernetes_dashboard_token.stdout }}"
-        dest: "{{ _work_dir }}/kubernetes_dashboard_token"
-      delegate_to: localhost
+    - import_tasks: ./tasks/task-get-secret.yaml
+      vars:
+        name: "dashboard account token"
+        command: "kubectl -n kube-system get secret dashboard-admin -o jsonpath='{.data.token}'"
+        filename: "kubernetes_dashboard_token"
 
     - name: Waiting for kubernetes dashboard to be ready
       shell: kubectl rollout status -n kubernetes-dashboard deployment/kubernetes-dashboard

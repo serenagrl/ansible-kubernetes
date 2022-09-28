@@ -102,6 +102,7 @@
                       - usermod --password '{{ _vm.root_pwd }}' root
                       - echo '{{ id_rsa_pub }}' > /root/.ssh/authorized_keys  
                       - sudo apt update && sudo apt full-upgrade -y
+                      - sudo apt install ntp ntpdate
                       - reboot -f
 
         - name: Create Seed iso
@@ -142,7 +143,7 @@
               Add-VMDvdDrive {{ inventory_hostname }} -Path "{{ _vm.iso.windows }}\\{{ inventory_hostname }}-seed.iso"
               Set-VMProcessor {{ inventory_hostname }} -Count {{ _vm.specs.v_cpu }}
               Set-VMFirmware -VMName {{ inventory_hostname }} -EnableSecureBoot Off 
-              Set-VMMemory {{ inventory_hostname }} -MinimumBytes {{ _vm.specs.min_ram_size }}
+              Set-VMMemory {{ inventory_hostname }} -MinimumBytes {{ _vm.specs.min_ram_size }} -DynamicMemoryEnabled 1
               Start-VM {{ inventory_hostname }}
 
         - name: Waiting for ubuntu configuration to complete

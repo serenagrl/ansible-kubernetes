@@ -18,7 +18,7 @@
       api_credential: "{{ _awx.setup.name }} Gitlab API Access Token"
     awx_username: admin
     awx_password: "{{ lookup('file', _work_dir + '/awx_password') }}"
-    awx_host: "http://{{ hostvars[names.cp].ansible_host }}:30080"
+    awx_host: "http://{{ _ingress.host }}/awx/"
 
   tasks:
     - name: Installing ansible tower cli
@@ -95,8 +95,7 @@
             name: "kubernetes_control_planes"
             description: "{{ _awx.setup.name }} Kubernetes control plane group."
             inventory: "{{ names.inventory }}"
-            hosts:
-              - "{{ names.cp }}"
+            hosts: "{{ groups['kubernetes_control_planes'] }}"
             state: present
 
         - name: Creating group 'kubernetes_nodes'

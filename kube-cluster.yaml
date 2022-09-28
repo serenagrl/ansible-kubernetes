@@ -138,6 +138,7 @@
               source <(kubectl completion bash)
               alias kc=kubectl
               alias kcaf='kubectl apply -f'
+              alias kccf='kubectl create -f'
               alias kcd='kubectl delete'
               alias kcg='kubectl get'
               alias kcdf='kubectl delete -f'
@@ -164,6 +165,7 @@
               alias kclo='kubectl logs'
               alias kcde='kubectl describe'
               alias kcdepo='kubectl describe po'
+              alias kcdedp='kubectl describe deploy'
               alias kcdesv='kubectl describe svc'
               alias kcdeno='kubectl describe node'
               alias wkcpo='watch kubectl get po'

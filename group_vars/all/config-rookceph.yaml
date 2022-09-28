@@ -4,7 +4,7 @@ _rook_ceph:
   disk:
     name: CephStorage
     dir: "D:\\Virtual Machines\\Kubernetes"
-    size: 20GB
+    size: 40GB
   pool_name: storage-pool
   
   fs_name: k8sfs
@@ -12,6 +12,11 @@ _rook_ceph:
     namespace: default
     fs_size: 2Gi
     rbd_size: 2Gi
+
+  # Set the storage class as default. 
+  # Some add-ons will fail if there is no default storage class.
+  # Do not set this to 'yes' if you already have an existing default storage class.
+  is_default: yes
 
   nodeport: 32004
 
