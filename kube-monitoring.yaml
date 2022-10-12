@@ -133,6 +133,13 @@
               spec:
                 externalUrl: /prometheus
                 routePrefix: /prometheus
+                alerting:
+                  alertmanagers:
+                    - apiVersion: v2
+                      name: alertmanager-main
+                      namespace: monitoring
+                      port: web
+                      pathPrefix: /alerts
 
         - name: Edit alertmanager configuration
           kubernetes.core.k8s:
@@ -173,7 +180,6 @@
             definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
           with_fileglob:
             - "{{ manifest_dir }}/grafana-config.yaml"
-            - "{{ manifest_dir }}/prometheus-prometheus.yaml"
             - "{{ manifest_dir }}/grafana-dashboardDatasources.yaml"
 
         - name: Waiting for grafana to be ready

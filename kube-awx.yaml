@@ -32,24 +32,20 @@
             spec:
               ingress_type: ingress
               ingress_class_name: "{{ ingress_name }}"
-              hostname: serena.k8s.local
+              hostname: "{{ _ingress.host }}"
               ingress_path: /awx
 
       delegate_to: localhost
 
     - name: Install AWX
       block:
-        - name: Add AWX chart repo
-          kubernetes.core.helm_repository:
-            name: awx-operator
-            repo_url: "https://ansible.github.io/awx-operator/"
-
         - name: Deploy AWX
           vars:
             version: "{% if _pkg.awx is defined and _pkg.awx and _pkg.awx != 'latest' %}{{ _pkg.awx }}{% endif %}"
           kubernetes.core.helm:
             name: awx
             atomic: yes
+            chart_repo_url: "https://ansible.github.io"
             chart_ref: awx-operator/awx-operator
             chart_version: "{{ version }}"
             namespace: awx
@@ -59,6 +55,7 @@
 
         - name: Waiting for AWX deployments to be ready
           shell: |
+             for d in $(kubectl -n awx get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx statefulset/$d; done;
              for d in $(kubectl -n awx get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx deployment/$d; done;
 
         - name: Waiting for AWX controller host to be up

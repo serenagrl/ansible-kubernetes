@@ -34,6 +34,8 @@
               extraEnvs:
                 - name: SERVER_BASEPATH
                   value: /kibana
+                - name: LOGGING_QUIET
+                  value: "true"                  
 
               ingress:
                 enabled: true
@@ -74,11 +76,6 @@
 
     - name: Install Elastic stack
       block:
-        - name: Add elastic chart repo
-          kubernetes.core.helm_repository:
-            name: elastic
-            repo_url: "https://helm.elastic.co"
-
         - name: Installing elasticsearch
           vars:
             version: "{% if _pkg.elasticsearch is defined and _pkg.elasticsearch and _pkg.elasticsearch != 'latest' %}{{ _pkg.elasticsearch }}{% endif %}"
@@ -86,6 +83,7 @@
             name: elasticsearch
             namespace: logging
             atomic: yes
+            chart_repo_url: "https://helm.elastic.co"
             chart_ref: elastic/elasticsearch
             chart_version: "{{ version }}"
             create_namespace: yes
@@ -99,6 +97,7 @@
             name: kibana
             namespace: logging
             atomic: yes
+            chart_repo_url: "https://helm.elastic.co"
             chart_ref: elastic/kibana
             chart_version: "{{ version }}"
             create_namespace: yes
