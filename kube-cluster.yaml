@@ -120,6 +120,7 @@
           file:
             path: $HOME/.kube
             state: directory
+            mode: 0700
 
         - name: Copy admin.conf to home directory kube config
           become_user: root
@@ -139,15 +140,24 @@
               alias kc=kubectl
               alias kcaf='kubectl apply -f'
               alias kccf='kubectl create -f'
+              alias kce='kubectl edit'
+              alias kcen='kubectl edit -n'
               alias kcd='kubectl delete'
-              alias kcg='kubectl get'
               alias kcdf='kubectl delete -f'
+              alias kcp='kubectl patch'
+              alias kcpn='kubectl patch -n'
+              alias kcg='kubectl get'
+              alias kcgn='kubectl get -n'
               alias kcpo='kubectl get po'
               alias kcpoa='kubectl get po -A'
               alias kcpon='kubectl get po -n'
+              alias kcpow='kubectl get po -o wide'
+              alias kcpowa='kubectl get po -o wide -A'
+              alias kcpown='kubectl get po -o wide -n'
               alias kcsv='kubectl get svc'
               alias kcsva='kubectl get svc -A'
               alias kcsvn='kubectl get svc -n'
+              alias kcsvw='kubectl get svc -o wide'
               alias kcdp='kubectl get deploy'
               alias kcdpa='kubectl get deploy -A'
               alias kcdpn='kubectl get deploy -n'
@@ -171,11 +181,7 @@
               alias wkcpo='watch kubectl get po'
               alias wkcpoa='watch kubectl get po -A'
               alias wkcpon='watch kubectl get po -n'
-              alias kcpow='kubectl get po -o wide'
-              alias kcpowa='kubectl get po -o wide -A'
-              alias kcpown='kubectl get po -o wide -n'
               alias kcnow='kubectl get no -o wide'
-              alias kcsvw='kubectl get svc -o wide'
               alias kctpoa='kubectl top po -A'
               alias kctpon='kubectl top po -n'
               alias kctno='kubectl top no'
