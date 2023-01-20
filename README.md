@@ -39,9 +39,9 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
 
 ### Advice
 You are advised not to be so ambitious to run `setup-all.yaml` on your first try. Start with these in the following order:
-1. setup-server.yaml
-2. setup-kubernetes.yaml
-3. ... and then specify the roles in the setup-components.yaml
+1. `setup-server.yaml` - Provisions the Ubuntu VMS on Hyper-V.
+2. `setup-kubernetes.yaml` - Sets up the Kubernetes cluster without any add-ons.
+3. ... and then specify the roles in the `setup-components.yaml`.
 
 You can rerun the `setup-components.yaml` after you have modified the roles to setup the add-ons you want. The installation order is important as some add-ons have dependencies on the others. Remember to comment out the NFS configuration if you are running it the second time.
 
