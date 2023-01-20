@@ -1,0 +1,163 @@
+# Author: Serena Yeoh
+#
+# Disclaimer: 
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Gather facts 
+  setup:
+
+- name: Configure the user to be used for kubernetes commands
+  block:
+    - name: Allow {{ _kube.user }} to use sudo without password
+      lineinfile:
+        dest: /etc/sudoers
+        line: '{{ _kube.user }} ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: Set up authorized keys for {{ _kube.user }}
+      authorized_key: user="{{ _kube.user }}" key="{{ item }}"
+      with_file:
+        - ~/.ssh/id_rsa.pub
+
+- name: Configure DNS entries
+  block:
+    - name: Add kubernetes cluster DNS entry to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        insertafter: "127.0.0.1 localhost"
+        line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
+
+    - name: Add kubernetes kubernetes_nodes DNS entries to /etc/hosts
+      vars:
+          node: "{{ hostvars[item] }}"
+      lineinfile:
+        path: /etc/hosts
+        insertafter: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
+        line: "{{ node.ansible_host }} {{ item }}"
+      when: item != ansible_hostname
+      with_inventory_hostnames:
+        - kubernetes_cluster
+
+- name: Disable swap
+  shell: |
+          swapoff -a
+          sed -i '/swap/ s/^\(.*\)$/#\1/g' /etc/fstab
+          update-initramfs -u
+
+- name: Enable modprobe modules
+  shell: |
+          modprobe overlay
+          modprobe br_netfilter
+
+- name: Create kubernetes configuration file with network settings
+  copy:
+    dest: "/etc/sysctl.d/kubernetes.conf"
+    content: |
+              net.bridge.bridge-nf-call-ip6tables = 1
+              net.bridge.bridge-nf-call-iptables = 1
+              net.ipv4.ip_forward = 1
+
+- name: Create containerd configuration file
+  copy:
+    dest: "/etc/modules-load.d/containerd.conf"
+    content: |
+              overlay
+              br_netfilter
+
+- name: Reload sysctl
+  command: sysctl --system
+
+- name: Installing dependency packages (may take a while)
+  apt:
+    pkg:
+      - curl
+      - apt-transport-https
+      - ca-certificates
+      - software-properties-common
+      - python3-pip
+      - jq
+    state: latest
+    update_cache: true
+
+- name: Register repositories
+  block:
+    - name: Get kubernetes gpg
+      get_url:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        dest: /usr/share/keyrings/kubernetes.gpg
+        mode: '0644'
+        force: true
+
+    - name: Register kubernetes repository
+      apt_repository:
+        filename: kubernetes
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/kubernetes.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
+
+    - name: Get containerd gpg
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /tmp/containerd.gpg
+        mode: '0644'
+        force: true
+
+    - name: De-armor containerd gpg
+      shell: gpg --dearmor < /tmp/containerd.gpg > /usr/share/keyrings/containerd.gpg
+
+    - name: Register containerd repository
+      apt_repository:
+        filename: containerd
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/containerd.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+
+- name: Installing kubernetes ({{ kubernetes_version }})
+  vars:
+    release: "{% if kubernetes_version is defined and kubernetes_version and kubernetes_version != 'latest' %}={{ kubernetes_version }}-00{% endif %}"
+  apt:
+    pkg:
+      - "kubelet{{ release }}"
+      - "kubeadm{{ release }}"
+      - "kubectl{{ release }}"
+    state: latest
+    update_cache: true
+
+- name: Hold kubernetes
+  shell: apt-mark hold kubelet kubeadm kubectl
+
+- name: Install and configure containerd
+  block:
+    - name: Installing containerd ({{ containerd_version }})
+      vars:
+          release: "{% if containerd_version is defined and containerd_version and containerd_version != 'latest' %}={{ containerd_version }}{% endif %}"
+      apt:
+        pkg:
+          - "containerd.io{{ release }}"
+        state: latest
+        update_cache: true
+
+    - name: Create containerd certificate directory
+      file:
+        path: "/etc/containerd/certs.d"
+        state: directory
+        mode: '0755'
+
+    - name: Create containerd configuration file
+      shell: |
+              containerd config default | sudo tee /etc/containerd/config.toml
+
+    - name: Turn on SystemdCgroup
+      replace:
+        path: /etc/containerd/config.toml
+        regexp: 'SystemdCgroup = false'
+        replace: 'SystemdCgroup = true'
+
+    - name: Set the container certificates directory
+      replace:
+        path: /etc/containerd/config.toml
+        regexp: 'config_path = ""'
+        replace: 'config_path = "/etc/containerd/certs.d"'
+
+    - name: Restart containerd
+      systemd:
+        name: containerd
+        state: restarted
+        enabled: yes

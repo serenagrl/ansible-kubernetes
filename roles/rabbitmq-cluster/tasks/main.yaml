@@ -1,0 +1,74 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- import_tasks: ./tasks/task-apply-manifest.yaml
+  vars:
+    name: "rabbitmq"
+    namespace: "rabbitmq"
+    repo_path: "rabbitmq/cluster-operator"
+    pkg_version: "{{ release_version | default }}"
+    version_prefix: "v"
+    dest: "{{ MANIFEST_FILE }}"
+    urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cluster-operator.yml"]
+
+- name: Waiting for rabbitmq-system to be ready
+  shell: for d in $(kubectl -n rabbitmq-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n rabbitmq-system deployment/$d; done;
+
+- name: Create a {{ rmq_namespace }} namespace
+  kubernetes.core.k8s:
+    name: "{{ rmq_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Create RabbitMQ cluster certificate
+  kubernetes.core.k8s:
+    definition: "{{ CERTIFICATE_TEMPLATE }}"
+
+- name: Create RabbitMQ cluster
+  kubernetes.core.k8s:
+    definition: "{{ CLUSTER_TEMPLATE }}"
+
+- name: Extract certificates for applications
+  block:
+    - import_tasks: ./tasks/task-get-secret.yaml
+      vars:
+        name: "RabbitMQ Certificate Authority (CA) cert"
+        command: "kubectl get -n {{ rmq_namespace }} secret rmq-tls-secret -o jsonpath='{.data.ca\\.crt}'"
+        filename: "{{ cert.ca }}"
+
+    - import_tasks: ./tasks/task-get-secret.yaml
+      vars:
+        name: "RabbitMQ cluster certificate"
+        command: "kubectl get -n {{ rmq_namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.crt}'"
+        filename: "{{ cert.cluster }}"
+
+    - import_tasks: ./tasks/task-get-secret.yaml
+      vars:
+        name: "RabbitMQ cluster certificate key"
+        command: "kubectl get -n {{ rmq_namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.key}'"
+        filename: "{{ cert.cluster_key }}"
+
+    - become_user: root
+      delegate_to: localhost
+      block:
+        - name: Convert ca cert to DER (.crt)
+          shell: "openssl x509 -outform der -in {{ cert.ca }} -out {{ cert.ca_crt }}"
+          args:
+            chdir: "{{ _work_dir }}"
+
+        - name: Create PKCS12 cert for dotnet clients (.pfx)
+          shell: "openssl pkcs12 -inkey {{ cert.cluster_key }} -in {{ cert.cluster }} -export -out {{ cert.cluster_pfx }} -passout pass:"
+          args:
+            chdir: "{{ _work_dir }}"
+
+  when: export_certs
+
+- import_tasks: ./tasks/task-get-secret.yaml
+  vars:
+    name: "RabbitMQ cluster login"
+    command: "kubectl get -n {{ rmq_namespace }} secret rabbitmq-default-user -o jsonpath='{.data.default_user\\.conf}'"
+    filename: "rabbitmq_cluster_login"

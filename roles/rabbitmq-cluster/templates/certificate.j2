@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rmq-cluster-cert
+  namespace: "{{ rmq_namespace }}"
+spec:
+  dnsNames:
+    - "*.{{ rmq_cluster_name }}-nodes.{{ rmq_namespace }}.svc.cluster.local"
+  secretName: rmq-tls-secret
+  issuerRef:
+    kind: ClusterIssuer
+    name: "{{ issuer_name }}"

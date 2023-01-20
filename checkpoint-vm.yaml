@@ -11,7 +11,7 @@
   tasks:
     - name: Run on Winrm
       block:
-        - name: Creating Checkpoint {{ checkpoint_name }} for Hyper-V Virtual Machines
+        - name: Creating Checkpoint '{{ checkpoint_name }}' for Hyper-V Virtual Machines
           ansible.windows.win_powershell:
             script: |
               Checkpoint-VM -Name {{ inventory_hostname }} -SnapshotName "{{ checkpoint_name }}"
@@ -22,4 +22,4 @@
               Wait-VM -Name {{ inventory_hostname }} -For Heartbeat
 
       when: checkpoint_name is defined
-      delegate_to: winrm_host
+      delegate_to: "{{ winrm_host }}"

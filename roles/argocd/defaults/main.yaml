@@ -1,0 +1,2 @@
+MANIFEST_FILE: "{{ _work_dir }}/argocd.yaml"
+INGRESS_TEMPLATE: "{{ lookup('template', 'ingress.j2') | from_yaml }}"

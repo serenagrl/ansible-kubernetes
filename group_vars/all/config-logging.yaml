@@ -1,3 +1,0 @@
-# Elasticsearch, kibana and fluentd settings
-_logging:
-  cleanup: yes

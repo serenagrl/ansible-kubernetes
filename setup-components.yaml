@@ -1,0 +1,31 @@
+# Note: Setup NFS before enabling the csi-nfs role.
+- import_playbook: setup-nfs.yaml
+
+- name: Install Kubernetes add-on components
+  hosts: primary_control_plane[0]
+  become_user: "{{ _kube.user }}"
+  gather_facts: no
+
+  roles:
+    - role: metallb
+    - role: ingress
+    - role: cert-manager
+    - role: dashboard
+    - role: monitoring
+    - role: metrics-server
+    - role: csi-nfs
+    # - role: csi-rook-ceph
+    # - role: harbor
+    #   register_dns_to: kubernetes_control_planes
+    # - role: logging
+    # - role: argocd
+    #   register_dns_to: kubernetes_control_planes
+    # - role: awx
+    # - role: istio
+    # - role: rabbitmq-cluster
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+- import_playbook: checkpoint-vm.yaml
+  vars:
+    checkpoint_name: "Components installed."
+  when: _checkpoint

@@ -1,0 +1,4 @@
+OPERATOR_MANIFEST: "tigera-operator.yaml"
+OPERATOR_CRD: "custom-resources.yaml"
+OPERATOR_MANIFEST_FILE: "{{ _work_dir }}/{{ OPERATOR_MANIFEST }}"
+OPERATOR_CRD_FILE: "{{ _work_dir }}/{{ OPERATOR_CRD }}"

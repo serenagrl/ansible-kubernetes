@@ -1,0 +1,27 @@
+release_version: latest #0.28.0
+auto_register: yes
+
+issuer_name: default-cluster-issuer
+
+setup:
+  name: "(Pre-registered)"
+  organization:
+    name: "My Organization"
+    desc: "Edit and enter details of your organization."
+  gitlab:
+    # Automation will fail if any of these are incorrect.
+    # Please make sure all the settings are correct and the url exists.
+    url: "https://github.com/ansible/ansible-tower-samples"
+    user: yourusername@gitlab.local # Your local gitlab user name
+    token: "<Gitlab Personal Access Token>" # Gitlab PAT for you user
+    api_token: "<Gitlab Personal Access Token>" # Gitlab PAT for accessing Gitlab API
+
+
+  # Automation will fail if this does not exist in the scm_url repo.
+  playbook: "hello_world.yml"
+
+  # Any inventory variables that you want to add in by default  
+  inventory_vars:
+
+  # Any job template extra_vars that you want to add in by default  
+  job_template_vars:

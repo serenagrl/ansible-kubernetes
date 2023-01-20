@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monitoring-ingress
+  namespace: monitoring
+spec:
+  ingressClassName: {{ ingress_name }}
+  rules:
+    - host: {{ _kube.hostname }}
+      http:
+        paths:
+          - path: /grafana
+            pathType: Prefix
+            backend:
+              service:
+                  name: grafana
+                  port:
+                    number: 3000
+          - path: /prometheus
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus-k8s
+                port:
+                  number: 9090
+          - path: /alerts
+            pathType: Prefix
+            backend:
+              service:
+                name: alertmanager-main
+                port:
+                  number: 9093

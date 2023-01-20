@@ -1,0 +1,2 @@
+REPO_DIR: "{{ _work_dir }}/nfs-provisioner"
+DEPLOY_DIR: "{{ REPO_DIR }}/deploy"

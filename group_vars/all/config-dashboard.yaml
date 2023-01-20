@@ -1,3 +1,0 @@
-# Kubernetes dashboard configuration settings.
-_dashboard:
-  nodeport: 32000

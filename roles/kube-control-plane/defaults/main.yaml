@@ -1,0 +1,1 @@
+ALIASES_TEMPLATE: "{{ lookup('template', 'aliases.j2') }}"

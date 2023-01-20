@@ -1,0 +1,80 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Download and configure nfs provisioner
+  delegate_to: localhost
+  become_user: root
+  block:
+    - import_tasks: ./tasks/task-git-clone.yaml
+      vars:
+        name: "nfs provisioner"
+        repo_path: "kubernetes-sigs/nfs-subdir-external-provisioner"
+        pkg_version: "{{ release_version | default }}"
+        version_prefix: "nfs-subdir-external-provisioner-"
+        url: "https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/"
+        dest: "{{ REPO_DIR }}"
+        
+    - name: Configure nfs provisioner
+      shell: |
+              sed -i 's/nfs-subdir-external-provisioner$/nfs-provisioner/g' deployment.yaml
+              sed -i "s/10.3.243.101$/{{ hostvars[groups['nfs_server'][0]]['ansible_host'] }}/g" deployment.yaml
+              sed -i "s/\/ifs\/kubernetes$/\{{ shared }}/g" deployment.yaml
+              sed -i 's/nfs-subdir-external-provisioner/nfs-provisioner/g' class.yaml
+              sed -i 's/nfs-client/{{ storage_name }}/g' class.yaml
+              sed -i "s/namespace:.*/namespace: {{ provisioner_namespace }}/g" rbac.yaml deployment.yaml
+      args:
+        chdir: "{{ DEPLOY_DIR }}"
+
+- name: Configure nfs provisioner on kubernetes cluster
+  block:
+    - name: Apply configuration changes
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+      with_fileglob:
+        - "{{ DEPLOY_DIR }}/rbac.yaml"
+        - "{{ DEPLOY_DIR }}/class.yaml"
+        - "{{ DEPLOY_DIR }}/deployment.yaml"
+
+    - name: Set to default storage class to {{ is_default }}
+      kubernetes.core.k8s:
+        state: patched
+        kind: StorageClass
+        name: "{{ storage_name }}"
+        definition: |
+          metadata:
+            annotations:
+              storageclass.kubernetes.io/is-default-class: "true"
+      when: is_default
+
+    - name: Create persistent volume claims
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        namespace: "{{ provisioner_namespace }}"
+        definition: |
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: {{ pvc.name }}
+            labels:
+              storage.k8s.io/name: nfs
+          spec:
+            accessModes:
+              - ReadWriteMany
+            storageClassName: {{ storage_name }}
+            resources:
+              requests:
+                storage: {{ pvc.size }}
+
+- name: Cleanup directories
+  delegate_to: localhost
+  become_user: root
+  file:
+    path: "{{ REPO_DIR }}"
+    state: absent
+  when: cleanup

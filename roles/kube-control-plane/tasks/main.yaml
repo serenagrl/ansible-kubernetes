@@ -1,0 +1,68 @@
+# Author: Serena Yeoh
+#
+# Disclaimer: 
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Installing python kubernetes module and dependencies for Ansible
+  pip:
+    name:
+      - pyyaml
+      - kubernetes
+      - jsonpatch
+
+- name: Install Helm
+  become_user: root
+  block:
+    - name: Get helm gpg
+      get_url:
+        url: https://baltocdn.com/helm/signing.asc
+        dest: /tmp/helm.gpg
+        mode: '0644'
+        force: true
+
+    - name: De-armor helm gpg
+      shell: gpg --dearmor < /tmp/helm.gpg > /usr/share/keyrings/helm.gpg
+
+    - name: Register helm repository
+      apt_repository:
+        filename: helm
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+
+    - name: Installing helm
+      apt:
+        pkg:
+          - helm
+        state: latest
+        update_cache: true      
+
+- name: Configure kube config
+  become_user: "{{ _kube.user }}"
+  block:
+    - name: Create .kube in home directory
+      file:
+        path: $HOME/.kube
+        state: directory
+        mode: 0700
+
+    - name: Copy admin.conf to home directory kube config
+      become_user: root
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "/home/{{ _kube.user }}/.kube/config"
+        remote_src: yes
+        owner: "{{ _kube.user }}"
+
+    - name: Add autocomplete and aliases to shell
+      blockinfile:
+        path: ~/.bashrc
+        block: "{{ ALIASES_TEMPLATE }}"
+
+    - name: Apply changes
+      shell: . ~/.bashrc  
+
+- name: Remove taint to allow scheduling on control plane nodes (if no worker nodes)
+  become_user: "{{ _kube.user }}"
+  shell: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane-
+  when: 
+    - (groups['kubernetes_nodes'] | length) < 1 

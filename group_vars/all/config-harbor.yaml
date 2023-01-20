@@ -1,5 +1,0 @@
-# Harbor container registry settings.
-_harbor:
-  domain: harbor.k8s.local
-
-

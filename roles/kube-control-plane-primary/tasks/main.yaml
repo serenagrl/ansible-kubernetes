@@ -1,0 +1,40 @@
+# Author: Serena Yeoh
+#
+# Disclaimer: 
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Initializing kubernetes cluster (primary control plane)
+  vars:
+    release: "{% if kubernetes_version is defined and kubernetes_version and kubernetes_version != 'latest' %}--kubernetes-version {{ kubernetes_version }}{% endif %}"
+  shell: |
+          kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }}/16 \
+          --upload-certs --cri-socket unix:///var/run/containerd/containerd.sock \
+          --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}  
+
+- name: Get join token for nodes
+  shell: kubeadm token create --print-join-command
+  register: join_node_command
+
+- name: Get certificate key for secondary control planes
+  shell: |
+    echo --control-plane --certificate-key $(sudo kubeadm init phase upload-certs --upload-certs | grep -vw -e certificate -e Namespace)
+  register: join_control_plane_command
+
+- become_user: root
+  delegate_to: localhost
+  block:
+    - name: Copy join command for nodes to Ansible host
+      copy:
+        content: "{{ join_node_command.stdout_lines[0] }}"
+        dest: "{{ _work_dir  }}/join_node_command"
+        mode: 0777
+
+    - name: Copy join command for control planes to Ansible host
+      copy:
+        content: "{{ join_node_command.stdout_lines[0] }} {{ join_control_plane_command.stdout_lines[0] }}"
+        dest: "{{ _work_dir  }}/join_control_plane_command"
+        mode: 0777
+
+- include_role:
+    name: kube-control-plane

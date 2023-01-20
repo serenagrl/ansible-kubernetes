@@ -1,0 +1,68 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- import_tasks: ./tasks/task-apply-manifest.yaml
+  vars:
+    name: "cert manager"
+    namespace: "cert-manager"
+    repo_path: "cert-manager/cert-manager"
+    pkg_version: "{{ release_version | default }}"
+    version_prefix: "v"
+    dest: "{{ MANIFEST_FILE }}"
+    urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cert-manager.yaml"]
+
+- name: Waiting for cert manager deployments to be ready
+  shell: |
+    for d in $(kubectl -n cert-manager get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n cert-manager deployment/$d; done;
+
+- name: Create self-signed certificate 
+  block:
+    - name: Create self-signed-ca key and certificate
+      delegate_to: localhost
+      become_user: root
+      shell: |
+          openssl genrsa -out {{ KEY_FILE }} 4096
+          openssl req -new -x509 -sha256 -days 10950 -subj '/C={{ cert.country_name }}/ST={{ cert.state_or_province_name }}/L={{ cert.locality_name }}/O={{ cert.organization_name }}/OU={{ cert.organizational_unit_name }}/CN={{ cert.common_name }}' -out "{{ CRT_FILE }}" -key "{{ KEY_FILE }}" 
+
+    - name: Create secret by certificate
+      kubernetes.core.k8s:
+        kind: Secret
+        name: "self-signed-ca"
+        namespace: "cert-manager"
+        definition:
+          type: "kubernetes.io/tls"
+          data:
+            tls.crt: "{{ lookup('file', CRT_FILE) | b64encode }}"
+            tls.key: "{{ lookup('file', KEY_FILE) | b64encode }}"
+
+    - name: Create ClusterIssuer
+      kubernetes.core.k8s:
+        api_version: cert-manager.io/v1
+        kind: ClusterIssuer
+        name: "{{ issuer_name }}"
+        definition:
+          spec:
+            ca:
+              secretName: self-signed-ca
+
+    - name: Configure kubernetes nodes to trust ca certificate
+      include_tasks: trust-cert.yaml
+      loop: "{{ groups['kubernetes_cluster'] }}"
+
+    - delegate_to: localhost
+      become_user: root
+      block:
+        - name: Copy ca certificate to ansible controller cert store
+          copy:
+            src: "{{ CRT_FILE }}"
+            dest: "{{ CERT_STORE }}"
+            remote_src: yes
+            mode: 0777
+
+        - name: Update certificates
+          shell: update-ca-certificates
+
+  when: self_signed_ca    

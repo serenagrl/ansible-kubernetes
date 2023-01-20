@@ -1,0 +1,20 @@
+# Pre-requisite for the csi-nfs. Comment out if not using nfs.
+# You should dedicate 1 server outside the kubernetes cluster to serve as an NFS server.
+- name: Setup the NFS Server
+  hosts: nfs_server
+  gather_facts: no
+
+  roles:
+     - role: nfs-server
+       share_to: kubernetes_control_planes
+
+# Pre-requisite for the csi-nfs. Comment out if not using nfs.
+# Configure the hosts to point to the servers you want to access the NFS share.
+- name: Setup NFS clients
+  hosts: kubernetes_cluster
+  gather_facts: no
+
+  roles:
+    - role: nfs-client
+
+
