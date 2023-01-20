@@ -1,0 +1,13 @@
+elasticsearch_version: latest
+kibana_version: latest
+
+service_account:
+  kibana:
+    username: kibana-system
+    password: p@ssw0rd
+  fluentd:
+    username: fluentd-system
+    password: p@ssw0rd
+    role: fluentd-system
+
+cleanup: yes

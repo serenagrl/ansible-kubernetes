@@ -1,0 +1,30 @@
+fullnameOverride: kibana
+elasticsearchHosts: "https://elasticsearch-master:9200"
+
+extraEnvs:
+  - name: SERVER_BASEPATH
+    value: /kibana
+  - name: LOGGING_QUIET
+    value: "true"
+  - name: ELASTICSEARCH_SERVICEACCOUNTTOKEN
+    value: ""
+  - name: "ELASTICSEARCH_PASSWORD"
+    valueFrom:
+      secretKeyRef:
+        name: "kibana-elasticsearch-credentials"
+        key: "password"
+  - name: "ELASTICSEARCH_USERNAME"
+    valueFrom:
+      secretKeyRef:
+        name: "kibana-elasticsearch-credentials"
+        key: "username"
+
+ingress:
+  enabled: true
+  className: {{ ingress_class.resources[0].metadata.name }}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  hosts:
+    - host: {{ _kube.hostname }}
+      paths:
+        - path: /kibana(/|$)(.*)

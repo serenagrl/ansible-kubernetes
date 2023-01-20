@@ -1,0 +1,24 @@
+fullnameOverride: harbor
+logLevel: warning
+expose:
+  type: ingress
+  tls:
+    enabled: true
+    certSource: auto
+
+  ingress:
+    hosts:
+      core: core.{{ domain }}
+      notary: notary.{{ domain }}
+    controller: default
+    className: "{{ ingress_name }}"
+    annotations:
+      ingress.kubernetes.io/ssl-redirect: "true"
+      ingress.kubernetes.io/proxy-body-size: "0"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+
+externalURL: https://core.{{ domain }}
+
+persistence:
+  enabled: true

@@ -1,0 +1,13 @@
+release_version: latest
+rmq_namespace: rabbitmq
+rmq_cluster_name: rabbitmq
+issuer_name: "default-cluster-issuer"
+service_type: LoadBalancer
+export_certs: yes
+
+cert:
+  ca: rmq-ca-cert.pem
+  cluster: rmq-cluster-cert.pem
+  cluster_key: rmq-cluster-key.pem
+  ca_crt: rmq-ca.crt
+  cluster_pfx: rmq-cluster.pfx

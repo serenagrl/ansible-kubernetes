@@ -1,0 +1,4 @@
+MANIFEST_FILE: "{{ _work_dir }}/cert-manager.yaml"
+KEY_FILE: "{{ _work_dir }}/{{ self_signed_ca_cert_name }}.key"
+CRT_FILE: "{{ _work_dir }}/{{ self_signed_ca_cert_name }}.crt"
+CERT_STORE: "/usr/local/share/ca-certificates/{{ self_signed_ca_cert_name }}.crt"

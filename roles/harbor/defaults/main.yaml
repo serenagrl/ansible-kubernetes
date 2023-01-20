@@ -1,0 +1,5 @@
+VALUES_FILE: "{{ lookup('template', 'values.j2') | from_yaml }}"
+CERT_FILE: "{{ _work_dir }}/harbor-ca.crt"
+CERT_DIR: "/usr/local/share/ca-certificates"
+CR_CERT_DIR: "/etc/containerd/certs.d/core.{{ domain }}"
+CONFIGMAP_FILE: "{{ _work_dir }}/coredns-corefile.configmap"

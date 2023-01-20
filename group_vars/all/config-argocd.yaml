@@ -1,3 +1,0 @@
-_argocd:
-  domain: argocd.k8s.local
-  nodeport: 32010

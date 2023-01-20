@@ -1,0 +1,3 @@
+    VALUES_FILE: "{{ lookup('template', 'kibana-values.j2') | from_yaml }}"
+    MANIFEST_FILE: "{{ _work_dir }}/fluentd.yaml"
+    PASSWORD_FILE: elastic_password

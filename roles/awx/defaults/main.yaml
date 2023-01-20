@@ -1,0 +1,14 @@
+VALUES_FILE: "{{ lookup('template', 'values.j2') | from_yaml }}"
+CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
+
+NAMES:
+  CP: "{{ groups['kubernetes_control_planes'].0 }}"
+  INVENTORY: "{{ setup.name }} Inventory"
+  PROJECT: "{{ setup.name }} Project"
+  JOB_TEMPLATE: "{{ setup.name }} Job Template"
+  HOST_CREDENTIAL: "{{ setup.name }} {{ groups['kubernetes_control_planes'].0 }} Host Credential"
+  SCM_CREDENTIAL: "{{ setup.name }} Source Control Credential"
+  API_CREDENTIAL: "{{ setup.name }} Gitlab API Access Token"
+AWX_USERNAME: admin
+AWX_PASSWORD: "{{ lookup('file', _work_dir + '/awx_password') }}"
+AWX_HOST: "https://{{ _kube.hostname }}/awx/"

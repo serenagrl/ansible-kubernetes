@@ -1,0 +1,1 @@
+MANIFEST_FILE: "{{ _work_dir }}/ingress-nginx-deployment.yaml"

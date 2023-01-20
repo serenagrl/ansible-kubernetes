@@ -1,0 +1,60 @@
+# Author: Serena Yeoh
+#
+# Disclaimer: 
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- become_user: root
+  delegate_to: localhost
+  block:
+    - include_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "calico"
+        repo_path: "projectcalico/calico"
+        pkg_version: "{{ release_version | default }}"
+        version_prefix: "v"
+        dest: "{{ _work_dir }}" 
+        manifest_url: "https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/manifests"
+        urls:
+          - "{{ manifest_url }}/{{ OPERATOR_MANIFEST }}"
+          - "{{ manifest_url }}/{{ OPERATOR_CRD }}" 
+      
+    - name: Set CIDR network
+      replace:
+        path: "{{ _work_dir }}/{{ OPERATOR_CRD }}"
+        regexp: '192.168.0.0'
+        replace: '{{ _kube.cluster.cidr_network }}'
+
+- become_user: "{{ _kube.user }}"
+  block:
+  - name: Installing calico
+    kubernetes.core.k8s:
+      definition: "{{ lookup('file', item) | from_yaml_all }}"
+      wait: yes
+    loop:
+      - "{{ OPERATOR_MANIFEST_FILE }}"
+      - "{{ OPERATOR_CRD_FILE }}"
+
+  - name: Waiting for calico to be ready
+    shell: |
+            kubectl wait --for=condition=Ready nodes --all --timeout=600s
+            for d in $(kubectl -n calico-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-system deployment/$d; done;
+
+  - name: Wait for calico-apiserver deployment to start
+    delegate_to: localhost
+    wait_for:
+      timeout: 30
+
+  - name: Waiting for kubernetes cluster to be ready
+    shell: |
+            for d in $(kubectl -n calico-apiserver get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-apiserver deployment/$d; done;
+            for d in $(kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n kube-system deployment/$d; done;
+
+- name: Cleanup manifest files
+  delegate_to: localhost
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ OPERATOR_MANIFEST_FILE }}"
+    - "{{ OPERATOR_CRD_FILE }}"

@@ -1,0 +1,401 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# You need to remove the disks manually if you wish to rerun this.
+- name: Create Hyper-V virtual disks and attach them to the nodes
+  delegate_to: "{{ hostvars[item].winrm_host }}"
+  vars:
+    hostnames: "{% if (groups['kubernetes_nodes'] | length > 0) %}kubernetes_nodes{% else %}kubernetes_control_planes{% endif %}"
+    vhd_disk: "{{ disk.dir }}\\{{ item }}\\Virtual Hard Disks\\{{ disk.name }}.vhdx"
+  ansible.windows.win_powershell:
+    script: |
+      New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ disk.size }} -Dynamic
+      Add-VMHardDiskDrive {{ item }} -Path "{{ vhd_disk }}"
+    creates: "{{ vhd_disk }}"
+  loop: "{{ q('inventory_hostnames', hostnames) }}"
+  run_once: yes
+
+- name: Download and configure rook-ceph
+  delegate_to: localhost
+  become_user: root
+  block:
+    - import_tasks: ./tasks/task-git-clone.yaml
+      vars:
+        name: "rook ceph"
+        repo_path: "rook/rook"
+        pkg_version: "{{ release_version | default }}"
+        version_prefix: "v"
+        url: "https://github.com/rook/rook.git"
+        dest: "{{ REPO_DIR }}"
+
+    - name: Scale down the pods for lesser than 3 kubernetes_nodes configuration
+      vars:
+        node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length }}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
+      shell: |
+              sed -i 's/count: 2$/count: 1/g' cluster.yaml
+              sed -i 's/count: 3$/count: 2/g' cluster.yaml
+      args:
+        chdir: "{{ DEPLOY_DIR }}"
+      when: node_count | int < 3
+
+    - name: Configure manifest values
+      shell: |
+              sed -i 's/ROOK_LOG_LEVEL: "INFO"$/ROOK_LOG_LEVEL: "WARNING"/g' operator.yaml
+      args:
+        chdir: "{{ DEPLOY_DIR }}"
+
+    - name: Create rook config override 
+      blockinfile:
+        create: yes
+        path: "{{ CONFIG_FILE }}"
+        block: |
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: rook-config-override
+            namespace: rook-ceph
+          data:
+            config: |
+                      [global]
+                      clog_to_syslog = false
+                      clog_to_syslog_level = "warn"
+                      clog_to_syslog_facility = "daemon"
+                      mon_cluster_log_file = "/dev/null"
+                      mon_cluster_log_file_level = "warn"
+                      mon_cluster_log_to_stderr = false
+                      mon_cluster_log_to_syslog = false
+                      mon_cluster_log_to_syslog_level = "warn"
+                      mon_cluster_log_to_syslog_facility = "daemon"
+                      mon_health_to_clog = false
+                      mon_health_detail_to_clog = false
+                      restapi_log_level = "warn"
+                      log_to_stderr = false
+                      log_to_syslog = false
+                      err_to_syslog = false
+                      debug_alienstore = "0/0"
+                      debug_asok = "0/0"
+                      debug_auth = "0/0"
+                      debug_bdev = "0/0"
+                      debug_bluefs = "0/0"
+                      debug_bluestore = "0/0"
+                      debug_buffer = "0/0"
+                      debug_cephfs_mirror = "0/0"
+                      debug_cephsqlite = "0/0"
+                      debug_civetweb = "0/0"
+                      debug_client = "0/0"
+                      debug_compressor = "0/0"
+                      debug_context = "0/0"
+                      debug_crush = "0/0"
+                      debug_crypto = "0/0"
+                      debug_dpdk = "0/0"
+                      debug_eventtrace = "0/0"
+                      debug_filer = "0/0"
+                      debug_filestore = "0/0"
+                      debug_finisher = "0/0"
+                      debug_fuse = "0/0"
+                      debug_heartbeatmap = "0/0"
+                      debug_immutable_obj_cache = "0/0"
+                      debug_javaclient = "0/0"
+                      debug_journal = "0/0"
+                      debug_journaler = "0/0"
+                      debug_kstore = "0/0"
+                      debug_leveldb = "0/0"
+                      debug_lockdep = "0/0"
+                      debug_mclock = "0/0"
+                      debug_mds = "0/0"
+                      debug_mds_balancer = "0/0"
+                      debug_mds_locker = "0/0"
+                      debug_mds_log = "0/0"
+                      debug_mds_log_expire = "0/0"
+                      debug_mds_migrator = "0/0"
+                      debug_memdb = "0/0"
+                      debug_mgr = "0/0"
+                      debug_mgrc = "0/0"
+                      debug_mon = "0/0"
+                      debug_monc = "0/0"
+                      debug_ms = "0/0"
+                      debug_none = "0/0"
+                      debug_objclass = "0/0"
+                      debug_objectcacher = "0/0"
+                      debug_objecter = "0/0"
+                      debug_optracker = "0/0"
+                      debug_osd = "0/0"
+                      debug_paxos = "0/0"
+                      debug_perfcounter = "0/0"
+                      debug_prioritycache = "0/0"
+                      debug_rados = "0/0"
+                      debug_rbd = "0/0"
+                      debug_rbd_mirror = "0/0"
+                      debug_rbd_pwl = "0/0"
+                      debug_rbd_replay = "0/0"
+                      debug_refs = "0/0"
+                      debug_reserver = "0/0"
+                      debug_rgw = "0/0"
+                      debug_rgw_datacache = "0/0"
+                      debug_rgw_sync = "0/0"
+                      debug_rocksdb = "0/0"
+                      debug_seastore = "0/0"
+                      debug_seastore_cache = "0/0"
+                      debug_seastore_cleaner = "0/0"
+                      debug_seastore_device = "0/0"
+                      debug_seastore_journal = "0/0"
+                      debug_seastore_lba = "0/0"
+                      debug_seastore_odata = "0/0"
+                      debug_seastore_omap = "0/0"
+                      debug_seastore_onode = "0/0"
+                      debug_seastore_tm = "0/0"
+                      debug_striper = "0/0"
+                      debug_test = "0/0"
+                      debug_throttle = "0/0"
+                      debug_timer = "0/0"
+                      debug_tp = "0/0"
+
+- name: Installing rook-ceph custom resources and operator
+  kubernetes.core.k8s:
+    force: yes
+    definition: "{{ lookup('file', item) | from_yaml_all }}"
+    wait: yes
+    wait_timeout: 300
+  loop:
+    - "{{ DEPLOY_DIR }}/crds.yaml"
+    - "{{ DEPLOY_DIR }}/common.yaml"
+    - "{{ CONFIG_FILE }}"
+    - "{{ DEPLOY_DIR }}/operator.yaml"
+
+- name: Waiting for rook-ceph operator to be ready
+  shell: kubectl rollout status -n rook-ceph deployment/rook-ceph-operator
+
+- name: Installing rook-ceph cluster
+  kubernetes.core.k8s:
+    force: yes
+    definition: "{{ lookup('file', item) | from_yaml_all }}"
+    wait: yes
+    wait_timeout: 300
+  loop:
+    - "{{ DEPLOY_DIR }}/cluster.yaml"
+
+- name: Waiting for ceph cluster to be ready (may timeout on slow servers)
+  shell: kubectl wait --for=jsonpath={.status.phase}=Ready cephclusters rook-ceph -n rook-ceph --timeout=900s
+
+- name: Installing rook-ceph toolbox
+  kubernetes.core.k8s:
+    force: yes
+    definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
+    wait: yes
+  loop:
+    - "{{ DEPLOY_DIR }}/toolbox.yaml"
+
+- name: Get ceph toolbox pod information
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: rook-ceph
+    label_selectors:
+      - app = rook-ceph-tools
+  register: pod_info
+
+- name: Create new storage pool
+  vars:
+    pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
+    node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length}}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
+
+  kubernetes.core.k8s_exec:
+    namespace: rook-ceph
+    pod: '{{ pod_name }}'
+    command: '{{ item }}'
+  when: node_count | int > 1
+  loop:
+    - "ceph osd pool create {{ pool_name }} 128"
+    - "ceph osd pool set {{ pool_name }} min_size {{ (node_count | int) - 1 }}"
+    - "ceph osd pool set {{ pool_name }} size {{ node_count }}"
+
+- name: Configure file system and storage class
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Set filesystem name and pvc sizes
+      shell: |
+              sed -i 's/name: myfs$/name: {{ fs_name }}/g' filesystem.yaml
+              sed -i 's/myfs/{{ fs_name }}/g' ./csi/cephfs/storageclass.yaml
+              sed -i 's/storage: 1Gi$/storage: {{ pvc.fs_size }}/g' ./csi/cephfs/pvc.yaml
+              sed -i 's/storage: 1Gi$/storage: {{ pvc.rbd_size }}/g' ./csi/rbd/pvc.yaml
+      args:
+        chdir: "{{ DEPLOY_DIR }}"
+
+    - name: Scale down replicas for lesser than 3 kubernetes_nodes configuration
+      shell: |
+              sed -i 's/size: 3$/size: 2/g' filesystem.yaml
+      args:
+        chdir: "{{ DEPLOY_DIR }}"
+      when: (groups['kubernetes_nodes'] | length) < 3
+
+- name: Create ceph fs and rbd storage classes
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ lookup('file', item) | from_yaml_all }}"
+    wait: yes
+  loop:
+    - "{{ DEPLOY_DIR }}/filesystem.yaml"
+    - "{{ DEPLOY_DIR }}/csi/cephfs/storageclass.yaml"
+    - "{{ DEPLOY_DIR }}/csi/rbd/storageclass.yaml"
+
+- name: Create ceph fs and rbd pvcs
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    namespace: "{{ pvc.namespace }}"
+    definition: "{{ lookup('file', item) | from_yaml_all }}"
+    wait: yes
+  loop:
+    - "{{ DEPLOY_DIR }}/csi/cephfs/pvc.yaml"
+    - "{{ DEPLOY_DIR }}/csi/rbd/pvc.yaml"
+
+- name: Set to default storage class to {{ is_default }}
+  kubernetes.core.k8s:
+    state: patched
+    kind: StorageClass
+    name: "rook-cephfs"
+    definition: |
+      metadata:
+        annotations:
+          storageclass.kubernetes.io/is-default-class: "true"
+  when: is_default
+
+- name: Configure nodeport
+  block:
+    - name: Expose ceph dashboard
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: |
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: rook-ceph-mgr-dashboard-external-https
+            namespace: rook-ceph
+            labels:
+              app: rook-ceph-mgr
+              rook_cluster: rook-ceph
+          spec:
+            ports:
+            - name: dashboard
+              nodePort: {{ nodeport }}
+              port: 8443
+              protocol: TCP
+              targetPort: 8443
+            selector:
+              app: rook-ceph-mgr
+              rook_cluster: rook-ceph
+            sessionAffinity: None
+            type: NodePort
+
+    - name: Reset ceph dashboard service
+      kubernetes.core.k8s:
+        state: absent
+        kind: Service
+        namespace: rook-ceph
+        name: rook-ceph-mgr-dashboard
+  
+  when: _kube.use_nodeport
+
+- name: Configure Ceph dashboard
+  vars:
+    pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
+  kubernetes.core.k8s_exec:
+    namespace: rook-ceph
+    pod: '{{ pod_name }}'
+    command: '{{ item }}'
+  loop:
+    - "ceph mgr module enable rook"
+    # - "ceph orch set backend rook"
+    - "ceph dashboard set-alertmanager-api-host 'http://alertmanager-main.monitoring.svc:9093/alerts'"
+    - "ceph dashboard set-prometheus-api-host 'http://prometheus-k8s.monitoring.svc:9090/prometheus'"
+    - "ceph dashboard set-prometheus-api-ssl-verify False"
+    - "ceph dashboard set-alertmanager-api-ssl-verify False"
+
+- import_tasks: ./tasks/task-get-secret.yaml
+  vars:
+    name: "ceph dashboard password"
+    command: "kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath='{.data.password}'"
+    filename: "ceph_dashboard_password"
+
+- import_tasks: ./tasks/task-create-ingress-route.yaml
+  vars:
+    namespace: rook-ceph
+    name: ceph-dashboard-ingress
+    protocol: HTTPS
+    route: ceph
+    service_name: rook-ceph-mgr-dashboard
+    port: 8443
+
+- name: Check if Prometheus is installed
+  shell: |
+      kubectl get prometheus k8s -n monitoring -o json | jq .status.conditions[0].type -r
+  register: prometheus_status
+  ignore_errors: yes
+
+- name: Configure prometheus to scrape ceph metrics endpoint
+  block:
+    - name: Export existing additional scrape configs to file
+      shell: |
+        kubectl -n monitoring get secret additional-scrape-configs -o jsonpath="{['data']['prometheus-additional\.yaml']}" | base64 --decode > {{ SCRAPE_CONFIG }}
+      args:
+        chdir: $HOME  
+
+    - name: Add istio scrape configs to scrape configs file
+      blockinfile:
+        path: "~/{{ SCRAPE_CONFIG }}"
+        marker: ""
+        block: |
+          - job_name: 'ceph'
+            static_configs:
+              - targets: ['rook-ceph-mgr.rook-ceph.svc:9283']
+
+    - name: Create secret for additional Prometheus scrape configs
+      shell: |
+        kubectl create secret generic additional-scrape-configs --from-file={{ SCRAPE_CONFIG }} --dry-run=client -o yaml > {{ SECRET_CONFIG }}
+      args:
+        chdir: $HOME  
+
+    - name: Apply additional scrape configs
+      kubernetes.core.k8s:
+        namespace: monitoring
+        src: "~/{{ SECRET_CONFIG }}"
+
+    - name: Patch prometheus to include additional scrape configs          
+      kubernetes.core.k8s:
+        state: patched
+        namespace: monitoring
+        name: k8s
+        kind: Prometheus
+        definition: |
+          spec:
+            additionalScrapeConfigs:
+              name: additional-scrape-configs
+              key: prometheus-additional.yaml
+  when: HAS_PROMETHEUS
+
+- name: Cleanup
+  block:
+    - name: Cleanup config files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "~/{{ SCRAPE_CONFIG }}"
+        - "~/{{ SECRET_CONFIG }}"
+
+    - name: Cleanup directories
+      become_user: root
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ CONFIG_FILE }}"
+        - "{{ REPO_DIR }}"
+      delegate_to: localhost
+  when: cleanup

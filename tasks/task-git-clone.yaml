@@ -5,7 +5,7 @@
     - name: Delete existing repository directory (if any)
       file:
         state: absent
-        path: "{{ repo_dir }}"
+        path: "{{ dest }}"
 
     - name: Get latest {{ name }} release tag
       shell: |

@@ -1,0 +1,6 @@
+REPO_DIR: "{{ _work_dir }}/rook"
+DEPLOY_DIR: "{{ REPO_DIR }}/deploy/examples"
+CONFIG_FILE: "{{ _work_dir }}/rook-config-override.yaml"
+SCRAPE_CONFIG: "prometheus-additional.yaml"
+SECRET_CONFIG: "additional-scrape-configs.yaml"
+HAS_PROMETHEUS: "{{ prometheus_status.stdout == 'Available' }}"

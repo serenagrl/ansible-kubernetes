@@ -1,0 +1,15 @@
+release_version: latest #1.9.1
+self_signed_ca: yes
+self_signed_ca_cert_name: k8s-ca
+
+# The name of the issuer for your cluster.
+issuer_name: "default-cluster-issuer"
+
+# Self sign certificate details.
+cert:
+  country_name: MY
+  state_or_province_name: "Wilayah Persekutuan"
+  locality_name: "Kuala Lumpur"
+  organization_name: "Kubernetes Local"
+  organizational_unit_name: "Research and Development"
+  common_name: "{{ _kube.hostname }}"

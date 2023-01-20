@@ -1,0 +1,19 @@
+release_version: latest #1.15.1
+istioctl_dir: /usr/local/bin/
+
+# The profile to install. Currently set to 'demo' for testing. Use 'default' for production.
+# https://istio.io/latest/docs/setup/additional-setup/config-profiles/
+profile: default
+
+# List of namespaces to inject istio
+inject:
+  - default
+
+addons:
+  nodeports:
+    gateway:
+      http: 32005
+      https: 32006
+    kiali: 32007
+
+cleanup: yes

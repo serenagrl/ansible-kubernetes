@@ -1,0 +1,3 @@
+# Path of the share.
+shared: /data
+share_to: kubernetes_nodes

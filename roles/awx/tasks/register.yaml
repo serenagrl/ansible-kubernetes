@@ -1,0 +1,204 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Setup AWX environment
+  delegate_to: localhost
+  block:
+    - name: Installing ansible tower cli
+      pip:
+        name: https://releases.ansible.com/ansible-tower/cli/ansible-tower-cli-latest.tar.gz
+
+    - name: Checking/waiting for awx host 
+      uri:
+        url: "{{ AWX_HOST }}"
+      register: result
+      until: result.status == 200
+      retries: 15
+      delay: 30
+
+    - name: Get authentication token
+      awx.awx.token:
+        controller_host: "{{ AWX_HOST }}"
+        description: 'Login token'
+        scope: "write"
+        state: present
+        controller_username: "{{ AWX_USERNAME }}"
+        controller_password: "{{ AWX_PASSWORD }}"
+
+    - name: Setup environment in AWX for basic kubernetes application deployment
+      block:
+        - name: Creating organization '{{ setup.organization.name }}'
+          awx.awx.organization:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "{{ setup.organization.name }}"
+            description: "{{ setup.organization.desc }}"
+            state: present
+
+        - name: Creating inventory '{{ NAMES.INVENTORY }}'
+          awx.awx.inventory:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "{{ NAMES.INVENTORY }}"
+            description: "Collection of hosts for {{ setup.name }}"
+            organization: "{{ setup.organization.name }}"
+            variables: "{{ setup.inventory_vars if setup.inventory_vars else {} }}"
+            state: present
+
+        - name: Creating host for kubernetes control planes
+          awx.awx.host:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "{{ item }}"
+            description: "{{ setup.name }} Kubernetes Control Plane."
+            inventory: "{{ NAMES.INVENTORY }}"
+            variables:
+              ansible_host: "{{ hostvars[item].ansible_host }}"
+              ansible_user: "{{ hostvars[item].ansible_user }}"
+            state: present
+          loop: "{{ groups['kubernetes_control_planes'] }}"
+
+        - name: Creating host for kubernetes nodes
+          awx.awx.host:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "{{ item }}"
+            description: "{{ setup.name }} Kubernetes node."
+            inventory: "{{ NAMES.INVENTORY }}"
+            variables:
+              ansible_host: "{{ hostvars[item].ansible_host }}"
+              ansible_user: "{{ hostvars[item].ansible_user }}"
+            state: present
+          loop: "{{ groups['kubernetes_nodes'] }}"
+
+        - name: Creating group 'kubernetes_control_planes'
+          awx.awx.group:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "kubernetes_control_planes"
+            description: "{{ setup.name }} Kubernetes control plane group."
+            inventory: "{{ NAMES.INVENTORY }}"
+            hosts: "{{ groups['kubernetes_control_planes'] }}"
+            state: present
+
+        - name: Creating group 'kubernetes_nodes'
+          awx.awx.group:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "kubernetes_nodes"
+            description: "{{ setup.name }} Kubernetes kubernetes_nodes group."
+            inventory: "{{ NAMES.INVENTORY }}"
+            hosts: "{{ groups['kubernetes_nodes'] }}"
+            state: present
+
+        - name: Creating group 'kubernetes_cluster'
+          awx.awx.group:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "kubernetes_cluster"
+            description: "{{ setup.name }} Kubernetes cluster main group."
+            inventory: "{{ NAMES.INVENTORY }}"
+            children:
+              - "kubernetes_control_planes"
+              - "kubernetes_nodes"
+            state: present
+
+        - name: Creating source control credential
+          awx.awx.credential:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "{{ NAMES.SCM_CREDENTIAL }}"
+            description: "Source control credential for {{ NAMES.PROJECT }}"
+            organization: "{{ setup.organization.name }}"
+            credential_type: Source Control
+            inputs:
+              username: "{{ setup.gitlab.user  }}"
+              password: "{{ setup.gitlab.token }}"
+            state: present
+
+        - name: Creating project '{{ NAMES.PROJECT }}'
+          awx.awx.project:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "{{ NAMES.PROJECT }}"
+            description: "Collection of playbooks for {{ setup.name }}"
+            organization: "{{ setup.organization.name }}"
+            scm_type: git
+            scm_url: "{{ setup.gitlab.url }}"
+            scm_update_on_launch: yes
+            scm_delete_on_update: yes
+            credential: "{{ NAMES.SCM_CREDENTIAL }}"
+            state: present
+          ignore_errors: yes
+
+        - name: Creating machine credential
+          awx.awx.credential:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "{{ NAMES.HOST_CREDENTIAL }}"
+            description: "Credentials for {{ NAMES.CP }}"
+            organization: "{{ setup.organization.name }}"
+            credential_type: Machine
+            inputs:
+              ssh_key_data: "{{ lookup('file', '/root/.ssh/id_rsa') }}"
+            state: present
+
+        - name: Creating new credential type
+          awx.awx.credential_type:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "Gitlab API Access Token (Custom)"
+            description: "Used for accessing Gitlab API."
+            kind: cloud
+            inputs:
+              fields:
+                - id: gitlab_api_token
+                  type: string
+                  label: Gitlab API Access Token
+                  secret: true
+            injectors:
+              extra_vars:
+                gitlab_pat: "{%raw%}{{ gitlab_api_token }}{%endraw%}"
+            state: present
+
+        - name: Creating gitlab credential
+          awx.awx.credential:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "{{ NAMES.API_CREDENTIAL }}"
+            description: "Credentials used for assessing Gitlab API"
+            organization: "{{ setup.organization.name }}"
+            credential_type: "Gitlab API Access Token (Custom)"
+            inputs:
+              gitlab_api_token: "{{ setup.gitlab.api_token }}"
+            state: present
+
+        - name: Creating job template '{{ NAMES.JOB_TEMPLATE }}'
+          awx.awx.job_template:
+            controller_host: "{{ AWX_HOST }}"
+            controller_oauthtoken: "{{ controller_token }}"
+            name: "{{ NAMES.JOB_TEMPLATE }}"
+            description: "Deploys applications to the kubernetes cluster"
+            organization: "{{ setup.organization.name }}"
+            inventory: "{{ NAMES.INVENTORY }}"
+            project: "{{ NAMES.PROJECT }}"
+            job_type: "run"
+            playbook: "{{ setup.playbook }}"
+            extra_vars: "{{ setup.job_template_vars if setup.job_template_vars else {} }}"
+            credentials:
+              - "{{ NAMES.HOST_CREDENTIAL }}"
+              - "{{ NAMES.API_CREDENTIAL }}"
+            state: present
+          ignore_errors: yes
+
+      rescue:
+        - name: Delete authentication token
+          awx.awx.token:
+            controller_host: "{{ AWX_HOST }}"
+            existing_token: "{{ controller_token }}"
+            state: absent
+            controller_oauthtoken: "{{ controller_token }}"
+

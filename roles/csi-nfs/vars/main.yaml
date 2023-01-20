@@ -1,0 +1,21 @@
+release_version: latest #4.0.17
+
+# Path of the share.
+shared: /data
+
+# The namespace to place the provisioner.
+provisioner_namespace: default
+
+# The name of the storage class to create.
+storage_name: nfs-storage
+
+# Set the storage class as default. 
+# Some add-ons will fail if there is no default storage class.
+is_default: yes
+
+# The Persistent Volume Claims settings. Adjust your required size accordingly.
+pvc:
+  name: nfs-pvc
+  size: 10Gi
+
+cleanup: yes

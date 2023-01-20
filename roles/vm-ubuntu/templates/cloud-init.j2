@@ -1,0 +1,43 @@
+#cloud-config
+passwd: '{{ root_pwd }}'
+chpasswd: { expire: False }
+ssh_pwauth: True
+
+users:
+  - default
+  - name: {{ _kube.user }}
+    gecos: K8s Admin
+    groups: users, admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    passwd: '{{ _kube.pwd }}'
+    lock_passwd: false
+
+write_files:
+  - path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    content: |
+      network: {config: disabled}
+  - path: /etc/netplan/99-custom.yaml      
+    content: |
+      network:
+        version: 2
+        ethernets:
+          eth0:
+            dhcp4: false
+            addresses: 
+              - {{ ansible_host }}/{{ network.cidr }}
+            nameservers:
+              addresses: [{{ network.dns }}]
+            routes:
+              - to: default
+                via: {{ network.gateway }}           
+
+runcmd:
+  - sudo netplan apply   
+  - sudo apt update -y && sudo apt full-upgrade -y                  
+  - sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
+  - systemctl restart ssh
+  - usermod --password '{{ root_pwd }}' root
+  - echo '{{ id_rsa_pub }}' > /root/.ssh/authorized_keys  
+  - sudo apt install ntp ntpdate -y
+  - sudo reboot -f

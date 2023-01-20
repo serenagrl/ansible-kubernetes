@@ -1,0 +1,10 @@
+fullnameOverride: awx
+AWX:
+  enabled: true
+
+  spec:
+    ingress_type: ingress
+    ingress_class_name: "{{ ingress_name }}"
+    ingress_tls_secret: nginx-tls
+    hostname: "{{ _kube.hostname }}"
+    ingress_path: /awx

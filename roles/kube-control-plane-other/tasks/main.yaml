@@ -1,0 +1,21 @@
+# Author: Serena Yeoh
+#
+# Disclaimer: 
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Join secondary control planes      
+  vars:
+    cmd_file: join_control_plane_command
+  block: 
+    - name: Initializing other control planes (if available)
+      copy:
+        src: "{{ _work_dir }}/{{ cmd_file }}"
+        dest: "/tmp/{{ cmd_file }}"
+        mode: 0777
+
+    - name: Joining other control planes to cluster
+      command: sh '/tmp/{{ cmd_file }}'
+
+- include_role:
+    name: kube-control-plane

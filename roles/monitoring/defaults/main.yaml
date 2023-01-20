@@ -1,0 +1,4 @@
+REPO_DIR: "{{ _work_dir }}/kube-prometheus"
+MANIFEST_DIR: "{{ REPO_DIR }}/manifests"
+SETUP_DIR: "{{ MANIFEST_DIR  }}/setup"
+INGRESS_TEMPLATE: "{{ lookup('template', 'ingress.j2') | from_yaml }}"

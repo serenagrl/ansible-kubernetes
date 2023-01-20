@@ -1,0 +1,16 @@
+- name: Get ingress service information
+  kubernetes.core.k8s_info:
+    kind: Service
+    namespace: ingress-nginx
+    name: ingress-nginx-controller
+  register: ingress_service
+
+- name: Check if metallb is installed
+  shell: kubectl get ns metallb-system -o json | jq .status.phase -r
+  register: lb_status
+  ignore_errors: yes
+
+- set_fact: 
+    cluster_address: "{% if lb_status.stdout == 'Active' %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ _kube.cluster.address }}{% endif %}"
+ 
+  

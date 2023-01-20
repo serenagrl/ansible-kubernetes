@@ -1,75 +1,30 @@
-# Author: Serena Yeoh
-#
-# Disclaimer:
-# This playbook was written based on my self-learning and may not follow certain
-# best practices or work properly in your environment. Use it at your own risk.
-#
-  # Prepare environment and install prerequisites
-- import_playbook: kube-prepare.yaml
+# Configure primary control plane
+- name: Create primary control plane
+  hosts: primary_control_plane[0]
+  gather_facts: no
 
-  # Configure Kubernetes cluster
-- import_playbook: kube-cluster.yaml
+  roles:
+    - kube-control-plane-primary
+    - cni-calico
 
-  # Create checkpoints for satefy reasons. You can delete the checkpoints later.
+# Configure sencondary control planes
+- name: Join secondary control planes
+  hosts: secondary_control_planes
+  gather_facts: no
+
+  roles:
+    - kube-control-plane-other
+
+# Uncomment this to have worker nodes.
+# - name: Join worker nodes
+#   hosts: kubernetes_nodes
+#   gather_facts: no
+
+#   roles:
+#     - kube-worker
+
+  # Create checkpoints for safety reasons. You can delete the checkpoints later.
 - import_playbook: checkpoint-vm.yaml
   vars:
-    checkpoint_name: "Kubernetes ready."
-  when: _checkpoint
-
-  # Install MetalLB
-- import_playbook: kube-metallb.yaml
-  when: _kube.install.metallb
-
-  # Install Ingress nginx controller
-- import_playbook: kube-ingress.yaml
-  when: _kube.install.ingress
-
-  # Install Kubernetes Dashboard
-- import_playbook: kube-dashboard.yaml
-  when: _kube.install.dashboard
-
-  # Install Cert Managers
-- import_playbook: kube-cert-manager.yaml
-  when: _kube.install.cert_mgr
-
-  # Install Kube-Prometheus
-- import_playbook: kube-monitoring.yaml
-  when: _kube.install.monitoring
-
-  # Install Metrics Server
-- import_playbook: kube-metrics.yaml
-  when: _kube.install.metrics
-
-  # Install and configure NFS
-- import_playbook: kube-nfs.yaml
-  when: _kube.install.nfs
-
-  # Install and configure Rook-Ceph
-- import_playbook: kube-rookceph.yaml
-  when: _kube.install.rookceph
-
-  # Install and configure EFK
-- import_playbook: kube-logging.yaml
-  when: _kube.install.logging
-
-  # Install and configure Harbor registry
-- import_playbook: kube-harbor.yaml
-  when: _kube.install.harbor
-
-  # Install and configure Istio
-- import_playbook: kube-istio.yaml
-  when: _kube.install.istio
-
-  # Install and configure AWX
-- import_playbook: kube-awx.yaml
-  when: _kube.install.awx
-
-  # Install and configure ArgoCD
-- import_playbook: kube-argocd.yaml
-  when: _kube.install.argocd  
-
-  # Create checkpoints for satefy reasons. You can delete the checkpoints later.
-- import_playbook: checkpoint-vm.yaml
-  vars:
-    checkpoint_name: "Installation completed."
+    checkpoint_name: "Kubernetes configured."
   when: _checkpoint
