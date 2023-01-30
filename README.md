@@ -29,7 +29,7 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
 ### Notes
 * The Kubernetes cluster is currently setup to use Calico and Containerd.
 * Both control-planes only or control-planes with worker nodes configuration are supported.
-* Configure the IP addresses, host names and domain to your environment in the `/inventories/hosts.yaml`
+* Configure the IP addresses, host names and domain to your environment in the `\inventories\hosts.yaml`
 * The nfs server is not provisioned currently. You need to manually create it.
 * Some roles are deploying sample/example configurations only (although some may deploy production environments)
 * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
@@ -39,7 +39,7 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
 
 ### Advice
 You are advised not to be so ambitious to run `setup-all.yaml` on your first try. Start with these in the following order:
-1. `setup-server.yaml` - Provisions the Ubuntu VMS on Hyper-V.
+1. `setup-server.yaml` - Provisions the Ubuntu VMs on Hyper-V.
 2. `setup-kubernetes.yaml` - Sets up the Kubernetes cluster without any add-ons.
 3. ... and then specify the roles in the `setup-components.yaml`.
 
