@@ -22,7 +22,7 @@ spec:
                   name: https
 {% if cm_status.stdout == "Active" %}
   tls:
-  - hosts:
-    - {{ domain }}
-    secretName: nginx-tls
+    - hosts:
+        - {{ domain }}
+      secretName: nginx-tls
 {% endif %}
