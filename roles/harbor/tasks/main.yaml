@@ -19,6 +19,16 @@
   ignore_errors: yes
   ignore_unreachable: yes
 
+- name: Create harbor-system namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: harbor-system
+
+- import_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: harbor
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
 - name: Get ingress class
   kubernetes.core.k8s_info:
     kind: IngressClass

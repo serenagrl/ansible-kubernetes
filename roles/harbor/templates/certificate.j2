@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nginx-cert
+  namespace: harbor-system
+spec:
+  dnsNames:
+  - core.{{ domain }}
+  - notary.{{ domain }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: default-cluster-issuer
+  secretName: nginx-tls
