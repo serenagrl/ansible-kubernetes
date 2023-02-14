@@ -4,7 +4,14 @@ expose:
   type: ingress
   tls:
     enabled: true
+{% if cm_status.stdout == "Active" %}
+    certSource: secret
+    secret:
+      secretName: "nginx-tls"
+      notarySecretName: "nginx-tls"
+{% else %}
     certSource: auto
+{% endif %}
 
   ingress:
     hosts:
@@ -22,3 +29,7 @@ externalURL: https://core.{{ domain }}
 
 persistence:
   enabled: true
+
+{% if cm_status.stdout == "Active" %}
+caSecretName: "nginx-tls"
+{% endif %}

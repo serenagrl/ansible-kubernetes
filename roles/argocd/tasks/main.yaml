@@ -24,6 +24,11 @@
     kind: Namespace
     name: argocd
 
+- import_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: argocd
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
 - import_tasks: ./tasks/task-apply-manifest.yaml
   vars:
     name: "argocd"
