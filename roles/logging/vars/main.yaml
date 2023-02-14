@@ -1,4 +1,5 @@
 elasticsearch_version: latest
+elasticsearch_certs_secret: elasticsearch-tls
 kibana_version: latest
 
 service_account:

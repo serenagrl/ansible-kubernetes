@@ -1,0 +1,9 @@
+- name: Check if cert-manager is installed
+  shell: kubectl get ns cert-manager -o json | jq .status.phase -r
+  register: cm_status
+  ignore_errors: yes
+      
+- name: Create {{ name }} TLS Certificate
+  kubernetes.core.k8s:
+    definition: "{{ certificate_template }}"
+  when: cm_status.stdout == "Active"

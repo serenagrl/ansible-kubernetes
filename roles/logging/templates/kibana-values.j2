@@ -1,6 +1,10 @@
 fullnameOverride: kibana
 elasticsearchHosts: "https://elasticsearch-master:9200"
 
+{% if cm_status.stdout == "Active" %}
+elasticsearchCertificateSecret: {{ elasticsearch_certs_secret }}
+{% endif %}
+
 extraEnvs:
   - name: SERVER_BASEPATH
     value: /kibana

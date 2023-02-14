@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nginx-cert
+  namespace: argocd
+spec:
+  dnsNames:
+  - {{ domain }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: default-cluster-issuer
+  secretName: nginx-tls
