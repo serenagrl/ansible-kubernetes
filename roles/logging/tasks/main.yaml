@@ -9,6 +9,11 @@
     kind: IngressClass
   register: ingress_class
 
+- import_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: elasticsearch
+    certificate_template: "{{ ELASTICSEARCH_CERTIFICATE_TEMPLATE }}"
+
 - name: Prepare manifest
   delegate_to: localhost
   become_user: root
@@ -50,6 +55,8 @@
                     name: elasticsearch-ca
 
     - name: Configure cert in volumes
+      vars:
+        secret_name: "{% if cm_status.stdout == 'Active' %}{{ elasticsearch_certs_secret }}{% else %}elasticsearch-master-certs{% endif %}"
       blockinfile:
         path: "{{ MANIFEST_FILE }}"
         insertafter: 'volumes:'
@@ -60,13 +67,14 @@
                     items:
                       - key: ca.crt
                         path: elastic-ca.crt
-                    secretName: elasticsearch-master-certs
+                    secretName: "{{ secret_name }}"
 
 - name: Install Elastic stack
   block:
     - name: Installing elasticsearch
       vars:
         version: "{% if elasticsearch_version is defined and elasticsearch_version and elasticsearch_version != 'latest' %}{{ elasticsearch_version }}{% endif %}"
+        values_file: "{% if cm_status.stdout == 'Active' %}{{ ELASTICSEARCH_VALUES_FILE }}{% else %}{}{% endif %}"
       kubernetes.core.helm:
         name: elasticsearch
         namespace: logging
@@ -75,6 +83,7 @@
         chart_ref: elasticsearch
         chart_version: "{{ version }}"
         create_namespace: yes
+        values: "{{ values_file }}"
         timeout: 10m0s
         wait: yes
 
@@ -86,11 +95,11 @@
       vars:
         name: "elastic password"
         command: kubectl get secret elasticsearch-master-credentials -n logging -ojsonpath='{.data.password}'
-        filename: "{{ PASSWORD_FILE }}"
+        filename: elastic_password
 
     - name: Get elastic password
       set_fact:
-        elastic_password: "{{ lookup('file', '{{ _work_dir }}/{{ PASSWORD_FILE }}') }}"
+        elastic_password: "{{ lookup('file', '{{ _work_dir }}/elastic_password') }}"
 
     - name: Create kibana service account
       shell: |
@@ -119,7 +128,6 @@
             username: "{{ service_account.kibana.username | b64encode }}"
             password: "{{ service_account.kibana.password | b64encode }}"
 
-
     - name: Installing kibana
       vars:
         version: "{% if kibana_version is defined and kibana_version and kibana_version != 'latest' %}{{ kibana_version }}{% endif %}"
@@ -131,7 +139,7 @@
         chart_ref: kibana
         chart_version: "{{ version }}"
         create_namespace: yes
-        values: "{{ VALUES_FILE }}"            
+        values: "{{ KIBANA_VALUES_FILE }}"
         timeout: 10m0s
         wait: yes
 
@@ -145,9 +153,6 @@
   delegate_to: localhost
   become_user: root
   file:
-    path: "{{ item }}"
+    path: "{{ MANIFEST_FILE }}"
     state: absent
-  loop:
-    - "{{ MANIFEST_FILE }}"
-
-  when: cleanup        
+  when: cleanup
