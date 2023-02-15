@@ -2,15 +2,15 @@ primary_control_plane:
   # Specify only 1 host for primary control plane.
   hosts: 
     k8s-cp1:
-      ansible_host: 192.168.0.200
+      ansible_host: 192.168.0.203
 
 secondary_control_planes:
   # Can have multiple secondary control planes.
   hosts: 
     k8s-cp2: 
-      ansible_host: 192.168.0.201
+      ansible_host: 192.168.0.204
     k8s-cp3: 
-      ansible_host: 192.168.0.202
+      ansible_host: 192.168.0.205
 
 kubernetes_control_planes:
 
@@ -26,11 +26,11 @@ kubernetes_nodes:
     # You can comment out these nodes if you just want to run control planes but please make sure you 
     # have atleast 3 control plane hosts defined above. 
     # k8s-01: 
-    #   ansible_host: 192.168.0.203
+    #   ansible_host: 192.168.0.206
     # k8s-02: 
-    #   ansible_host: 192.168.0.204
+    #   ansible_host: 192.168.0.207
     # k8s-03: 
-    #   ansible_host: 192.168.0.205
+    #   ansible_host: 192.168.0.208
 
 # The kubernetes cluster group.
 kubernetes_cluster:
@@ -45,11 +45,25 @@ kubernetes_cluster:
     kubernetes_control_planes:
     kubernetes_nodes:
 
+load_balancers:
+  vars:
+    ansible_user: root 
+    ansible_become: yes
+    # You can also set this in individual host if you are splitting the nodes to different physical
+    # servers.
+    winrm_host: local_machine     
+
+  hosts:
+    haproxy-01:
+      ansible_host: 192.168.0.201
+    haproxy-02:
+      ansible_host: 192.168.0.202
+
 # The nfs server to use. For this example, I just use the control plane because
 # I don't have enough server resources. Don't do this for production.
 nfs_server:
   hosts: # Only 1 host is supported
-    k8s-infra:
+    k8s-nfs:
       ansible_host: 192.168.0.200
       ansible_user: root 
 

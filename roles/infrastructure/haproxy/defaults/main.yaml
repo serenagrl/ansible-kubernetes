@@ -1,0 +1,2 @@
+HAPROXY_CONFIG_TEMPLATE: "{{ lookup('template', 'haproxy.cfg.j2') }}"
+KEEPALIVED_CONFIG_TEMPLATE: "{{ lookup('template', 'keepalived.conf.j2') }}"

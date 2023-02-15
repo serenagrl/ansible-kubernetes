@@ -1,0 +1,9 @@
+haproxy:
+  version: 2.6
+  username: haproxy
+  password: p@ssw0rd
+  port: 80
+
+keepalived:
+  vip_address: 192.168.0.200
+  vip_cidr: 24

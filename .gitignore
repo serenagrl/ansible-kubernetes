@@ -1,4 +1,5 @@
 **/certs/
 **/.vs
 **/.vscode
+**/old_version
 test*
