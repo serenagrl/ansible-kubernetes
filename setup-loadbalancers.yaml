@@ -1,5 +1,5 @@
 - name: Provision Virtual Machines
-  hosts: kubernetes_cluster
+  hosts: load_balancers
   gather_facts: no
 
   pre_tasks:
@@ -12,11 +12,18 @@
       run_once: yes
 
   roles:
-    - vm-ubuntu
+    - role: vm-ubuntu
+      specs:
+        ram_size: 2GB
+        min_ram_size: 2GB
+        disk_size: 127GB
+        v_cpu: 2
+
+    - role: infrastructure/haproxy
 
   # Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:
     - import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
-        checkpoint_name: "Ubuntu configured."
+        checkpoint_name: "Haproxy configured."
       when: _checkpoint

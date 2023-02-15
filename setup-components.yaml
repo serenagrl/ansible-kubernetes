@@ -1,5 +1,5 @@
 # Note: Setup NFS before enabling the csi-nfs role.
-- import_playbook: setup-nfs.yaml
+# - import_playbook: setup-nfs.yaml
 
 - name: Install Kubernetes add-on components
   hosts: primary_control_plane[0]
@@ -24,8 +24,12 @@
     # - role: istio
     # - role: rabbitmq-cluster
 
-# Create checkpoints for safety reasons. You can delete the checkpoints later.
-- import_playbook: checkpoint-vm.yaml
-  vars:
-    checkpoint_name: "Components installed."
-  when: _checkpoint
+  # Create checkpoints for safety reasons. You can delete the checkpoints later.
+# - hosts: kubernetes_cluster
+#   gather_facts: no
+
+#   tasks:
+#     - import_tasks: ./tasks/task-checkpoint-vm.yaml
+#       vars:
+#         checkpoint_name: "Components installed."
+#       when: _checkpoint

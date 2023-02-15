@@ -24,7 +24,11 @@
 #     - kube-worker
 
   # Create checkpoints for safety reasons. You can delete the checkpoints later.
-- import_playbook: checkpoint-vm.yaml
-  vars:
-    checkpoint_name: "Kubernetes configured."
-  when: _checkpoint
+- hosts: kubernetes_cluster
+  gather_facts: no
+
+  tasks:
+    - import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "Kubernetes configured."
+      when: _checkpoint
