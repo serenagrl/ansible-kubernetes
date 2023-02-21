@@ -37,4 +37,4 @@
         mode: 0777
 
 - include_role:
-    name: kube-control-plane
+    name: kubernetes/control-plane

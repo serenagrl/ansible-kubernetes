@@ -4,7 +4,7 @@
   gather_facts: no
 
   roles:
-    - kube-control-plane-primary
+    - kubernetes/control-plane-primary
     - cni-calico
 
 # Configure sencondary control planes
@@ -13,7 +13,7 @@
   gather_facts: no
 
   roles:
-    - kube-control-plane-other
+    - kubernetes/control-plane-other
 
 # Uncomment this to have worker nodes.
 # - name: Join worker nodes
@@ -21,7 +21,7 @@
 #   gather_facts: no
 
 #   roles:
-#     - kube-worker
+#     - kubernetes/worker-node
 
   # Create checkpoints for safety reasons. You can delete the checkpoints later.
 - hosts: kubernetes_cluster

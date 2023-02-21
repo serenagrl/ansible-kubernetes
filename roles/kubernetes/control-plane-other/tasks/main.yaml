@@ -18,4 +18,4 @@
       command: sh '/tmp/{{ cmd_file }}'
 
 - include_role:
-    name: kube-control-plane
+    name: kubernetes/control-plane
