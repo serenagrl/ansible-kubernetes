@@ -1,1 +1,5 @@
 kubernetes_version: latest #1.26.0
+
+# Enable this to allow remote administration from the Ansible host.
+# Warning: Multi-cluster administration is not supported. The .kube/config will be overwritten.
+remote_admin: yes
