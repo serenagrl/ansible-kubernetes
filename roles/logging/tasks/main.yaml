@@ -9,6 +9,11 @@
     kind: IngressClass
   register: ingress_class
 
+- name: Create logging namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: logging
+
 - import_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: elasticsearch
