@@ -1,0 +1,1 @@
+ALIASES_TEMPLATE: "{{ lookup('template', 'roles/kubernetes/control-plane/templates/aliases.j2') }}"
