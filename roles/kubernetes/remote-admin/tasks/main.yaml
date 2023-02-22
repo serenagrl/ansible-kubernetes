@@ -1,0 +1,27 @@
+# Author: Serena Yeoh
+#
+# Disclaimer: 
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Download kube config
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Create .kube in home directory
+      file:
+        path: ~/.kube
+        state: directory
+        mode: 0700
+
+    - name: Copy admin.conf to home directory kube config
+      delegate_to: "{{ groups['primary_control_plane'][0] }}"
+      fetch:
+        src: /etc/kubernetes/admin.conf
+        dest: ~/.kube/config
+        flat: yes
+
+    - name: Add autocomplete and aliases to shell
+      blockinfile:
+        path: ~/.bashrc
+        block: "{{ ALIASES_TEMPLATE }}"

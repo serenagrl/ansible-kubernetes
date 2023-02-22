@@ -39,24 +39,6 @@
 - include_role:
     name: kubernetes/control-plane
 
-- name: Download kube config
-  delegate_to: localhost
-  become_user: root
-  block:
-    - name: Create .kube in home directory
-      file:
-        path: ~/.kube
-        state: directory
-        mode: 0700
-
-    - name: Copy admin.conf to home directory kube config
-      delegate_to: "{{ groups['primary_control_plane'][0] }}"
-      fetch:
-        src: /etc/kubernetes/admin.conf
-        dest: ~/.kube/config
-        flat: yes
-
-    - name: Add autocomplete and aliases to shell
-      blockinfile:
-        path: ~/.bashrc
-        block: "{{ ALIASES_TEMPLATE }}"
+- include_role:
+    name: kubernetes/remote-admin
+  when: remote_admin
