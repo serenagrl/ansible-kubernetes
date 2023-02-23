@@ -11,6 +11,6 @@
   ignore_errors: yes
 
 - set_fact: 
-    cluster_address: "{% if lb_status.stdout == 'Active' %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ _kube.cluster.address }}{% endif %}"
+    cluster_address: "{% if lb_status.stdout == 'Active' %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ ingress_service.resources[0].spec.externalIPs.0 }}{% endif %}"
  
   

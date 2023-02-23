@@ -1,0 +1,11 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: root-httpproxy
+  namespace: projectcontour
+spec:
+  virtualhost:
+    fqdn: {{ _kube.hostname }}
+    tls:
+      secretName: root-httpproxy-tls
+  includes:

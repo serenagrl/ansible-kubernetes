@@ -1,0 +1,40 @@
+- name: Check for root HTTPProxy availability
+  kubernetes.core.k8s_info:
+    kind: HTTPProxy
+    name: root-httpproxy
+    namespace: projectcontour
+  register: httpproxy  
+
+- block:
+    - name: Create root HTTPProxy
+      kubernetes.core.k8s:
+        definition: |
+          apiVersion: projectcontour.io/v1
+          kind: HTTPProxy
+          metadata:
+            name: {{ name }}
+            namespace: {{ namespace }}
+          spec:
+            routes:
+              - conditions:
+                  - prefix: /{{ route }}
+                services:
+                  - name: {{ service_name }}
+                    port: {{ port }}
+                    protocol: tls
+                pathRewritePolicy:
+                  replacePrefix:
+                    - replacement: /
+
+    - name: Patch root HTTPProxy
+      kubernetes.core.k8s:
+        state: patched
+        namespace: projectcontour
+        kind: HTTPProxy
+        name: root-httpproxy
+        definition: |
+          spec:
+            includes:
+              - name: {{ name }}
+  when:
+    - (httpproxy.resources | length > 0)  

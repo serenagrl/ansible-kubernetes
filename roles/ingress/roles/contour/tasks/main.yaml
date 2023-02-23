@@ -1,0 +1,44 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- import_tasks: ./tasks/task-apply-manifest.yaml
+  vars:
+    name: "contour ingress"
+    namespace: "projectcontour"
+    repo_path: "projectcontour/contour"
+    pkg_version: "{{ release_version | default }}"
+    version_prefix: "v"
+    dest: "{{ MANIFEST_FILE }}"
+    urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/render/contour.yaml"]
+
+- import_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: projectcontour
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+- name: Create root HTTPProxy
+  kubernetes.core.k8s:
+    definition: "{{ HTTPPROXY_TEMPLATE }}"
+
+- name: Get ingress service information
+  kubernetes.core.k8s_info:
+    kind: Service
+    namespace: projectcontour
+    name: envoy
+  register: ingress_service
+
+- name: Add host name into DNS entries
+  delegate_to: "{{ item }}"
+  become_user: root
+  vars:
+    address: "{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}"
+  lineinfile:
+    path: /etc/hosts
+    insertafter: "127.0.0.1 localhost"
+    line: "{{ address }} {{ _kube.hostname }}"
+  loop: "{{ groups['kubernetes_cluster'] }}"
+  ignore_unreachable: yes
+  ignore_errors: yes    

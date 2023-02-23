@@ -1,1 +1,6 @@
-MANIFEST_FILE: "{{ _work_dir }}/dashboard.yaml"  
+MANIFEST_FILE: "{{ _work_dir }}/dashboard.yaml" 
+
+INGRESSES:
+  contour: "ingress-contour.yaml"
+  nginx: "ingress-nginx.yaml"
+

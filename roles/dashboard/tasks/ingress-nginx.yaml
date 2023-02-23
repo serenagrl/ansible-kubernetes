@@ -1,0 +1,8 @@
+- include_tasks: ./tasks/task-create-ingress-route.yaml
+  vars:
+    namespace: kubernetes-dashboard
+    name: kubernetes-dashboard-ingress
+    protocol: HTTPS
+    route: dashboard
+    service_name: kubernetes-dashboard
+    port: 443

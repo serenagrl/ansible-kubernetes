@@ -1,4 +1,1 @@
-release_version: latest #4.2.3
-scale: yes
-
-  
+type: "{{ _kube.ingressType }}"

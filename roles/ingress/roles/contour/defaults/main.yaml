@@ -1,0 +1,3 @@
+MANIFEST_FILE: "{{ _work_dir }}/contour.yaml"
+CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
+HTTPPROXY_TEMPLATE: "{{ lookup('template', 'httpproxy.j2') | from_yaml }}"
