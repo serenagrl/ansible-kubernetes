@@ -1,7 +1,7 @@
 - include_tasks: ./tasks/task-create-contour-httpproxy.yaml
   vars:
-    httpproxy_definition: "{{ HTTPPROXY_DEFINITION_FILE }}"
-    httpproxy_include: "{{ HTTPPROXY_INCLUDES_FILE }}"
+    httpproxy_definition: "{{ HTTPPROXY_DEFINITION_TEMPLATE }}"
+    httpproxy_include: "{{ HTTPPROXY_INCLUDES_TEMPLATE }}"
     name: kubernetes-dashboard-httpproxy
     namespace: kubernetes-dashboard
     route: dashboard
