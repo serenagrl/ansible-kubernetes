@@ -19,6 +19,6 @@ _kube:
   use_nodeport: no
   
   # Specify which ingress type to use - nginx or contour
-  ingressType: contour
+  ingress_type: contour
 
   hostname: serena.k8s.local

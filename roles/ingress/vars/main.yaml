@@ -1,1 +1,1 @@
-type: "{{ _kube.ingressType }}"
+type: "{{ _kube.ingress_type }}"

@@ -82,4 +82,4 @@
 - name: Waiting for kubernetes dashboard to be ready
   shell: kubectl rollout status -n kubernetes-dashboard deployment/kubernetes-dashboard
 
-- include_tasks: "{{ INGRESSES[_kube.ingressType] }}"
+- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"

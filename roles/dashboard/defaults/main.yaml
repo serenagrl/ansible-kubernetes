@@ -1,4 +1,6 @@
 MANIFEST_FILE: "{{ _work_dir }}/dashboard.yaml" 
+HTTPPROXY_DEFINITION_FILE: "{{ lookup('template', 'httpproxy-definition.j2') | from_yaml }}"
+HTTPPROXY_INCLUDES_FILE: "{{ lookup('template', 'httpproxy-includes.j2') | from_yaml }}"
 
 INGRESSES:
   contour: "ingress-contour.yaml"

@@ -6,25 +6,10 @@
   register: httpproxy  
 
 - block:
-    - name: Create root HTTPProxy
+    - name: Create HTTPProxy
       kubernetes.core.k8s:
         definition: |
-          apiVersion: projectcontour.io/v1
-          kind: HTTPProxy
-          metadata:
-            name: {{ name }}
-            namespace: {{ namespace }}
-          spec:
-            routes:
-              - conditions:
-                  - prefix: /{{ route }}
-                services:
-                  - name: {{ service_name }}
-                    port: {{ port }}
-                    protocol: tls
-                pathRewritePolicy:
-                  replacePrefix:
-                    - replacement: /
+          {{ httpproxy_definition }}
 
     - name: Patch root HTTPProxy
       kubernetes.core.k8s:
@@ -33,8 +18,6 @@
         kind: HTTPProxy
         name: root-httpproxy
         definition: |
-          spec:
-            includes:
-              - name: {{ name }}
+          {{ httpproxy_include }}
   when:
     - (httpproxy.resources | length > 0)  
