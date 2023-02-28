@@ -18,6 +18,9 @@
         kind: HTTPProxy
         name: root-httpproxy
         definition: |
-          {{ httpproxy_include }}
+          spec:
+            includes:
+              - name: {{ name }}
+                namespace: {{ namespace }}
   when:
     - (httpproxy.resources | length > 0)  
