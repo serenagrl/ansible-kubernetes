@@ -65,20 +65,23 @@
     - { name: alertmanager-main, nodePort: '{{ nodeports.alertmanager }}', port: 9093 }
   when: _kube.use_nodeport
 
-- name: Check for ingress availability
-  kubernetes.core.k8s_info:
-    kind: IngressClass
-  register: ingress_class
+# Create Ingress
+- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"
+
+# - name: Check for ingress availability
+#   kubernetes.core.k8s_info:
+#     kind: IngressClass
+#   register: ingress_class
 
 - name: Configure ingress
-  vars:
-    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+  # vars:
+  #   ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
   block:
-    - name: Create ingress for kube prometheus services
-      kubernetes.core.k8s:
-        apply: yes
-        force: yes
-        definition: "{{ INGRESS_TEMPLATE }}"
+    # - name: Create ingress for kube prometheus services
+    #   kubernetes.core.k8s:
+    #     apply: yes
+    #     force: yes
+    #     definition: "{{ INGRESS_TEMPLATE }}"
 
     - name: Edit prometheus configuration
       kubernetes.core.k8s:
@@ -143,7 +146,7 @@
               kubectl rollout restart deployment grafana -n monitoring
               kubectl rollout status -n monitoring deployment/grafana
 
-  when: ingress_name != ""
+  when: (ingress_result.resources | length > 0)
 
 - name: Cleanup directories
   delegate_to: localhost

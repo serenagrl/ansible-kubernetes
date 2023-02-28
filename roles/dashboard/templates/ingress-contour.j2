@@ -6,10 +6,10 @@ metadata:
 spec:
   routes:
     - conditions:
-        - prefix: /{{ route }}
+        - prefix: /dashboard
       services:
-        - name: {{ service_name }}
-          port: {{ port }}
+        - name: kubernetes-dashboard
+          port: 443
           protocol: tls
       pathRewritePolicy:
         replacePrefix:

@@ -1,5 +1,6 @@
 MANIFEST_FILE: "{{ _work_dir }}/dashboard.yaml" 
-HTTPPROXY_TEMPLATE: "{{ lookup('template', 'httpproxy.j2') | from_yaml }}"
+INGRESS_CONTOUR_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"
+INGRESS_NGINX_TEMPLATE: "{{ lookup('template', 'ingress-nginx.j2') | from_yaml }}"
 
 INGRESSES:
   contour: "ingress-contour.yaml"

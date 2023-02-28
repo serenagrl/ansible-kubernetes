@@ -3,13 +3,13 @@
     kind: HTTPProxy
     name: root-httpproxy
     namespace: projectcontour
-  register: httpproxy  
+  register: ingress_result  
 
 - block:
     - name: Create HTTPProxy
       kubernetes.core.k8s:
         definition: |
-          {{ httpproxy_definition }}
+          {{ definition }}
 
     - name: Patch root HTTPProxy
       kubernetes.core.k8s:
@@ -23,4 +23,4 @@
               - name: {{ name }}
                 namespace: {{ namespace }}
   when:
-    - (httpproxy.resources | length > 0)  
+    - (ingress_result.resources | length > 0)  

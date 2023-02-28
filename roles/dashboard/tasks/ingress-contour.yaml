@@ -1,8 +1,5 @@
 - include_tasks: ./tasks/task-create-contour-httpproxy.yaml
   vars:
-    httpproxy_definition: "{{ HTTPPROXY_TEMPLATE }}"
     name: kubernetes-dashboard-httpproxy
     namespace: kubernetes-dashboard
-    route: dashboard
-    service_name: kubernetes-dashboard
-    port: 443
+    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"

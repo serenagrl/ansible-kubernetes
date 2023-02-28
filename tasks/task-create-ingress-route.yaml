@@ -1,54 +1,7 @@
-- name: Check for ingress availability
-  kubernetes.core.k8s_info:
-    kind: IngressClass
-  register: ingress_class
-
-- name: Create ingress for {{ service_name }}
+- name: Create nginx tls certificate
   vars:
-    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-  kubernetes.core.k8s:
-    apply: yes
-    force: yes
-    definition: |
-      apiVersion: networking.k8s.io/v1
-      kind: Ingress
-      metadata:
-        name: {{ name }}
-        namespace: {{ namespace }}
-        labels:
-          app.kubernetes.io/name: {{ name }}
-        annotations:
-          nginx.ingress.kubernetes.io/backend-protocol: {{ protocol }}
-          nginx.ingress.kubernetes.io/configuration-snippet: |
-            proxy_set_header Accept-Encoding "";
-            sub_filter '<base href="/">' '<base href="/{{ route }}/">';
-            sub_filter_once on;
-          nginx.ingress.kubernetes.io/rewrite-target: /$2
-      spec:
-        ingressClassName: {{ ingress_name }}
-        rules:
-          - host: {{ _kube.hostname }}
-            http:
-              paths:
-              - path: /{{ route }}(/|$)(.*)
-                pathType: Prefix
-                backend:
-                  service:
-                    name: {{ service_name }}
-                    port:
-                      number: {{ port }}
-  when: 
-    - (ingress_class.resources | length > 0)
-    - ingress_name != ""
-    - name is defined
-    - namespace is defined
-    - protocol is defined
-    - route is defined
-    - service_name is defined
-    - port is defined
-
-- vars:
     issuer: "{{ issuer_name | default('default-cluster-issuer', true) }}"
+    has_issuer: issuer_status.stdout == "Ready"
   block:
     - name: Check for existing cluster issuer
       shell: |
@@ -56,33 +9,35 @@
       register: issuer_status
       ignore_errors: yes
 
-    - block:
-      - name: Create Ingress TLS Certificate
-        kubernetes.core.k8s:
-          api_version: cert-manager.io/v1
-          kind: Certificate
-          name: nginx-cert
-          namespace: "{{ namespace }}"
-          definition: |
-            spec:
-              secretName: nginx-tls
-              issuerRef:
-                name: "{{ issuer }}"
-                kind: ClusterIssuer
-              dnsNames:
-                - {{ _kube.hostname }}
+    - name: Create Ingress TLS Certificate
+      kubernetes.core.k8s:
+        api_version: cert-manager.io/v1
+        kind: Certificate
+        name: nginx-cert
+        namespace: "{{ namespace }}"
+        definition: |
+          spec:
+            secretName: nginx-tls
+            issuerRef:
+              name: "{{ issuer }}"
+              kind: ClusterIssuer
+            dnsNames:
+              - {{ _kube.hostname }}
+      when: has_issuer
 
-      - name: Patch {{ name }}
-        kubernetes.core.k8s:
-          kind: Ingress
-          namespace: "{{ namespace }}"
-          name: "{{ name }}"
-          state: patched
-          definition: |
-            spec:
-              tls:
-                - hosts:
-                    - {{ _kube.hostname }}
-                  secretName: nginx-tls
+    - name: Check for ingress availability
+      kubernetes.core.k8s_info:
+        kind: IngressClass
+      register: ingress_result
 
-      when: issuer_status.stdout == "Ready"
+    - name: Create ingress for {{ namespace }}
+      vars:
+        ingress_name: "{{ ingress_result.resources[0].metadata.name }}"
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: |
+          {{ definition }}
+      when: 
+        - (ingress_result.resources | length > 0)
+        - ingress_name != ""

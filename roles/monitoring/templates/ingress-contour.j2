@@ -1,0 +1,32 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: monitoring-httpproxy
+  namespace: monitoring
+spec:
+  routes:
+    - conditions:
+        - prefix: /prometheus
+      services:
+        - name: prometheus-k8s
+          port: 9090
+      pathRewritePolicy:
+        replacePrefix:
+          - replacement: /prometheus
+    - conditions:
+        - prefix: /grafana
+      services:
+        - name: grafana
+          port: 3000
+      pathRewritePolicy:
+        replacePrefix:
+          - replacement: /grafana
+    - conditions:
+        - prefix: /alerts
+      services:
+        - name: alertmanager-main
+          port: 9093
+      pathRewritePolicy:
+        replacePrefix:
+          - replacement: /alerts
+
