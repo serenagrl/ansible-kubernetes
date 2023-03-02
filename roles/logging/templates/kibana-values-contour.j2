@@ -1,0 +1,27 @@
+fullnameOverride: kibana
+elasticsearchHosts: "https://elasticsearch-master:9200"
+
+{% if cm_status.stdout == "Active" %}
+elasticsearchCertificateSecret: {{ elasticsearch_certs_secret }}
+{% endif %}
+
+extraEnvs:
+  - name: SERVER_BASEPATH
+    value: /kibana
+  - name: LOGGING_QUIET
+    value: "true"
+  - name: ELASTICSEARCH_SERVICEACCOUNTTOKEN
+    value: ""
+  - name: "ELASTICSEARCH_PASSWORD"
+    valueFrom:
+      secretKeyRef:
+        name: "kibana-elasticsearch-credentials"
+        key: "password"
+  - name: "ELASTICSEARCH_USERNAME"
+    valueFrom:
+      secretKeyRef:
+        name: "kibana-elasticsearch-credentials"
+        key: "username"
+
+ingress:
+  enabled: false

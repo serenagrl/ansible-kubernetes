@@ -1,0 +1,5 @@
+- include_tasks: ./tasks/task-create-contour-httpproxy.yaml
+  vars:
+    name: ceph-dashboard-httpproxy
+    namespace: rook-ceph
+    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"

@@ -5,4 +5,9 @@ ISTIO_DIR: "{{ _work_dir }}/istio-{{ RELEASE }}"
 ADDONS_DIR: "{{ ISTIO_DIR }}/samples/addons"
 HAS_PROMETHEUS: "{{ prometheus_status.stdout == 'Available' }}"
 SCRAPE_CONFIG_TEMPLATE: "{{ lookup('template', 'scrape-config.j2') }}"
-KIALI_INGRESS_TEMPLATE: "{{ lookup('template', 'kiali-ingress.j2') | from_yaml }}"
+INGRESS_NGINX_TEMPLATE: "{{ lookup('template', 'ingress-nginx.j2') | from_yaml }}"
+INGRESS_CONTOUR_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"
+
+INGRESSES:
+  contour: "ingress-contour.yaml"
+  nginx: "ingress-nginx.yaml"

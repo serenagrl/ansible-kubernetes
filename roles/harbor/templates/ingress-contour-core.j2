@@ -1,0 +1,36 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: harbor-httpproxy
+  namespace: harbor-system
+spec:
+  virtualhost:
+    fqdn: core.{{ domain }}
+    tls:
+      secretName: httpproxy-tls
+  routes:
+    - conditions:
+        - prefix: /api/
+      services:
+        - name: harbor-core
+          port: 80
+    - conditions:
+        - prefix: /service/
+      services:
+        - name: harbor-core
+          port: 80
+    - conditions:
+        - prefix: /v2/
+      services:
+        - name: harbor-core
+          port: 80
+    - conditions:
+        - prefix: /c/
+      services:
+        - name: harbor-core
+          port: 80
+    - conditions:
+        - prefix: /
+      services:
+        - name: harbor-portal
+          port: 80

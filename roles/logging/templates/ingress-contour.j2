@@ -1,0 +1,15 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+spec:
+  routes:
+    - conditions:
+        - prefix: /kibana
+      services:
+        - name: kibana
+          port: 5601
+      pathRewritePolicy:
+        replacePrefix:
+          - replacement: /

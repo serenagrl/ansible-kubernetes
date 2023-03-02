@@ -1,0 +1,29 @@
+- include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: harbor
+    certificate_name: "httpproxy-cert"
+    secret_name: "httpproxy-tls"
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+- name: Deploying harbor
+  vars:
+    version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+  kubernetes.core.helm:
+    name: harbor
+    atomic: yes
+    chart_ref: harbor/harbor
+    chart_version: "{{ version }}"
+    namespace: harbor-system
+    create_namespace: yes
+    values: "{{ CONTOUR_VALUES_FILE }}"
+    timeout: 10m0s
+    wait: yes
+        
+- name: Create httpproxy for harbor
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ item }}"
+  loop:
+    - "{{ CORE_INGRESS_CONTOUR_TEMPLATE }}"
+    - "{{ NOTARY_INGRESS_CONTOUR_TEMPLATE }}"

@@ -4,11 +4,6 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Get ingress class
-  kubernetes.core.k8s_info:
-    kind: IngressClass
-  register: ingress_class
-
 - name: Create logging namespace
   kubernetes.core.k8s:
     kind: Namespace
@@ -133,20 +128,7 @@
             username: "{{ service_account.kibana.username | b64encode }}"
             password: "{{ service_account.kibana.password | b64encode }}"
 
-    - name: Installing kibana
-      vars:
-        version: "{% if kibana_version is defined and kibana_version and kibana_version != 'latest' %}{{ kibana_version }}{% endif %}"
-      kubernetes.core.helm:
-        name: kibana
-        namespace: logging
-        atomic: yes
-        chart_repo_url: "https://helm.elastic.co"
-        chart_ref: kibana
-        chart_version: "{{ version }}"
-        create_namespace: yes
-        values: "{{ KIBANA_VALUES_FILE }}"
-        timeout: 10m0s
-        wait: yes
+    - include_tasks: "{{ KIBANA_CHART[_kube.ingress_type] }}"
 
 - name: Installing fluentd
   kubernetes.core.k8s:

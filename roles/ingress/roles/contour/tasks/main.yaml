@@ -21,7 +21,7 @@
 
 - name: Create root HTTPProxy
   kubernetes.core.k8s:
-    definition: "{{ HTTPPROXY_TEMPLATE }}"
+    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"
 
 - name: Get ingress service information
   kubernetes.core.k8s_info:

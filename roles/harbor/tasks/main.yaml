@@ -7,6 +7,8 @@
 
 # Sets the cluster_address fact
 - import_tasks: ./tasks/task-get-cluster-address.yaml
+  vars:
+    ingress_type: "{{ _kube.ingress_type }}"
 
 - name: Add harbor portal DNS entries to /etc/hosts
   become_user: root
@@ -24,16 +26,6 @@
     kind: Namespace
     name: harbor-system
 
-- import_tasks: ./tasks/task-create-certificate.yaml
-  vars:
-    name: harbor
-    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
-
-- name: Get ingress class
-  kubernetes.core.k8s_info:
-    kind: IngressClass
-  register: ingress_class
-
 - name: Install harbor
   block:
     - name: Add harbor chart repo
@@ -41,20 +33,7 @@
         name: harbor
         repo_url: "https://helm.goharbor.io"
 
-    - name: Deploying harbor
-      vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
-        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
-      kubernetes.core.helm:
-        name: harbor
-        atomic: yes
-        chart_ref: harbor/harbor
-        chart_version: "{{ version }}"
-        namespace: harbor-system
-        create_namespace: yes
-        values: "{{ VALUES_FILE }}"
-        timeout: 10m0s
-        wait: yes
+    - include_tasks: "{{ INSTALL[_kube.ingress_type] }}"
 
     - name: Waiting for harbor deployments to be ready
       shell: |
