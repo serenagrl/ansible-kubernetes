@@ -5,6 +5,6 @@ ELASTICSEARCH_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'elasticsearch-certif
 MANIFEST_FILE: "{{ _work_dir }}/fluentd.yaml"
 INGRESS_CONTOUR_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"
 
-KIBANA_CHART:
+INSTALL:
   contour: "kibana-install-contour.yaml"
   nginx: "kibana-install-nginx.yaml"

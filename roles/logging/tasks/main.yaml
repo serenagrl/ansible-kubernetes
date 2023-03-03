@@ -128,7 +128,7 @@
             username: "{{ service_account.kibana.username | b64encode }}"
             password: "{{ service_account.kibana.password | b64encode }}"
 
-    - include_tasks: "{{ KIBANA_CHART[_kube.ingress_type] }}"
+    - include_tasks: "{{ INSTALL[_kube.ingress_type] }}"
 
 - name: Installing fluentd
   kubernetes.core.k8s:
