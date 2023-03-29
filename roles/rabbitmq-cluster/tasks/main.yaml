@@ -32,6 +32,11 @@
   kubernetes.core.k8s:
     definition: "{{ CLUSTER_TEMPLATE }}"
 
+- name: Waiting for rabbitmq cluster to be ready
+  shell: kubectl rollout status -n rabbitmq statefulset/rabbitmq-server
+
+- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"
+
 - name: Extract certificates for applications
   block:
     - import_tasks: ./tasks/task-get-secret.yaml
