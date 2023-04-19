@@ -11,16 +11,29 @@
         definition: |
           {{ definition }}
 
+    # - name: Patch root HTTPProxy
+    #   kubernetes.core.k8s:
+    #     state: patched
+    #     namespace: projectcontour
+    #     kind: HTTPProxy
+    #     name: root-httpproxy
+    #     definition: |
+    #       spec:
+    #         includes:
+    #           - name: {{ name }}
+    #             namespace: {{ namespace }}
+
     - name: Patch root HTTPProxy
-      kubernetes.core.k8s:
-        state: patched
-        namespace: projectcontour
+      kubernetes.core.k8s_json_patch:
         kind: HTTPProxy
+        namespace: projectcontour
         name: root-httpproxy
-        definition: |
-          spec:
-            includes:
-              - name: {{ name }}
-                namespace: {{ namespace }}
+        patch:
+          - op: add
+            path: /spec/includes/-
+            value: 
+              name: "{{ name }}"
+              namespace: "{{ namespace }}"
+
   when:
     - (ingress_result.resources | length > 0)  
