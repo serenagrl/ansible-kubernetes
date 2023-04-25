@@ -1,0 +1,12 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+spec:
+  routes:
+    - conditions:
+        - prefix: /kiali
+      services:
+        - name: kiali
+          port: 20001

@@ -4,11 +4,6 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Get ingress class
-  kubernetes.core.k8s_info:
-    kind: IngressClass
-  register: ingress_class
-
 - name: Create a awx namespace
   kubernetes.core.k8s:
     name: awx
@@ -16,26 +11,9 @@
     kind: Namespace
     state: present
 
-- name: Create Ingress TLS Certificate
-  kubernetes.core.k8s:
-    definition: "{{ CERTIFICATE_TEMPLATE }}"
-
 - name: Install AWX
   block:
-    - name: Deploy AWX
-      vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"    
-        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
-      kubernetes.core.helm:
-        name: awx
-        atomic: yes
-        chart_repo_url: "https://ansible.github.io/awx-operator"
-        chart_ref: awx-operator
-        chart_version: "{{ version }}"
-        namespace: awx
-        create_namespace: yes
-        values: "{{ VALUES_FILE }}"
-        wait: yes
+    - include_tasks: "{{ INSTALL[_kube.ingress_type] }}"
 
     - name: Waiting for AWX deployments to be ready
       shell: |

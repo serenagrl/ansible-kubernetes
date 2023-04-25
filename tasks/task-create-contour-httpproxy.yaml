@@ -1,0 +1,27 @@
+- name: Check for root HTTPProxy availability
+  kubernetes.core.k8s_info:
+    kind: HTTPProxy
+    name: root-httpproxy
+    namespace: projectcontour
+  register: ingress_result  
+
+- block:
+    - name: Create HTTPProxy
+      kubernetes.core.k8s:
+        definition: |
+          {{ definition }}
+
+    - name: Patch root HTTPProxy
+      kubernetes.core.k8s_json_patch:
+        kind: HTTPProxy
+        namespace: projectcontour
+        name: root-httpproxy
+        patch:
+          - op: add
+            path: /spec/includes/-
+            value: 
+              name: "{{ name }}"
+              namespace: "{{ namespace }}"
+
+  when:
+    - (ingress_result.resources | length > 0)  

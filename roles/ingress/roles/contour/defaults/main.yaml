@@ -1,0 +1,3 @@
+MANIFEST_FILE: "{{ _work_dir }}/contour.yaml"
+CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
+INGRESS_CONTOUR_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"

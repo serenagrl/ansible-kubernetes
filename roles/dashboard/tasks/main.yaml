@@ -82,12 +82,4 @@
 - name: Waiting for kubernetes dashboard to be ready
   shell: kubectl rollout status -n kubernetes-dashboard deployment/kubernetes-dashboard
 
-- import_tasks: ./tasks/task-create-ingress-route.yaml
-  vars:
-    namespace: kubernetes-dashboard
-    name: kubernetes-dashboard-ingress
-    protocol: HTTPS
-    route: dashboard
-    service_name: kubernetes-dashboard
-    port: 443
-
+- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"

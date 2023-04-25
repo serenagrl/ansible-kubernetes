@@ -1,0 +1,19 @@
+- name: Deploy AWX
+  vars:
+    version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+  kubernetes.core.helm:
+    name: awx
+    atomic: yes
+    chart_repo_url: "https://ansible.github.io/awx-operator"
+    chart_ref: awx-operator
+    chart_version: "{{ version }}"
+    namespace: awx
+    create_namespace: yes
+    values: "{{ CONTOUR_VALUES_FILE }}"
+    wait: yes
+
+- include_tasks: ./tasks/task-create-contour-httpproxy.yaml
+  vars:
+    name: awx-httpproxy
+    namespace: awx
+    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"

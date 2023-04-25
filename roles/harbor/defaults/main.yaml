@@ -1,6 +1,13 @@
-VALUES_FILE: "{{ lookup('template', 'values.j2') | from_yaml }}"
+NGINX_VALUES_FILE: "{{ lookup('template', 'values-nginx.j2') | from_yaml }}"
+CONTOUR_VALUES_FILE: "{{ lookup('template', 'values-contour.j2') | from_yaml }}"
 CERT_FILE: "{{ _work_dir }}/harbor-ca.crt"
 CERT_DIR: "/usr/local/share/ca-certificates"
 CR_CERT_DIR: "/etc/containerd/certs.d/core.{{ domain }}"
 CONFIGMAP_FILE: "{{ _work_dir }}/coredns-corefile.configmap"
 CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
+CORE_INGRESS_CONTOUR_TEMPLATE: "{{ lookup('template', 'ingress-contour-core.j2') | from_yaml }}"
+NOTARY_INGRESS_CONTOUR_TEMPLATE: "{{ lookup('template', 'ingress-contour-notary.j2') | from_yaml }}"
+
+INSTALL:
+  contour: "harbor-install-contour.yaml"
+  nginx: "harbor-install-nginx.yaml"

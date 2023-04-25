@@ -1,0 +1,16 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+spec:
+  routes:
+    - conditions:
+        - prefix: /dashboard
+      services:
+        - name: kubernetes-dashboard
+          port: 443
+          protocol: tls
+      pathRewritePolicy:
+        replacePrefix:
+          - replacement: /

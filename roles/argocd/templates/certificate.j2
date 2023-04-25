@@ -1,7 +1,7 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: nginx-cert
+  name: {{ certificate_name }}
   namespace: argocd
 spec:
   dnsNames:
@@ -9,4 +9,4 @@ spec:
   issuerRef:
     kind: ClusterIssuer
     name: default-cluster-issuer
-  secretName: nginx-tls
+  secretName: {{ secret_name }}

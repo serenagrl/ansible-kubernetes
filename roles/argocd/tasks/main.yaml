@@ -7,6 +7,8 @@
 
 # Sets the cluster_address fact
 - import_tasks: ./tasks/task-get-cluster-address.yaml
+  vars:
+    ingress_type: "{{ _kube.ingress_type }}"
 
 - name: Add argocd portal DNS entries to /etc/hosts
   become_user: root
@@ -23,11 +25,6 @@
   kubernetes.core.k8s:
     kind: Namespace
     name: argocd
-
-- import_tasks: ./tasks/task-create-certificate.yaml
-  vars:
-    name: argocd
-    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
 - import_tasks: ./tasks/task-apply-manifest.yaml
   vars:
@@ -73,15 +70,4 @@
           port: 443
   when: _kube.use_nodeport
 
-- name: Check for ingress availability
-  kubernetes.core.k8s_info:
-    kind: IngressClass
-  register: ingress_class
-
-- name: Create ingress for argocd server
-  vars:
-    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-  kubernetes.core.k8s:
-    apply: yes
-    force: yes
-    definition: "{{ INGRESS_TEMPLATE }}"
+- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"

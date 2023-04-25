@@ -1,0 +1,19 @@
+- include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: argocd
+    certificate_name: "nginx-cert"
+    secret_name: "nginx-tls"
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+- name: Check for ingress availability
+  kubernetes.core.k8s_info:
+    kind: IngressClass
+  register: ingress_class
+
+- name: Create ingress for argocd server
+  vars:
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ INGRESS_NGINX_TEMPLATE }}"

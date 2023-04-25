@@ -1,0 +1,19 @@
+- name: Get ingress class
+  kubernetes.core.k8s_info:
+    kind: IngressClass
+  register: ingress_class
+
+- name: Installing kibana
+  vars:
+    version: "{% if kibana_version is defined and kibana_version and kibana_version != 'latest' %}{{ kibana_version }}{% endif %}"
+  kubernetes.core.helm:
+    name: kibana
+    namespace: logging
+    atomic: yes
+    chart_repo_url: "https://helm.elastic.co"
+    chart_ref: kibana
+    chart_version: "{{ version }}"
+    create_namespace: yes
+    values: "{{ NGINX_KIBANA_VALUES_FILE }}"
+    timeout: 10m0s
+    wait: yes
