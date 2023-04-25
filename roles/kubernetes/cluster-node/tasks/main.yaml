@@ -50,20 +50,20 @@
           modprobe overlay
           modprobe br_netfilter
 
-- name: Create kubernetes configuration file with network settings
+- name: Configure bridged traffic
+  copy:
+    dest: "/etc/modules-load.d/kubernetes.conf"
+    content: |
+              overlay
+              br_netfilter
+
+- name: Configure bridged traffic to persist across reboots
   copy:
     dest: "/etc/sysctl.d/kubernetes.conf"
     content: |
               net.bridge.bridge-nf-call-ip6tables = 1
               net.bridge.bridge-nf-call-iptables = 1
               net.ipv4.ip_forward = 1
-
-- name: Create containerd configuration file
-  copy:
-    dest: "/etc/modules-load.d/containerd.conf"
-    content: |
-              overlay
-              br_netfilter
 
 - name: Reload sysctl
   command: sysctl --system
@@ -161,3 +161,10 @@
         name: containerd
         state: restarted
         enabled: yes
+
+    - name: Configure crictl default endpoint to containerd
+      copy:
+        dest: "/etc/crictl.yaml"
+        content: |
+                  runtime-endpoint: unix:///run/containerd/containerd.sock
+                  image-endpoint: unix:///run/containerd/containerd.sock
