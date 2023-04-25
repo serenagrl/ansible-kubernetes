@@ -312,10 +312,6 @@
   loop:
     - "ceph mgr module enable rook"
     # - "ceph orch set backend rook"
-    - "ceph dashboard set-alertmanager-api-host 'http://alertmanager-main.monitoring.svc:9093/alerts'"
-    - "ceph dashboard set-prometheus-api-host 'http://prometheus-k8s.monitoring.svc:9090/prometheus'"
-    - "ceph dashboard set-prometheus-api-ssl-verify False"
-    - "ceph dashboard set-alertmanager-api-ssl-verify False"
 
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
@@ -323,14 +319,7 @@
     command: "kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath='{.data.password}'"
     filename: "ceph_dashboard_password"
 
-- import_tasks: ./tasks/task-create-ingress-route.yaml
-  vars:
-    namespace: rook-ceph
-    name: ceph-dashboard-ingress
-    protocol: HTTPS
-    route: ceph
-    service_name: rook-ceph-mgr-dashboard
-    port: 8443
+- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"
 
 - name: Check if Prometheus is installed
   shell: |
@@ -340,6 +329,19 @@
 
 - name: Configure prometheus to scrape ceph metrics endpoint
   block:
+    - name: Configure prometheus endpoint
+      vars:
+        pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
+      kubernetes.core.k8s_exec:
+        namespace: rook-ceph
+        pod: '{{ pod_name }}'
+        command: '{{ item }}'
+      loop:
+        - "ceph dashboard set-alertmanager-api-host 'http://alertmanager-main.monitoring.svc:9093/alerts/'"
+        - "ceph dashboard set-prometheus-api-host 'http://prometheus-k8s.monitoring.svc:9090/prometheus/'"
+        - "ceph dashboard set-prometheus-api-ssl-verify False"
+        - "ceph dashboard set-alertmanager-api-ssl-verify False"
+
     - name: Export existing additional scrape configs to file
       shell: |
         kubectl -n monitoring get secret additional-scrape-configs -o jsonpath="{['data']['prometheus-additional\.yaml']}" | base64 --decode > {{ SCRAPE_CONFIG }}

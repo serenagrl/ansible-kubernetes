@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    app.kubernetes.io/name: {{ name }}
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS    
+spec:
+  ingressClassName: {{ ingress_name }}
+  rules:
+    - host: {{ _kube.hostname }}
+      http:
+        paths:
+          - path: /rabbitmq
+            pathType: Prefix
+            backend:
+              service:
+                name: rabbitmq
+                port:
+                  number: 15671
+{% if has_issuer %}
+  tls:
+    - hosts:
+        - {{ _kube.hostname }}
+      secretName: nginx-tls
+{% endif %}

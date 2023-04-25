@@ -1,0 +1,12 @@
+- include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: argocd
+    certificate_name: "httpproxy-cert"
+    secret_name: "httpproxy-tls"
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+- name: Create httpproxy for argocd server
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"

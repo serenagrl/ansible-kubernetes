@@ -2,7 +2,7 @@
 _work_dir: /tmp/automate
 
 # Creates VM checkpoints at specific stages of automation.
-_checkpoint: yes
+_checkpoint: no
 
 # Kubernetes configuration settings.
 # The user account to create. This account will be used to setup kubernetes.
@@ -17,5 +17,8 @@ _kube:
     cidr_network: 10.1.0.0
 
   use_nodeport: no
+  
+  # Specify which ingress type to use - nginx or contour
+  ingress_type: contour
 
   hostname: serena.k8s.local

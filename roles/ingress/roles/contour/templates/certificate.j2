@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: httpproxy-cert
+  namespace: projectcontour
+spec:
+  dnsNames:
+    - {{ _kube.hostname }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: {{ issuer_name }}
+  secretName: root-httpproxy-tls

@@ -1,0 +1,13 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+spec:
+  routes:
+    - conditions:
+        - prefix: /rabbitmq
+      services:
+        - name: rabbitmq
+          port: 15671
+          protocol: tls

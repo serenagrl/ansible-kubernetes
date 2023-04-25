@@ -1,0 +1,26 @@
+- include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: awx
+    certificate_name: "nginx-cert"
+    secret_name: "nginx-tls"
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+- name: Get ingress class
+  kubernetes.core.k8s_info:
+    kind: IngressClass
+  register: ingress_class
+
+- name: Deploy AWX
+  vars:
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"    
+    version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+  kubernetes.core.helm:
+    name: awx
+    atomic: yes
+    chart_repo_url: "https://ansible.github.io/awx-operator"
+    chart_ref: awx-operator
+    chart_version: "{{ version }}"
+    namespace: awx
+    create_namespace: yes
+    values: "{{ NGINX_VALUES_FILE }}"
+    wait: yes

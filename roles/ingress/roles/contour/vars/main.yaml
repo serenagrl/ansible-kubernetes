@@ -1,0 +1,4 @@
+release_version: latest #1.24.1
+
+# The name of the issuer for your cluster.
+issuer_name: "default-cluster-issuer"

@@ -1,1 +1,3 @@
-MANIFEST_FILE: "{{ _work_dir }}/ingress-nginx-deployment.yaml"
+INGRESSES:
+  contour: "ingress/roles/contour"
+  nginx: "ingress/roles/nginx"
