@@ -72,6 +72,16 @@
         path: "{{ dir.ubuntu }}/{{ inventory_hostname }}/Virtual Hard Disks"
         state: directory    
 
+    - name: Check if Virtual Hard Disk exists.
+      find:
+        paths: "{{ dir.ubuntu }}/{{ inventory_hostname }}/Virtual Hard Disks/"
+        patterns: "{{ inventory_hostname }}.vhdx"
+      register: file_exist
+
+    - fail:
+        msg: "Virtual Hard Disk {{ inventory_hostname }}.vhdx already exist. Please detach it from Hyper-V and perform the necessary backup or deletion before proceeding with this task."
+      when: file_exist.matched > 0
+
     - name: Preparing vhdx files for the Virtual Machines
       vars:
         vhd_disk: "{{ dir.ubuntu }}/{{ inventory_hostname }}/Virtual Hard Disks/{{ inventory_hostname }}.vhdx"
