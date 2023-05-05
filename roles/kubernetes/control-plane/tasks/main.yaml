@@ -34,7 +34,11 @@
         pkg:
           - helm
         state: latest
-        update_cache: true      
+        update_cache: true
+
+    # Prevents warnings when running ansible helm commands.
+    - name: Install helm diff
+      shell: helm plugin install https://github.com/databus23/helm-diff
 
 - name: Configure kube config
   become_user: "{{ _kube.user }}"
@@ -51,6 +55,7 @@
         src: /etc/kubernetes/admin.conf
         dest: "/home/{{ _kube.user }}/.kube/config"
         remote_src: yes
+        mode: 0600
         owner: "{{ _kube.user }}"
 
     - name: Add autocomplete and aliases to shell
