@@ -47,7 +47,7 @@ You can rerun the `setup-components.yaml` after you have modified the roles to s
 
 ### Add-ons stack
 * Metallb
-* Ingress Nginx
+* Ingress Nginx or Contour
 * Cert Manager
 * Kubernetes Dashboard
 * Metrics Server
@@ -55,10 +55,13 @@ You can rerun the `setup-components.yaml` after you have modified the roles to s
 * Rook Ceph
 * Kube Prometheus (monitoring) - includes Prometheus, Grafana and AlertManager
 * Elasticsearch-Fluentd-Kibana (logging)
+* Gitlab - includes minio
+* Gitlab Runner
+* Sonarqube
 * Harbor
+* ArgoCD
 * Istio
 * Ansible Tower (AWX)
-* ArgoCD
 * RabbitMQ Cluster
 
 ### Roles Guide
