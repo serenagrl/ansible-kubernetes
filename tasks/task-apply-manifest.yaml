@@ -1,31 +1,41 @@
-- name: Download {{ name }} manifest
-  become_user: root
+- name: Apply manifest
   vars:
-    release: "{% if pkg_version is defined and pkg_version and pkg_version != 'latest' %}{{ version_prefix | default() }}{{ pkg_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
+    manifest_folder: "{{ (dest is directory) | ternary (dest + '/' + namespace, dest) }}"
   block:
-    - name: Get latest {{ name }} release tag
-      shell: |
-          curl -s "https://api.github.com/repos/{{ repo_path }}/releases/latest" | grep tag_name | cut -d '"' -f 4
-      register: release_tag
-      when: pkg_version is undefined or not pkg_version or pkg_version == "latest"
+    - name: Download {{ name }} manifest
+      become_user: root
+      vars:
+        grep_tag: "{{ tag_name | default('tag_name', true) }}"  
+        release: "{% if pkg_version is defined and pkg_version and pkg_version != 'latest' %}{{ version_prefix | default() }}{{ pkg_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
+      block:
+        - name: Create manifest folder
+          shell: mkdir -p {{ manifest_folder }}
+          when: dest is directory
 
-    - name: Get {{ name }} ({{ release }}) manifest
-      get_url:
-        url: "{{ item }}"
-        dest: "{{ dest }}"
-      loop: "{{ urls }}"
-  delegate_to: localhost
+        - name: Get latest {{ name }} release tag
+          shell: |
+              curl -s "https://api.github.com/repos/{{ repo_path }}/releases/latest" | grep {{ grep_tag }} | cut -d '"' -f 4
+          register: release_tag
+          when: pkg_version is undefined or not pkg_version or pkg_version == "latest"
 
-- name: Installing {{ name }}
-  kubernetes.core.k8s:
-    apply: yes
-    force: yes
-    namespace: "{{ namespace }}"
-    definition: "{{ lookup('file', dest) | from_yaml_all }}"
+        - name: Get {{ name }} ({{ release }}) manifest
+          get_url:
+            url: "{{ item }}"
+            dest: "{{ manifest_folder }}"
+          loop: "{{ urls }}"
+      delegate_to: localhost
 
-- name: Cleanup manifest file
-  become_user: root
-  file:
-    path: "{{ dest }}"
-    state: absent
-  delegate_to: localhost
+    - name: Installing {{ name }}
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        namespace: "{{ namespace }}"
+        definition: "{{ lookup('file', item) | from_yaml_all }}"
+      loop: "{{ q('fileglob', (dest is directory) | ternary (manifest_folder + '/*.yaml', dest)) }}"
+
+    - name: Cleanup manifest file
+      become_user: root
+      file:
+        path: "{{ manifest_folder }}"
+        state: absent
+      delegate_to: localhost
