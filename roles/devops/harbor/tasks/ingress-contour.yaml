@@ -1,0 +1,7 @@
+- name: Create httpproxy for harbor
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ item }}"
+  loop: "{{ HTTP_PROXY_TEMPLATES }}"
+   

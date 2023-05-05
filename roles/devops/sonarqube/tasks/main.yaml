@@ -1,0 +1,75 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Sets the cluster_address fact
+- import_tasks: ./tasks/task-get-cluster-address.yaml
+  vars:
+    ingress_type: "{{ _kube.ingress_type }}"
+
+- name: Add sonarqube portal DNS entries to /etc/hosts
+  become_user: root
+  delegate_to: "{{ item }}"
+  lineinfile:
+    path: /etc/hosts
+    insertafter: "127.0.0.1 localhost"
+    line: "{{ cluster_address }} sonarqube.{{ domain }}"
+  loop: "{{ groups[register_dns_to] }}"
+  ignore_errors: yes
+  ignore_unreachable: yes
+
+- name: Create sonarqube namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: sonarqube 
+
+- name: Install Sonarqube
+  block:
+    - name: Add Sonarqube chart repo
+      kubernetes.core.helm_repository:
+        name: sonarqube
+        repo_url: "https://SonarSource.github.io/helm-chart-sonarqube"
+
+    - include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: sonarqube
+        certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+        
+    - name: Run pre-requisites
+      include_tasks: "{{ INGRESS_SETUP }}"
+
+    - name: Deploying sonarqube
+      vars:
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+      kubernetes.core.helm:
+        name: sonarqube
+        atomic: yes
+        chart_ref: sonarqube/sonarqube
+        chart_version: "{{ version }}"
+        namespace: sonarqube
+        create_namespace: yes
+        values: "{{ VALUES_FILE }}"
+        timeout: 10m0s
+        wait: yes
+
+    - name: Waiting for sonarqube deployments to be ready
+      shell: |
+          for d in $(kubectl -n sonarqube get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n sonarqube deployment/$d; done;
+
+- name: Extract certificates for applications
+  block:
+    - import_tasks: ./tasks/task-get-secret.yaml
+      vars:
+        name: "Sonarqube certificate"
+        command: "kubectl get -n sonarqube secret sonar-ingress-tls -o jsonpath='{.data.tls\\.crt}'"
+        filename: "{{ CERT_FILE }}"
+
+    - import_tasks: ./tasks/task-get-secret.yaml
+      vars:
+        name: "Sonarqube certificate key"
+        command: "kubectl get -n sonarqube secret sonar-ingress-tls -o jsonpath='{.data.tls\\.key}'"
+        filename: "{{ KEY_FILE }}"          

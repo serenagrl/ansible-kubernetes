@@ -1,0 +1,16 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: minio-httpproxy
+  namespace: gitlab
+spec:
+  virtualhost:
+    fqdn: minio.{{ domain }}
+    tls:
+      secretName: gitlab-ingress-tls
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: gitlab-minio-svc
+          port: 9000

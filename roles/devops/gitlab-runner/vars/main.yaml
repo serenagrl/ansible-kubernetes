@@ -1,0 +1,4 @@
+release_version: latest
+domain: k8s.local
+
+image: "ubuntu:22.04"

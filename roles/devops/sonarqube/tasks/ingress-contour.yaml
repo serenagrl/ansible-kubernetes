@@ -1,0 +1,6 @@
+- name: Create httpproxy for sonarqube
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ HTTP_PROXY_TEMPLATE }}"
+   

@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sonarqube-ingress-cert
+  namespace: sonarqube
+spec:
+  dnsNames:
+    - sonarqube.{{ domain }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: default-cluster-issuer
+  secretName: sonarqube-ingress-tls

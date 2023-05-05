@@ -1,0 +1,57 @@
+fullnameOverride: gitlab-runner
+
+envVars:
+  - name: CI_SERVER_TLS_CA_FILE
+    value: /home/gitlab-runner/.gitlab-runner/certs/ca.crt
+
+certsSecretName: gitlab-ingress-tls
+
+gitlabUrl: http://gitlab-webservice-default:8181
+
+replicas: 1
+
+# Specify this if connecting to non kubernetes Gitlab and remove the runners.secret value at the bottom
+# runnerRegistrationToken: ""
+
+rbac:
+  create: true
+  rules:
+    - apiGroups:
+        - ""
+      resources:
+        - '*'
+      verbs:
+        - '*'
+
+runners:
+  config: |
+    [[runners]]
+      clone_url = "http://gitlab-webservice-default:8181/"
+      pre_get_sources_script = "update-ca-certificates"
+      [runners.cache]
+        Type = "s3"
+        Path = "gitlab-runner"
+        Shared = true
+        MaxUploadedArchiveSize = 0
+        [runners.cache.s3]
+          ServerAddress = "gitlab-minio-svc:9000"
+          Insecure = true
+          AccessKey = "{{ minio.accesskey }}"
+          SecretKey = "{{ minio.secretkey }}"
+          BucketName = "runner-cache"
+          BucketLocation = "us-east-1"
+      [runners.kubernetes]
+        image = "{{ image }}"
+        [[runners.kubernetes.host_aliases]]
+          ip = "{{ cluster_address }}"
+          hostnames = ["core.harbor.k8s.local"]
+
+      [runners.kubernetes.volumes]
+        [[runners.kubernetes.volumes.secret]]
+          name = "gitlab-ingress-tls"
+          mount_path = "/usr/local/share/ca-certificates/"
+          read_only = false
+          [runners.kubernetes.volumes.secret.items]
+            "ca.crt" = "ca.crt" 
+
+  secret: gitlab-gitlab-runner-secret

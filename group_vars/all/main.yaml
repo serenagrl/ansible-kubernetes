@@ -2,13 +2,13 @@
 _work_dir: /tmp/automate
 
 # Creates VM checkpoints at specific stages of automation.
-_checkpoint: no
+_checkpoint: yes
 
 # Kubernetes configuration settings.
 # The user account to create. This account will be used to setup kubernetes.
 _kube:
   user: k8s-admin
-  # Passwoid is p@ssw0rd
+  # Password is p@ssw0rd
   pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
   cluster:
     # You need to point this to a load balancer domain name and ip if you are running multiple control planes.
@@ -19,6 +19,6 @@ _kube:
   use_nodeport: no
   
   # Specify which ingress type to use - nginx or contour
-  ingress_type: contour
+  ingress_type: nginx
 
   hostname: serena.k8s.local

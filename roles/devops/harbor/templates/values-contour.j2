@@ -1,0 +1,19 @@
+fullnameOverride: harbor
+logLevel: warning
+expose:
+  type: clusterIP
+  tls:
+    enabled: true
+    auto:
+      commonName: {{ domain }}
+    certSource: secret
+    secret:
+      secretName: "harbor-ingress-tls"
+      notarySecretName: "harbor-ingress-tls"
+
+externalURL: https://core.{{ domain }}
+
+persistence:
+  enabled: true
+
+caSecretName: "harbor-ingress-tls"
