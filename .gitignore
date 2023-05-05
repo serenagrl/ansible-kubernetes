@@ -2,4 +2,5 @@
 **/.vs
 **/.vscode
 **/old_version
+**/roles/role*
 test*

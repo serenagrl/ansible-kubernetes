@@ -1,0 +1,95 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Sets the cluster_address fact
+- import_tasks: ./tasks/task-get-cluster-address.yaml
+  vars:
+    ingress_type: "{{ _kube.ingress_type }}"
+
+- name: Add harbor portal DNS entries to /etc/hosts
+  become_user: root
+  delegate_to: "{{ item }}"
+  lineinfile:
+    path: /etc/hosts
+    insertafter: "127.0.0.1 localhost"
+    line: "{{ cluster_address }} core.{{ domain }} notary.{{ domain }}"
+  loop: "{{ groups[register_dns_to] }}"
+  ignore_errors: yes
+  ignore_unreachable: yes
+
+- name: Create harbor-system namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: harbor-system
+
+- name: Install harbor
+  block:
+    - name: Add harbor chart repo
+      kubernetes.core.helm_repository:
+        name: harbor
+        repo_url: "https://helm.goharbor.io"
+
+    - include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: harbor
+        certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+    - name: Run pre-requisites
+      include_tasks: "{{ INGRESS_SETUP }}"
+
+    - name: Deploying harbor
+      vars:
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+      kubernetes.core.helm:
+        name: harbor
+        atomic: yes
+        chart_ref: harbor/harbor
+        chart_version: "{{ version }}"
+        namespace: harbor-system
+        create_namespace: yes
+        values: "{{ VALUES_FILE }}"
+        timeout: 10m0s
+        wait: yes
+
+    - name: Waiting for harbor deployments to be ready
+      shell: |
+          for d in $(kubectl -n harbor-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n harbor-system deployment/$d; done;
+
+    - name: Waiting for Harbor api to be up
+      uri:
+        url: "https://core.{{ domain }}/api/v2.0/systeminfo/getcert"
+        validate_certs: no
+      register: result
+      until: result.status == 200
+      retries: 15
+      delay: 30
+
+- name: Get harbor registry certificate
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Get harbor registry certificate
+      get_url:
+        url: https://core.{{ domain }}/api/v2.0/systeminfo/getcert
+        dest: "{{ CERT_FILE }}"
+        mode: '0644'
+        force: true
+        validate_certs: no
+
+- name: Configure kubernetes nodes to trust registry certificate
+  include_tasks: trust-cert.yaml
+  loop: "{{ groups[register_dns_to] }}"
+
+- name: Cleanup files
+  delegate_to: localhost
+  become_user: root
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ CERT_FILE }}"

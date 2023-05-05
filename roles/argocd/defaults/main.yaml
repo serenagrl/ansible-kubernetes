@@ -1,8 +1,0 @@
-MANIFEST_FILE: "{{ _work_dir }}/argocd.yaml"
-INGRESS_NGINX_TEMPLATE: "{{ lookup('template', 'ingress-nginx.j2') | from_yaml }}"
-INGRESS_CONTOUR_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"
-CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
-
-INGRESSES:
-  contour: "ingress-contour.yaml"
-  nginx: "ingress-nginx.yaml"

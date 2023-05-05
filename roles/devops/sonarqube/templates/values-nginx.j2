@@ -1,0 +1,16 @@
+nginx:
+  enabled: false
+
+ingress:
+  enabled: true
+  hosts:
+    - name: sonarqube.{{ domain }}
+      path: /
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+
+  ingressClassName: {{ ingress_name }}
+  tls:
+    - secretName: sonarqube-ingress-tls
+      hosts:
+        - sonarqube.{{ domain }}

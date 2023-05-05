@@ -1,0 +1,21 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: kas-httpproxy
+  namespace: gitlab
+spec:
+  virtualhost:
+    fqdn: kas.{{ domain }}
+    tls:
+      secretName: gitlab-ingress-tls
+  routes:
+    - conditions:
+        - prefix: /k8s-proxy/
+      services:
+        - name: gitlab-kas
+          port: 8154
+    - conditions:
+        - prefix: /
+      services:
+        - name: gitlab-kas
+          port: 8150

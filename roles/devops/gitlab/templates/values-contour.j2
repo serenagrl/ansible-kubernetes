@@ -1,0 +1,22 @@
+fullnameOverride: gitlab
+global:
+  hosts:
+    domain: {{ domain }}
+  ingress:
+    enabled: false
+    configureCertmanager: false
+
+gitlab-runner:
+  install: false
+
+certmanager:
+  install: false
+
+nginx-ingress:
+  enabled: false
+
+prometheus:
+  install: false
+
+registry:
+  enabled: false  
