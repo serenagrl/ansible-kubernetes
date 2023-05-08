@@ -1,0 +1,23 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+  namespace: logging
+spec:  
+  version: {{ release }}
+  count: 1
+  elasticsearchRef:
+    name: elasticsearch
+  podTemplate:
+    spec:
+      containers:
+        - name: kibana
+          env:
+            - name: SERVER_BASEPATH
+              value: /kibana
+{% if has_issuer %}
+  http:
+    tls:
+      certificate:
+        secretName: elasticsearch-tls
+{% endif %}

@@ -1,0 +1,7 @@
+cleanup: yes
+
+service_account:
+  fluentd:
+    username: fluentd-system
+    password: p@ssw0rd
+    role: fluentd-system

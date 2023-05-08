@@ -1,0 +1,57 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-virtual-memory.html
+- name: Configure virtual memory
+  block:
+    # To maintain configuration after reboot 
+    - name: Configure max_map_count in /etc/sysctl.conf
+      become_user: root
+      delegate_to: "{{ item }}"
+      lineinfile:
+        path: /etc/sysctl.conf
+        line: "vm.max_map_count=262144"
+      loop: "{{ groups[configure_map_count_to] }}"
+
+    # Update max_map_count value without rebooting VM 
+    - name: Configure max_map_count
+      become_user: root
+      shell: |
+        sysctl -w vm.max_map_count=262144
+      delegate_to: "{{ item }}"
+      loop: "{{ groups[configure_map_count_to] }}"
+  when: use_virtual_memory
+
+- import_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: elasticsearch
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+- name: Get elasticsearch version
+  shell: |
+    curl -s https://api.github.com/repos/elastic/elasticsearch/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
+  register: release_tag
+  when: release_version is undefined or not release_version or release_version == "latest"
+
+- name: Create elasticsearch
+  vars: 
+    release: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
+    has_issuer: issuer_status.stdout == "Ready"
+  kubernetes.core.k8s:
+    definition: |
+      {{ TEMPLATE }}
+
+- name: Waiting for elasticsearch to be ready
+  shell: kubectl wait --for=jsonpath='{.status.health}'=green elasticsearch elasticsearch -n logging --timeout=300s && kubectl wait --for=condition=ready pods -n logging -l common.k8s.elastic.co/type=elasticsearch --timeout=300s
+
+- import_tasks: ./tasks/task-get-secret.yaml
+  vars:
+    name: "elastic password"
+    command: kubectl get secret elasticsearch-es-elastic-user -n logging -o=jsonpath='{.data.elastic}'
+    filename: elastic_password
+

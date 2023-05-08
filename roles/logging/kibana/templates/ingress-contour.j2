@@ -8,8 +8,9 @@ spec:
     - conditions:
         - prefix: /kibana
       services:
-        - name: kibana
+        - name: kibana-kb-http
           port: 5601
+          protocol: tls
       pathRewritePolicy:
         replacePrefix:
           - replacement: /

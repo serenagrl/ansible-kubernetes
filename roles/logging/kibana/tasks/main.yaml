@@ -1,0 +1,31 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Get kibana version
+  shell: |
+    curl -s https://api.github.com/repos/elastic/kibana/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
+  register: release_tag
+  when: release_version is undefined or not release_version or release_version == "latest"
+
+- include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: kibana-ingress
+    namespace: logging
+    definition: "{{ INGRESS_TEMPLATE }}"
+
+- name: Create kibana
+  vars: 
+    release: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
+    has_issuer: issuer_status.stdout == "Ready"
+  kubernetes.core.k8s:
+    definition: |
+      {{ TEMPLATE }}
+
+- name: Waiting for kibana to be ready
+  shell: kubectl wait --for=jsonpath='{.status.health}'=green kibana kibana -n logging --timeout=180s
+

@@ -1,0 +1,15 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Create logging namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: logging
+
+- include_role:
+    name: logging/kibana
