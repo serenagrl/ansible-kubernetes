@@ -1,9 +1,12 @@
-- name: Check if cert-manager is installed
-  shell: kubectl get ns cert-manager -o json | jq .status.phase -r
-  register: cm_status
+- name: Check for existing cluster issuer
+  shell: |
+    kubectl get clusterissuer default-cluster-issuer -o json | jq .status.conditions[0].type -r
+  register: issuer_status
   ignore_errors: yes
-      
+
 - name: Create {{ name }} TLS Certificate
+  vars:
+    has_issuer: issuer_status.stdout == "Ready"
   kubernetes.core.k8s:
     definition: "{{ certificate_template }}"
-  when: cm_status.stdout == "Active"
+  when: has_issuer

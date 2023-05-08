@@ -1,5 +1,0 @@
-- include_tasks: ./tasks/task-create-ingress-route.yaml
-  vars:
-    name: kiali-ingress
-    namespace: istio-system
-    definition: "{{ INGRESS_NGINX_TEMPLATE }}"

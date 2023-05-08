@@ -5,6 +5,6 @@ AWX:
   spec:
     ingress_type: ingress
     ingress_class_name: "{{ ingress_name }}"
-    ingress_tls_secret: nginx-tls
+    ingress_tls_secret: awx-ingress-tls
     hostname: "{{ _kube.hostname }}"
     ingress_path: /awx

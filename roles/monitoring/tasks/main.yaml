@@ -65,8 +65,13 @@
     - { name: alertmanager-main, nodePort: '{{ nodeports.alertmanager }}', port: 9093 }
   when: _kube.use_nodeport
 
-# Create Ingress
-- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"
+# Notes: Use cluster's domain name and with custom route /prometheus, /grafana and /alerts
+- name: Setup ingress
+  include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: monitoring
+    namespace: monitoring
+    definition: "{{ INGRESS_TEMPLATE }}"  
 
 - name: Configure ingress
   block:

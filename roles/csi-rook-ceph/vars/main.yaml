@@ -1,10 +1,10 @@
-release_version: 1.10.4 #latest 1.10.5
+release_version: latest # 1.11.4
 
 # Change to your desired settings
 disk:
   name: CephStorage
   dir: "D:\\Virtual Machines\\Kubernetes"
-  size: 40GB
+  size: 20GB
 pool_name: storage-pool
 
 fs_name: k8sfs

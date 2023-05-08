@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ name }}
-  namespace: {{ namespace }}
+  name: kiali-ingress
+  namespace: istio-system
 spec:
   ingressClassName: {{ ingress_name }}
   rules:
@@ -20,5 +20,5 @@ spec:
   tls:
     - hosts:
         - {{ _kube.hostname }}
-      secretName: nginx-tls
+      secretName: kiali-ingress-tls
 {% endif %}

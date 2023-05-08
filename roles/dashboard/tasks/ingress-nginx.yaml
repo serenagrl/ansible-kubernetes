@@ -1,5 +1,0 @@
-- include_tasks: ./tasks/task-create-ingress-route.yaml
-  vars:
-    namespace: kubernetes-dashboard
-    name: kubernetes-dashboard-ingress
-    definition: "{{ INGRESS_NGINX_TEMPLATE }}"

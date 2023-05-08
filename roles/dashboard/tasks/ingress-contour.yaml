@@ -1,5 +1,0 @@
-- include_tasks: ./tasks/task-create-contour-httpproxy.yaml
-  vars:
-    name: kubernetes-dashboard-httpproxy
-    namespace: kubernetes-dashboard
-    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"

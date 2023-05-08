@@ -13,7 +13,25 @@
 
 - name: Install AWX
   block:
-    - include_tasks: "{{ INSTALL[_kube.ingress_type] }}"
+    
+    # Notes: Uses cluster's domain name and with custom route /awx
+    - name: Setup ingress
+      include_tasks: "{{ INGRESS_SETUP }}"
+
+    - name: Deploy AWX
+      vars:
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"    
+        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+      kubernetes.core.helm:
+        name: awx
+        atomic: yes
+        chart_repo_url: "https://ansible.github.io/awx-operator"
+        chart_ref: awx-operator
+        chart_version: "{{ version }}"
+        namespace: awx
+        create_namespace: yes
+        values: "{{ VALUES_FILE }}"
+        wait: yes
 
     - name: Waiting for AWX deployments to be ready
       shell: |

@@ -1,8 +1,8 @@
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: {{ name }}
-  namespace: {{ namespace }}
+  name: kubernetes-dashboard-httpproxy
+  namespace: kubernetes-dashboard
 spec:
   routes:
     - conditions:

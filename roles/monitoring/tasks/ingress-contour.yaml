@@ -1,5 +1,0 @@
-- include_tasks: ./tasks/task-create-contour-httpproxy.yaml
-  vars:
-    name: monitoring-httpproxy
-    namespace: monitoring
-    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"

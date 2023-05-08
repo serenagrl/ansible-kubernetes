@@ -37,14 +37,16 @@
       vars:
         name: gitlab
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
-        
-    - name: Run pre-requisites
+
+    # Notes: Uses own domain names.    
+    - name: Setup ingress
       include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying Gitlab
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
         version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: gitlab
         atomic: yes

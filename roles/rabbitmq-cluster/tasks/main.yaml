@@ -32,7 +32,13 @@
   kubernetes.core.k8s:
     definition: "{{ CLUSTER_TEMPLATE }}"
 
-- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"
+# Notes: Use cluster's domain name and with custom route /prometheus, /grafana and /alerts
+- name: Setup ingress
+  include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: rabbitmq-management
+    namespace: "{{ rmq_namespace }}"
+    definition: "{{ INGRESS_TEMPLATE }}"
 
 - name: Waiting for rabbitmq cluster to be ready
   shell: kubectl rollout status -n rabbitmq statefulset/rabbitmq-server

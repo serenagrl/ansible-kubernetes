@@ -319,7 +319,13 @@
     command: "kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath='{.data.password}'"
     filename: "ceph_dashboard_password"
 
-- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"
+  # Notes: Use cluster's domain name and with custom route /ceph
+- name: Setup ingress
+  include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: ceph-dashboard
+    namespace: rook-ceph
+    definition: "{{ INGRESS_TEMPLATE }}"  
 
 - name: Check if Prometheus is installed
   shell: |

@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ name }}
-  namespace: {{ namespace }}
+  name: kubernetes-dashboard-ingress
+  namespace: kubernetes-dashboard
   labels:
-    app.kubernetes.io/name: {{ name }}
+    app.kubernetes.io/name: kubernetes-dashboard-ingress
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     nginx.ingress.kubernetes.io/configuration-snippet: |
@@ -29,5 +29,5 @@ spec:
   tls:
     - hosts:
         - {{ _kube.hostname }}
-      secretName: nginx-tls
+      secretName: kubernetes-dashboard-ingress-tls
 {% endif %}

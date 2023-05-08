@@ -3,8 +3,10 @@ global:
   hosts:
     domain: {{ domain }}
   ingress:
+{% if has_issuer %}
     tls:
       secretName: gitlab-ingress-tls
+{% endif %}
     class: {{ ingress_name }}
     configureCertmanager: false
 

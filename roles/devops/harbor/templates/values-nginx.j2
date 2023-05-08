@@ -4,7 +4,7 @@ expose:
   type: ingress
   tls:
     enabled: true
-{% if cm_status.stdout == "Active" %}
+{% if has_issuer %}
     certSource: secret
     secret:
       secretName: "harbor-ingress-tls"
@@ -30,6 +30,6 @@ externalURL: https://core.{{ domain }}
 persistence:
   enabled: true
 
-{% if cm_status.stdout == "Active" %}
+{% if has_issuer %}
 caSecretName: "harbor-ingress-tls"
 {% endif %}

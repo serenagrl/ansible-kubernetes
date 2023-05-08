@@ -12,7 +12,7 @@
     - role: cert-manager
     - role: ingress
     - role: dashboard
-    - role: monitoring
+    # - role: monitoring
     - role: metrics-server
     - role: csi-nfs
     # - role: csi-rook-ceph
@@ -25,7 +25,9 @@
     #   register_dns_to: kubernetes_control_planes
     # - role: devops/argocd
     #   register_dns_to: kubernetes_control_planes
-    # - role: logging
+    # - role: logging/elastic-stack
+    # - role: logging/fluentd
+
     # - role: awx
     # - role: istio
     # - role: rabbitmq-cluster
