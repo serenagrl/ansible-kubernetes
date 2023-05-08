@@ -1,0 +1,22 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- import_tasks: ./tasks/task-apply-manifest.yaml
+  vars:
+    name: "eck-operator"
+    namespace: "elastic-system"
+    repo_path: "elastic/cloud-on-k8s"
+    pkg_version: "{{ operator_version | default }}"
+    tag_name: \"name\" # Due to non standard versioning, we need to use this.
+    dest: "{{ _work_dir }}"
+    manifest_url: "https://download.elastic.co/downloads/eck/{{ release }}"
+    urls: 
+      - "{{ manifest_url }}/crds.yaml"
+      - "{{ manifest_url }}/operator.yaml"
+
+- name: Waiting for elastic-operator to be ready
+  shell: kubectl rollout status -n elastic-system statefulset/elastic-operator

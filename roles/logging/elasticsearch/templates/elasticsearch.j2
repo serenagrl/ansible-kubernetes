@@ -1,0 +1,18 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch
+  namespace: logging
+spec:
+  version: {{ release }}
+  nodeSets:
+  - name: default
+    count: 3
+    config:
+      node.store.allow_mmap: {{ use_virtual_memory }}
+{% if has_issuer %}
+  http:
+    tls:
+      certificate:
+        secretName: elasticsearch-tls
+{% endif %}
