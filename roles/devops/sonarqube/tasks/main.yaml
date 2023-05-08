@@ -37,14 +37,16 @@
       vars:
         name: sonarqube
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
-        
-    - name: Run pre-requisites
+
+    # Notes: Uses own domain name.    
+    - name: Setup ingress
       include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying sonarqube
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
         version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: sonarqube
         atomic: yes

@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ name }}
+  name: {{ name }}-ingress
   namespace: {{ namespace }}
   labels:
-    app.kubernetes.io/name: {{ name }}
+    app.kubernetes.io/name: {{ name }}-ingress
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS    
 spec:
@@ -24,5 +24,5 @@ spec:
   tls:
     - hosts:
         - {{ _kube.hostname }}
-      secretName: nginx-tls
+      secretName: {{ name }}-ingress-tls
 {% endif %}

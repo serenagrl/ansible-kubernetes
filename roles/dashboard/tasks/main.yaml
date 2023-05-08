@@ -82,4 +82,10 @@
 - name: Waiting for kubernetes dashboard to be ready
   shell: kubectl rollout status -n kubernetes-dashboard deployment/kubernetes-dashboard
 
-- include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"
+  # Notes: Use cluster's domain name and with custom route /dashboard
+- name: Setup ingress
+  include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: kubernetes-dashboard
+    namespace: kubernetes-dashboard
+    definition: "{{ INGRESS_TEMPLATE }}"  

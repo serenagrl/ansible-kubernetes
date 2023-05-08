@@ -20,7 +20,7 @@ spec:
                 name: argocd-server
                 port:
                   name: https
-{% if cm_status.stdout == "Active" %}
+{% if has_issuer %}
   tls:
     - hosts:
         - {{ domain }}

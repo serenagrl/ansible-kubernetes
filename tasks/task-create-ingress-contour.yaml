@@ -20,7 +20,7 @@
           - op: add
             path: /spec/includes/-
             value: 
-              name: "{{ name }}"
+              name: "{{ name }}-httpproxy"
               namespace: "{{ namespace }}"
 
   when:

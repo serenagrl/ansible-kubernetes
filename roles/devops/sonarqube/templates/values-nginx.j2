@@ -10,7 +10,9 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-body-size: "8m"
 
   ingressClassName: {{ ingress_name }}
+{% if has_issuer %}
   tls:
     - secretName: sonarqube-ingress-tls
       hosts:
         - sonarqube.{{ domain }}
+{% endif %}

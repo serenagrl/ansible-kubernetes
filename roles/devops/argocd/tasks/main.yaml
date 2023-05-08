@@ -73,6 +73,7 @@
 - name: Install ingress ({{ _kube.ingress_type }})
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+    has_issuer: issuer_status.stdout == "Ready"
   block:  
     - include_tasks: ./tasks/task-create-certificate.yaml
       vars:

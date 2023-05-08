@@ -1,5 +1,0 @@
-- include_tasks: ./tasks/task-create-contour-httpproxy.yaml
-  vars:
-    name: kiali-httpproxy
-    namespace: istio-system
-    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"

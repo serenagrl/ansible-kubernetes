@@ -148,8 +148,14 @@
               port: 20001
       when: _kube.use_nodeport
 
-    - include_tasks: "{{ INGRESSES[_kube.ingress_type] }}"
-
+    # Notes: Use cluster's domain name and with custom route /kiali
+    - name: Setup ingress
+      include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: kiali
+        namespace: istio-system
+        definition: "{{ INGRESS_TEMPLATE }}"
+        
 - name: Cleanup
   block:
     - name: Cleanup config files

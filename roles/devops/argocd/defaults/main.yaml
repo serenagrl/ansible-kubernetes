@@ -1,4 +1,5 @@
 MANIFEST_FILE: "{{ _work_dir }}/argocd.yaml"
 CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 
+INGRESS_SETUP: "{{ 'ingress-' + _kube.ingress_type + '.yaml' }}"
 INGRESS_TEMPLATE: "{{ lookup('template', 'ingress-' + _kube.ingress_type + '.j2') | from_yaml }}"

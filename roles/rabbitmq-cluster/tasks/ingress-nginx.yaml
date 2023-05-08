@@ -1,5 +1,0 @@
-- include_tasks: ./tasks/task-create-ingress-route.yaml
-  vars:
-    namespace: rabbitmq
-    name: rabbitmq-management-ingress
-    definition: "{{ INGRESS_NGINX_TEMPLATE }}"

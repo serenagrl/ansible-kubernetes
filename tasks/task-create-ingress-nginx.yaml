@@ -13,11 +13,11 @@
       kubernetes.core.k8s:
         api_version: cert-manager.io/v1
         kind: Certificate
-        name: nginx-cert
+        name: "{{ name }}-ingress-cert"
         namespace: "{{ namespace }}"
         definition: |
           spec:
-            secretName: nginx-tls
+            secretName: {{ name }}-ingress-tls
             issuerRef:
               name: "{{ issuer }}"
               kind: ClusterIssuer

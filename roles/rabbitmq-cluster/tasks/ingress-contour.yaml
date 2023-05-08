@@ -1,5 +1,0 @@
-- include_tasks: ./tasks/task-create-contour-httpproxy.yaml
-  vars:
-    name: rabbitmq-management-httpproxy
-    namespace: rabbitmq
-    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"

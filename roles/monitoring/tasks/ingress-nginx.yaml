@@ -1,5 +1,0 @@
-- include_tasks: ./tasks/task-create-ingress-route.yaml
-  vars:
-    namespace: monitoring
-    name: monitoring-ingress
-    definition: "{{ INGRESS_NGINX_TEMPLATE }}"
