@@ -1,7 +1,7 @@
   # The specification for each VM node.
   # Note: These are the recommended specifications. Anything lower may cause unexpected errors.
   specs:
-    ram_size: 12GB
+    ram_size: 8GB
     min_ram_size: 8GB
     disk_size: 127GB
     v_cpu: 4
@@ -19,14 +19,10 @@
     cidr: 24
 
   # The location where the seed isos will be placed
-  iso:
-    ubuntu: "/mnt/d/Installation Files/Ubuntu"
-    windows: "D:\\Installation Files\\Ubuntu"
+  iso_folder: "E:\\Installation Files\\Ubuntu"
 
   # The location where the VMs will be created
-  dir:
-    ubuntu: "/mnt/d/Virtual Machines/Kubernetes"
-    windows: "D:\\Virtual Machines\\Kubernetes"
+  vm_folder: "E:\\Virtual Machines\\Kubernetes"
 
   # The hyper-v switch to use
   switch: LAN
