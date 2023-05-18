@@ -22,3 +22,8 @@ _kube:
   ingress_type: nginx
 
   hostname: serena.k8s.local
+  
+  # This setting has the following effect:
+  #   yes - Remove the taints on all control-planes and allow all pods (including user applications) to be scheduled on any nodes.
+  #   no - Keep the taints on all control-planes but will configure tolerations on add-on components to run on the control-planes.
+  allow_scheduling: no
