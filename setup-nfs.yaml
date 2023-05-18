@@ -15,7 +15,7 @@
 
     # Configure servers that are allowed to access the NFS share
     - role: nfs-server
-      share_to: kubernetes_control_planes
+      share_to: kubernetes_cluster
 
 # Pre-requisite for the csi-nfs. 
 # Install the nfs package on clients.
