@@ -1,0 +1,18 @@
+- name: Check for existing virtual hard disk
+  delegate_to: localhost
+  become_user: root
+  vars:
+    backslash: "\\"
+    linux_dir: "{{ '/mnt/' + (win_folder[0] | lower) + (win_folder[2:] | replace( backslash, '/')) }}"
+    vhd_disk: "{{ win_folder }}\\{{ host_name }}\\Virtual Hard Disks\\{{ disk_name }}.vhdx"
+  block:
+    - name: Checking for {{ disk_name }}.vhdx on {{ host_name }}.
+      find:
+        paths: "{{ linux_dir }}/{{ host_name }}/Virtual Hard Disks/"
+        patterns: "{{ disk_name }}.vhdx"
+      register: file_exist
+
+    - name: File Check (Skipped when passed)
+      fail:
+        msg: "{{ vhd_disk }} already exist. Please detach it from Hyper-V and perform the necessary backup/deletion before proceeding."
+      when: file_exist.matched > 0
