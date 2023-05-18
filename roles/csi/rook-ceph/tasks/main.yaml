@@ -5,12 +5,21 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# You need to remove the disks manually if you wish to rerun this.
-- name: Create Hyper-V virtual disks and attach them to the nodes
+- name: Check for existing Virtual Hard Disks
+  include_tasks: ./tasks/task-check-vhdx-exist.yaml
+  vars:
+    win_folder: "{{ disk.vm_folder }}"
+    host_name: "{{ item }}"
+    disk_name: "{{ disk.name }}"
+    hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
+  loop: "{{ q('inventory_hostnames', hostnames) }}"
+
+# IMPORTANT! You need to remove the disks manually if you wish to rerun this.
+- name: Create Hyper-V virtual disks and attach them to nodes
   delegate_to: "{{ hostvars[item].winrm_host }}"
   vars:
-    hostnames: "{% if (groups['kubernetes_nodes'] | length > 0) %}kubernetes_nodes{% else %}kubernetes_control_planes{% endif %}"
-    vhd_disk: "{{ disk.dir }}\\{{ item }}\\Virtual Hard Disks\\{{ disk.name }}.vhdx"
+    hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
+    vhd_disk: "{{ disk.vm_folder }}\\{{ item }}\\Virtual Hard Disks\\{{ disk.name }}.vhdx"
   ansible.windows.win_powershell:
     script: |
       New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ disk.size }} -Dynamic
@@ -47,6 +56,94 @@
               sed -i 's/ROOK_LOG_LEVEL: "INFO"$/ROOK_LOG_LEVEL: "WARNING"/g' operator.yaml
       args:
         chdir: "{{ DEPLOY_DIR }}"
+
+    - name: Patch tolerations and node selectors
+      block:
+        - name: Configure cluster to run on control-planes only 
+          replace:
+            path: "{{ DEPLOY_DIR }}/cluster.yaml"
+            regexp: '^(spec:)$'
+            replace: |8-
+                    \1
+                      placement:
+                        all:
+                          nodeAffinity:
+                           requiredDuringSchedulingIgnoredDuringExecution:
+                             nodeSelectorTerms:
+                             - matchExpressions:
+                               - key: node-role.kubernetes.io/control-plane
+                                 operator: Exists
+                          tolerations:
+                            - effect: NoSchedule
+                              key: node-role.kubernetes.io/control-plane
+                              operator: Exists
+                      
+        - name: Configure operator to run on control-planes only
+          replace:
+            path: "{{ DEPLOY_DIR }}/operator.yaml"
+            regexp: '^(data:)$'
+            replace: |8-
+                    \1
+                    {{ OPERATOR_TOLERATIONS_TEMPLATE }}
+
+        - name: Configure operator tolerations and node affinity environment variables
+          replace:
+            path: "{{ DEPLOY_DIR }}/operator.yaml"
+            regexp: '^\s*(env:)$'
+            replace: |2-
+                        \1
+                          - name: DISCOVER_TOLERATIONS
+                            value: |
+                              - effect: NoSchedule
+                                key: node-role.kubernetes.io/control-plane
+                                operator: Exists                    
+                          - name: DISCOVER_AGENT_NODE_AFFINITY
+                            value: "node-role.kubernetes.io/control-plane="
+
+        - name: Configure operator deployment to run on control-planes only
+          replace:
+            path: "{{ DEPLOY_DIR }}/operator.yaml"
+            regexp: '^\s*(containers:)$'
+            replace: |4-
+                      tolerations:
+                        - effect: NoSchedule
+                          key: node-role.kubernetes.io/control-plane
+                          operator: Exists
+                      nodeSelector:
+                        node-role.kubernetes.io/control-plane: ""
+                      \1
+
+        - name: Configure toolbox to run on control-planes only
+          replace:
+            path: "{{ DEPLOY_DIR }}/toolbox.yaml"
+            regexp: '^\s*(tolerations:)$'
+            replace: |4-
+                      nodeSelector:
+                        node-role.kubernetes.io/control-plane: ""
+                      \1
+                        - effect: NoSchedule
+                          key: node-role.kubernetes.io/control-plane
+                          operator: Exists
+
+        - name: Patch filesystem tolerations
+          replace:
+            path: "{{ DEPLOY_DIR }}/filesystem.yaml"
+            regexp: '^\s*(placement:)$'
+            replace: |6-
+                      \1
+                        nodeAffinity:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            nodeSelectorTerms:
+                            - matchExpressions:
+                              - key: node-role.kubernetes.io/control-plane
+                                operator: Exists
+
+                        tolerations:
+                          - effect: NoSchedule
+                            key: node-role.kubernetes.io/control-plane
+                            operator: Exists
+
+      when: not _kube.allow_scheduling
 
     - name: Create rook config override 
       blockinfile:
@@ -154,6 +251,7 @@
                       debug_timer = "0/0"
                       debug_tp = "0/0"
 
+# Note: Need to remove crds on the kubernetes cluster if you need to rerun this.
 - name: Installing rook-ceph custom resources and operator
   kubernetes.core.k8s:
     force: yes

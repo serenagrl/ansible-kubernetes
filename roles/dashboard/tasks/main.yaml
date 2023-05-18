@@ -4,15 +4,53 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- import_tasks: ./tasks/task-apply-manifest.yaml
-  vars:
-    name: "kubernetes dashboard"
-    namespace: "kubernetes-dashboard"
-    repo_path: "kubernetes/dashboard"
-    pkg_version: "{{ release_version | default }}"
-    version_prefix: "v"
-    dest: "{{ MANIFEST_FILE }}"
-    urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/aio/deploy/recommended.yaml"]
+- become_user: root
+  delegate_to: localhost
+  block:
+    - import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "kubernetes dashboard"
+        namespace: "kubernetes-dashboard"
+        repo_path: "kubernetes/dashboard"
+        pkg_version: "{{ release_version | default }}"
+        version_prefix: "v"
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/aio/deploy/recommended.yaml"]
+
+    - name: Configure to run on control-planes only
+      block:    
+        - name: Patch tolerations 
+          replace:
+            path: "{{ MANIFEST_FILE }}"
+            regexp: '^\s*(tolerations:)$'
+            replace: |4-
+                      \1
+                        - effect: NoSchedule
+                          key: node-role.kubernetes.io/control-plane
+                          operator: Exists
+
+        - name: Patch nodeSelectors
+          replace:
+            path: "{{ MANIFEST_FILE }}"
+            regexp: '^\s*(nodeSelector:)$'
+            replace: |4-
+                      \1
+                        node-role.kubernetes.io/control-plane: ""
+
+      when: not _kube.allow_scheduling
+
+- name: Install kubernetes dashboard
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
 
 - name: Patch dashboard service to NodePort {{ nodeport }}
   kubernetes.core.k8s:

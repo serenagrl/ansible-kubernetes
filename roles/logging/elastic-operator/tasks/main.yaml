@@ -5,18 +5,55 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- import_tasks: ./tasks/task-apply-manifest.yaml
-  vars:
-    name: "eck-operator"
-    namespace: "elastic-system"
-    repo_path: "elastic/cloud-on-k8s"
-    pkg_version: "{{ operator_version | default }}"
-    tag_name: \"name\" # Due to non standard versioning, we need to use this.
-    dest: "{{ _work_dir }}"
-    manifest_url: "https://download.elastic.co/downloads/eck/{{ release }}"
-    urls: 
-      - "{{ manifest_url }}/crds.yaml"
-      - "{{ manifest_url }}/operator.yaml"
+- become_user: root
+  delegate_to: localhost
+  block:
+    - import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "eck-operator"
+        namespace: "elastic-system"
+        repo_path: "elastic/cloud-on-k8s"
+        pkg_version: "{{ operator_version | default }}"
+        tag_name: \"name\" # Due to non standard versioning, we need to use this.
+        dest: "{{ _work_dir }}"
+        manifest_url: "https://download.elastic.co/downloads/eck/{{ release }}"
+        urls: 
+          - "{{ manifest_url }}/crds.yaml"
+          - "{{ manifest_url }}/operator.yaml"
 
+    - name: Configure to run on control-planes only 
+      ansible.builtin.replace:
+        path: "{{ OPERATOR_MANIFEST_FILE }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane: ""
+                  \1
+      when: not _kube.allow_scheduling
+
+- name: Install elastic operator
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    namespace: elastic-system
+    definition: "{{ lookup('file', item) | from_yaml_all }}"
+  loop:
+    - "{{ CRDS_MANIFEST_FILE }}"
+    - "{{ OPERATOR_MANIFEST_FILE }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ CRDS_MANIFEST_FILE }}"
+    - "{{ OPERATOR_MANIFEST_FILE }}"
+    
 - name: Waiting for elastic-operator to be ready
   shell: kubectl rollout status -n elastic-system statefulset/elastic-operator

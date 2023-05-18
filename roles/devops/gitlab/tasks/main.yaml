@@ -73,7 +73,7 @@
     name: "Minio credential keys"
     command: 
       "echo accesskey=$(kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.accesskey}' | base64 -d); 
-       echo -n secretkey=; kubectl get secret gitlab-minio-secret -ojsonpath='{.data.secretkey}'"
+       echo -n secretkey=; kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.secretkey}'"
     filename: "minio_credential_keys"
 
 

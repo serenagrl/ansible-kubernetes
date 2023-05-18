@@ -10,9 +10,22 @@ spec:
     count: 3
     config:
       node.store.allow_mmap: {{ use_virtual_memory }}
+
+{% if not _kube.allow_scheduling %}
+    podTemplate:
+      spec:
+        tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/control-plane
+            operator: Exists
+        nodeSelector:
+          node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
 {% if has_issuer %}
   http:
     tls:
       certificate:
         secretName: elasticsearch-tls
 {% endif %}
+

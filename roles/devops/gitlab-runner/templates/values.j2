@@ -13,6 +13,15 @@ replicas: 1
 # Specify this if connecting to non kubernetes Gitlab and remove the runners.secret value at the bottom
 # runnerRegistrationToken: ""
 
+{% if not _kube.allow_scheduling %}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""  
+{% endif %}
+
 rbac:
   create: true
   rules:
@@ -46,12 +55,17 @@ runners:
           ip = "{{ cluster_address }}"
           hostnames = ["core.harbor.k8s.local"]
 
-      [runners.kubernetes.volumes]
-        [[runners.kubernetes.volumes.secret]]
-          name = "gitlab-ingress-tls"
-          mount_path = "/usr/local/share/ca-certificates/"
-          read_only = false
-          [runners.kubernetes.volumes.secret.items]
-            "ca.crt" = "ca.crt" 
+        [runners.kubernetes.volumes]
+          [[runners.kubernetes.volumes.secret]]
+            name = "gitlab-ingress-tls"
+            mount_path = "/usr/local/share/ca-certificates/"
+            read_only = false
+            [runners.kubernetes.volumes.secret.items]
+              "ca.crt" = "ca.crt" 
+
+{% if not _kube.allow_scheduling %}
+        [runners.kubernetes.node_tolerations]
+          "node-role.kubernetes.io/control-plane" = "NoSchedule"
+{% endif %}
 
   secret: gitlab-gitlab-runner-secret

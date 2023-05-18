@@ -4,32 +4,51 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- import_tasks: ./tasks/task-apply-manifest.yaml
-  vars:
-    name: "ingress nginx"
-    namespace: "ingress-nginx"
-    repo_path: "kubernetes/ingress-nginx"
-    pkg_version: "{{ release_version | default }}"
-    version_prefix: "helm-chart-"
-    dest: "{{ MANIFEST_FILE }}"
-    urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/deploy/static/provider/baremetal/deploy.yaml"]
 
-- name: Waiting for ingress-nginx-controller to be ready
-  shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller
+- become_user: root
+  delegate_to: localhost
+  block:
+    - import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "ingress nginx"
+        namespace: "ingress-nginx"
+        repo_path: "kubernetes/ingress-nginx"
+        pkg_version: "{{ release_version | default }}"
+        version_prefix: "helm-chart-"
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/deploy/static/provider/baremetal/deploy.yaml"]
 
-- name: Scale ingress controller pods = {{ scale }}
-  vars:
-    replicas: "{{ groups['kubernetes_control_planes'] | length }}"
-  shell: | 
-      kubectl scale deployment -n ingress-nginx ingress-nginx-controller --replicas={{ replicas }}
-  when: scale
+    - name: Configure to run on control-planes only
+      replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(nodeSelector:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  \1
+                    node-role.kubernetes.io/control-plane: ""
+      when: not _kube.allow_scheduling
+
+- name: Install ingress nginx
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
 
 # This is needed. Do not remove.
 - name: Check if metallb is installed
-  block:
-    - shell: kubectl get ns metallb-system -o json | jq .status.phase -r
-      register: lb_status
-      ignore_errors: yes
+  shell: kubectl get ns metallb-system -o json | jq .status.phase -r
+  register: lb_status
+  ignore_errors: yes
         
 - name: Configure ingress service type and external IP
   kubernetes.core.k8s:
@@ -39,44 +58,12 @@
     name: ingress-nginx-controller
     definition: "{{ SERVICE_DEFINITION }}"
 
-- name: Add label to control plane
-  kubernetes.core.k8s:
-    state: patched
-    kind: Node
-    name: "{{ item }}"
-    definition:
-      metadata:
-        labels:
-          ansible.kubernetes/run: ingress-nginx
-  loop: "{{ groups['kubernetes_control_planes'] }}"
-
-- name: Patch ingress nginx controller
-  kubernetes.core.k8s:
-    state: patched
-    namespace: ingress-nginx
-    kind: Deployment
-    name: ingress-nginx-controller
-    definition: 
-      spec:
-        template:
-          spec:
-            nodeSelector:
-              ansible.kubernetes/run: ingress-nginx
-            tolerations:
-              - key: node-role.kubernetes.io/control-plane
-                operator: Equal
-                value: "true"
-                effect: NoSchedule
-              - key: node-role.kubernetes.io/control-plane
-                operator: Equal
-                effect: NoSchedule
-              - key: node-role.kubernetes.io/master
-                operator: Equal
-                value: "true"
-                effect: NoSchedule
-              - key: node-role.kubernetes.io/master
-                operator: Equal
-                effect: NoSchedule
+- name: Scale ingress controller pods = {{ scale }}
+  vars:
+    replicas: "{{ groups['kubernetes_control_planes'] | length }}"
+  shell: | 
+      kubectl scale deployment -n ingress-nginx ingress-nginx-controller --replicas={{ replicas }}
+  when: scale
 
 - name: Configure default ingress nginx class
   kubernetes.core.k8s:

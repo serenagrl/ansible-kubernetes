@@ -28,6 +28,19 @@
       args:
         chdir: "{{ DEPLOY_DIR }}"
 
+    - name: Configure to run on control-planes only
+      replace:
+        path: "{{ DEPLOY_DIR }}/deployment.yaml"
+        regexp: '^\s*(volumes:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane:
+                  \1
+
 - name: Configure nfs provisioner on kubernetes cluster
   block:
     - name: Apply configuration changes

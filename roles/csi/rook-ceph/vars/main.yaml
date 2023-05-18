@@ -3,8 +3,8 @@ release_version: latest # 1.11.4
 # Change to your desired settings
 disk:
   name: CephStorage
-  dir: "D:\\Virtual Machines\\Kubernetes"
-  size: 20GB
+  vm_folder: "E:\\Virtual Machines\\Kubernetes"
+  size: 40GB
 pool_name: storage-pool
 
 fs_name: k8sfs
@@ -16,7 +16,7 @@ pvc:
 # Set the storage class as default. 
 # Some add-ons will fail if there is no default storage class.
 # Do not set this to 'yes' if you already have an existing default storage class.
-is_default: yes
+is_default: no
 
 nodeport: 32004
 

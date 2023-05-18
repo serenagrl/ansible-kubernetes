@@ -4,15 +4,45 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- import_tasks: ./tasks/task-apply-manifest.yaml
-  vars:
-    name: "contour ingress"
-    namespace: "projectcontour"
-    repo_path: "projectcontour/contour"
-    pkg_version: "{{ release_version | default }}"
-    version_prefix: "v"
-    dest: "{{ MANIFEST_FILE }}"
-    urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/render/contour.yaml"]
+- become_user: root
+  delegate_to: localhost
+  block:
+    - import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "contour ingress"
+        namespace: "projectcontour"
+        repo_path: "projectcontour/contour"
+        pkg_version: "{{ release_version | default }}"
+        version_prefix: "v"
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/render/contour.yaml"]
+
+    - name: Configure to run on control-planes only 
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  \1
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane: ""
+      when: not _kube.allow_scheduling
+
+- name: Install contour
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
 
 - import_tasks: ./tasks/task-create-certificate.yaml
   vars:

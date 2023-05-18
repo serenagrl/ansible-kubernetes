@@ -7,12 +7,28 @@ spec:
   replicas: 3
   service:
     type: "{{ service_type }}"
+
   tls:
     secretName: rmq-tls-secret
     caSecretName: rmq-tls-secret
     disableNonTLSListeners: true
+
   rabbitmq:
     additionalConfig: |
       ssl_options.verify = verify_peer
       ssl_options.fail_if_no_peer_cert = true
       management.path_prefix = /rabbitmq
+
+{% if not _kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+{% endif %}

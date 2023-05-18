@@ -1,0 +1,39 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: istio-system
+spec:
+  components:
+    egressGateways:
+    - enabled: true
+      name: istio-egressgateway
+
+{% if not _kube.allow_scheduling %}
+      k8s:
+        tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/control-plane
+            operator: Exists
+        nodeSelector:
+          node-role.kubernetes.io/control-plane: ""
+
+    pilot:
+      k8s:
+        tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/control-plane
+            operator: Exists
+        nodeSelector:
+          node-role.kubernetes.io/control-plane: ""
+
+    ingressGateways:
+    - name: istio-ingressgateway
+      k8s:
+        tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/control-plane
+            operator: Exists
+        nodeSelector:
+          node-role.kubernetes.io/control-plane: ""
+
+{% endif %}

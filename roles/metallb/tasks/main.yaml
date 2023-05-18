@@ -20,6 +20,29 @@
       shell: |
               sed -i 's/- --log-level=info$/- --log-level=error/g' "{{ MANIFEST_FILE }}"
 
+    - name: Configure to run on control-planes only
+      block:
+        - name: Patch tolerations
+          lineinfile:
+            path: "{{ MANIFEST_FILE }}"
+            insertbefore: "nodeSelector:"
+            firstmatch: yes
+            line: |2-
+                    tolerations:
+                      - effect: NoSchedule
+                        key: node-role.kubernetes.io/control-plane
+                        operator: Exists
+
+        - name: Patch node selector
+          lineinfile:
+            path: "{{ MANIFEST_FILE }}"
+            insertafter: "nodeSelector:"
+            firstmatch: yes
+            line: |2-
+                      node-role.kubernetes.io/control-plane: ""
+
+      when: not _kube.allow_scheduling
+
 - name: Installing metallb
   kubernetes.core.k8s:
     state: present
@@ -28,7 +51,9 @@
     definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
 
 - name: Waiting for metallb-system to be ready
-  shell: for d in $(kubectl -n metallb-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n metallb-system deployment/$d; done;
+  shell: |
+     for d in $(kubectl -n metallb-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n metallb-system deployment/$d; done;
+     for d in $(kubectl -n metallb-system get daemonset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n metallb-system daemonset/$d; done;
 
 - name: Cleanup manifest file
   delegate_to: localhost
