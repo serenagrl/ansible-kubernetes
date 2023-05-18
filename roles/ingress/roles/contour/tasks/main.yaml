@@ -18,7 +18,7 @@
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/render/contour.yaml"]
 
     - name: Configure to run on control-planes only 
-      ansible.builtin.replace:
+      replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '^\s*(containers:)$'
         replace: |4-
@@ -26,9 +26,9 @@
                     - effect: NoSchedule
                       key: node-role.kubernetes.io/control-plane
                       operator: Exists
-                  \1
                   nodeSelector:
                     node-role.kubernetes.io/control-plane: ""
+                  \1
       when: not _kube.allow_scheduling
 
 - name: Install contour
