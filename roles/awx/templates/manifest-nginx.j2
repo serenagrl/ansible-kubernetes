@@ -1,0 +1,41 @@
+apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: awx
+  namespace: awx
+spec:
+  ingress_type: ingress
+  ingress_class_name: {{ ingress_name }}
+  ingress_tls_secret: awx-ingress-tls
+  hostname: {{ _kube.hostname }}
+  ingress_path: /awx
+
+{% if not _kube.allow_scheduling %}
+  tolerations: |
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  node_selector: |
+    node-role.kubernetes.io/control-plane: ""
+
+  web_tolerations: |
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  web_node_selector: |
+    node-role.kubernetes.io/control-plane: ""
+
+  task_tolerations: |
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  task_node_selector: |
+    node-role.kubernetes.io/control-plane: ""
+
+  postgres_tolerations: |
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  postgres_selector: |
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}

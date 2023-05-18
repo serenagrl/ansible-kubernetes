@@ -69,5 +69,5 @@
 - name: Remove taint to allow scheduling on control plane nodes (if no worker nodes)
   become_user: "{{ _kube.user }}"
   shell: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane-
-  when: 
-    - (groups['kubernetes_nodes'] | length) < 1 
+  when: _kube.allow_scheduling
+  

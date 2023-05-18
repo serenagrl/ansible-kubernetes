@@ -70,6 +70,19 @@
         block: |2
                 hostNetwork: true
 
+    - name: Configure to run on control-planes only
+      replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(nodeSelector:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  \1
+                    node-role.kubernetes.io/control-plane: ""
+      when: not _kube.allow_scheduling
+
 - name: Install metrics server
   kubernetes.core.k8s:
     apply: yes

@@ -7,10 +7,6 @@
 - name: Setup AWX environment
   delegate_to: localhost
   block:
-    - name: Installing ansible tower cli
-      pip:
-        name: https://releases.ansible.com/ansible-tower/cli/ansible-tower-cli-latest.tar.gz
-
     - name: Checking/waiting for awx host 
       uri:
         url: "{{ AWX_HOST }}"
