@@ -1,7 +1,0 @@
-- name: Create working directory
-  delegate_to: localhost
-  become_user: root
-  file:
-    path: "{{ _work_dir }}"
-    state: directory
-  run_once: yes

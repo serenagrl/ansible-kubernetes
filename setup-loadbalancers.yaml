@@ -2,9 +2,6 @@
   hosts: load_balancers
   gather_facts: no
 
-  pre_tasks:
-    - import_tasks: ./tasks/task-create-working-directory.yaml
-
   roles:
     - role: vm-ubuntu
       specs:
