@@ -1,0 +1,1 @@
+MANIFEST_FILE: "{{ _work_dir }}/rmq-cluster-operator.yaml"

@@ -6,7 +6,7 @@ metadata:
 spec:
   dnsNames:
     - "*.{{ rmq_cluster_name }}-nodes.{{ rmq_namespace }}.svc.cluster.local"
-  secretName: rmq-tls-secret
   issuerRef:
     kind: ClusterIssuer
-    name: "{{ issuer_name }}"
+    name: default-cluster-issuer
+  secretName: rmq-tls-secret
