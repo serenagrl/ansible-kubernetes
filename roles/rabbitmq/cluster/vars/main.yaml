@@ -1,7 +1,5 @@
-release_version: latest
 rmq_namespace: rabbitmq
 rmq_cluster_name: rabbitmq
-issuer_name: "default-cluster-issuer"
 
 # Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
 service_type: LoadBalancer
@@ -13,5 +11,3 @@ cert:
   cluster_key: rmq-cluster-key.pem
   ca_crt: rmq-ca.crt
   cluster_pfx: rmq-cluster.pfx
-
-cleanup: yes

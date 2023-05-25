@@ -82,6 +82,3 @@
     name: "awx portal password"
     command: "kubectl get secret -n awx awx-admin-password -o jsonpath='{.data.password}'"
     filename: "awx_password"
-
-- import_tasks: register.yaml
-  when: auto_register

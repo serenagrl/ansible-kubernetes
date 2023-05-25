@@ -4,9 +4,9 @@ metadata:
   name: aws-ingress-cert
   namespace: awx
 spec:
-  secretName: awx-ingress-tls
-  issuerRef:
-    name: "default-cluster-issuer"
-    kind: ClusterIssuer
   dnsNames:
     - {{ _kube.hostname }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: default-cluster-issuer
+  secretName: awx-ingress-tls
