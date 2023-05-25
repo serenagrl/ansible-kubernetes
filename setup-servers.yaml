@@ -1,15 +1,33 @@
-- name: Provision Virtual Machines
+- name: Provision Virtual Machines for Kubernetes Control Planes
+  hosts: kubernetes_control_planes
+  gather_facts: no
+
+  roles:
+    - role: vm-ubuntu
+      specs:
+        ram_size: 8GB
+        min_ram_size: 8GB
+        disk_size: 127GB
+        v_cpu: 4
+
+- name: Provision Virtual Machines for Kubernetes Nodes
+  hosts: kubernetes_nodes
+  gather_facts: no
+
+  roles:
+    - role: vm-ubuntu
+      specs:
+        ram_size: 4GB
+        min_ram_size: 4GB
+        disk_size: 127GB
+        v_cpu: 2
+
+- name: Create Virtual Machine checkpoints
   hosts: kubernetes_cluster
   gather_facts: no
 
-  pre_tasks:
-    - import_tasks: ./tasks/task-create-working-directory.yaml
-
-  roles:
-    - vm-ubuntu
-
   # Create checkpoints for safety reasons. You can delete the checkpoints later.
-  post_tasks:
+  tasks:
     - import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Ubuntu configured."
