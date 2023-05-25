@@ -1,3 +1,4 @@
 release_version: latest #1.3.0
 domain: harbor.k8s.local
 register_dns_to: kubernetes_cluster
+cleanup: yes

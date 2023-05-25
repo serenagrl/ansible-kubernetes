@@ -43,7 +43,8 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-
+  when: cleanup
+  
 # This is needed. Do not remove.
 - name: Check if metallb is installed
   shell: kubectl get ns metallb-system -o json | jq .status.phase -r

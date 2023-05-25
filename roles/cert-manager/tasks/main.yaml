@@ -42,7 +42,8 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-
+  when: cleanup
+  
 - name: Waiting for cert manager deployments to be ready
   shell: |
     for d in $(kubectl -n cert-manager get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n cert-manager deployment/$d; done;

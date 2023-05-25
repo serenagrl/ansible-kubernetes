@@ -54,6 +54,7 @@
   loop:
     - "{{ CRDS_MANIFEST_FILE }}"
     - "{{ OPERATOR_MANIFEST_FILE }}"
+  when: cleanup
     
 - name: Waiting for elastic-operator to be ready
   shell: kubectl rollout status -n elastic-system statefulset/elastic-operator

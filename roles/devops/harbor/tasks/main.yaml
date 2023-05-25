@@ -95,3 +95,4 @@
     state: absent
   loop:
     - "{{ CERT_FILE }}"
+  when: cleanup

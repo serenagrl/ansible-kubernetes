@@ -43,7 +43,8 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-
+  when: cleanup
+  
 - name: Waiting for rabbitmq-system to be ready
   shell: for d in $(kubectl -n rabbitmq-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n rabbitmq-system deployment/$d; done;
 

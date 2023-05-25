@@ -43,7 +43,8 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-
+  when: cleanup
+  
 - import_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: projectcontour
