@@ -16,3 +16,13 @@
 
     - name: Joining kubernetes cluster
       command: sh '/tmp/{{ cmd_file }}'
+
+- become_user: "{{ _kube.user }}"
+  delegate_to: "{{ groups['primary_control_plane'][0] }}"
+  block:
+    - name: Wait for node to be ready
+      shell: kubectl wait --for=condition=Ready nodes {{ inventory_hostname }} --timeout=600s
+
+    - name: Add labels to node
+      shell: kubectl label nodes {{ inventory_hostname }} {{ item }}
+      loop: "{{ node_labels }}"

@@ -1,0 +1,2 @@
+# Enter a list of labels you want to add to the control planes.
+node_labels:  [ ]

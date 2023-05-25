@@ -66,8 +66,13 @@
     - name: Apply changes
       shell: . ~/.bashrc  
 
-- name: Remove taint to allow scheduling on control plane nodes (if no worker nodes)
-  become_user: "{{ _kube.user }}"
-  shell: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane-
-  when: _kube.allow_scheduling
+- become_user: "{{ _kube.user }}"
+  block:
+    - name: Add labels to control planes
+      shell: kubectl label nodes {{ inventory_hostname }} {{ item }}
+      loop: "{{ node_labels }}"
+
+    - name: Remove taint to allow scheduling on control plane nodes 
+      shell: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane-
+      when: _kube.allow_scheduling
   
