@@ -13,3 +13,5 @@ cert:
   cluster_key: rmq-cluster-key.pem
   ca_crt: rmq-ca.crt
   cluster_pfx: rmq-cluster.pfx
+
+cleanup: yes

@@ -95,7 +95,8 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-
+  when: cleanup
+  
 - name: Waiting for metrics server to be ready
   shell: |
           kubectl wait --for=jsonpath={.status.conditions[*].reason}=Passed apiservice v1beta1.metrics.k8s.io --timeout=600s

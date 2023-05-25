@@ -58,3 +58,4 @@
   loop:
     - "{{ OPERATOR_MANIFEST_FILE }}"
     - "{{ OPERATOR_CRD_FILE }}"
+  when: cleanup

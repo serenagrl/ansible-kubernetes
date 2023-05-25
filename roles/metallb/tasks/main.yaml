@@ -61,7 +61,8 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-
+  when: cleanup
+  
 - name: Configure address pool 
   kubernetes.core.k8s:
     apply: yes

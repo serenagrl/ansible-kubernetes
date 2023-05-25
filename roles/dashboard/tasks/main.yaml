@@ -51,7 +51,8 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-
+  when: cleanup
+  
 - name: Patch dashboard service to NodePort {{ nodeport }}
   kubernetes.core.k8s:
     state: patched

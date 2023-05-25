@@ -56,6 +56,7 @@
   file:
     path: "{{ MANIFEST_FOLDER }}"
     state: absent
+  when: cleanup
 
 - name: Installing AWX cli on Ansible host
   delegate_to: localhost
