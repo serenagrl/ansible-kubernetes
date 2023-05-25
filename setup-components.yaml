@@ -28,9 +28,11 @@
     # - role: logging/elastic-stack
     # - role: logging/fluentd
 
-    # - role: awx
+    # - role: awx/operator
+    # - role: awx/register
     # - role: istio
-    # - role: rabbitmq-cluster
+    # - role: rabbitmq/operator
+    # - role: rabbitmq/cluster
 
   # Create checkpoints for safety reasons. You can delete the checkpoints later.
 # - hosts: kubernetes_cluster

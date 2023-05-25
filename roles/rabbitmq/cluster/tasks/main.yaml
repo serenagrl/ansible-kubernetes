@@ -4,50 +4,6 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- become_user: root
-  delegate_to: localhost
-  block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
-      vars:
-        name: "rabbitmq operator"
-        namespace: "rabbitmq"
-        repo_path: "rabbitmq/cluster-operator"
-        pkg_version: "{{ release_version | default }}"
-        version_prefix: "v"
-        dest: "{{ MANIFEST_FILE }}"
-        urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cluster-operator.yml"]
-
-    - name: Configure to run on control-planes only
-      replace:
-        path: "{{ MANIFEST_FILE }}"
-        regexp: '^ {6}(containers:)$'
-        replace: |4-
-                  tolerations:
-                    - effect: NoSchedule
-                      key: node-role.kubernetes.io/control-plane
-                      operator: Exists
-                  nodeSelector:
-                    node-role.kubernetes.io/control-plane: ""
-                  \1
-      when: not _kube.allow_scheduling
-
-- name: Install RabbitMQ Operator
-  kubernetes.core.k8s:
-    apply: yes
-    force: yes
-    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
-
-- name: Cleanup manifest file
-  delegate_to: localhost
-  become_user: root
-  file:
-    path: "{{ MANIFEST_FILE }}"
-    state: absent
-  when: cleanup
-  
-- name: Waiting for rabbitmq-system to be ready
-  shell: for d in $(kubectl -n rabbitmq-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n rabbitmq-system deployment/$d; done;
-
 - name: Create a {{ rmq_namespace }} namespace
   kubernetes.core.k8s:
     name: "{{ rmq_namespace }}"
@@ -61,7 +17,7 @@
 
 - name: Create RabbitMQ cluster
   kubernetes.core.k8s:
-    definition: "{{ CLUSTER_TEMPLATE }}"
+    definition: "{{ TEMPLATE }}"
 
 # Notes: Use cluster's domain name and with custom route /prometheus, /grafana and /alerts
 - name: Setup ingress

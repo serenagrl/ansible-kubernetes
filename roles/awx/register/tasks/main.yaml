@@ -197,4 +197,3 @@
             existing_token: "{{ controller_token }}"
             state: absent
             controller_oauthtoken: "{{ controller_token }}"
-
