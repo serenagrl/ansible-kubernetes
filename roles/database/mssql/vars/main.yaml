@@ -1,0 +1,7 @@
+release_version: 2022
+sa_password: p@ssw0rd
+target_namespace: mssql-server
+
+# Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
+# Otherwise, set it to ClusterIP
+service_type: LoadBalancer

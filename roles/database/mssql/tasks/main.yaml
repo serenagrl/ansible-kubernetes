@@ -1,0 +1,21 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Create namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: "{{ target_namespace }}"
+
+- name: Create secret (Please change password after install)
+  shell: kubectl create secret generic mssql-sa-secret --from-literal=MSSQL_SA_PASSWORD="{{ sa_password }}" -n {{ target_namespace }}
+
+- name: Install Microsoft SQL Server
+  kubernetes.core.k8s:
+    definition: "{{ STATEFULSET_TEMPLATE }}"
+
+- name: Create service
+  kubernetes.core.k8s:
+    definition: "{{ SERVICE_TEMPLATE }}"

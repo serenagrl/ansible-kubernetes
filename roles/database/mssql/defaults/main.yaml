@@ -1,0 +1,2 @@
+STATEFULSET_TEMPLATE: "{{ lookup('template', 'statefulset.j2') | from_yaml }}"
+SERVICE_TEMPLATE: "{{ lookup('template', 'service.j2') | from_yaml }}"

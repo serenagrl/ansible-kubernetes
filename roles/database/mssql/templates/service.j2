@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mssql-svc
+  namespace: {{ target_namespace }}
+spec:
+  type: {{ service_type }}
+  selector:
+    app: mssql
+  ports:
+    - protocol: TCP
+      port: 1433
+      targetPort: 1433
+      name: tcpsql
