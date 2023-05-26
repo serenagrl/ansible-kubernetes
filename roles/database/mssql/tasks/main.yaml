@@ -9,8 +9,17 @@
     kind: Namespace
     name: "{{ target_namespace }}"
 
+- include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: mssql
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
 - name: Create secret (Please change password after install)
-  shell: kubectl create secret generic mssql-sa-secret --from-literal=MSSQL_SA_PASSWORD="{{ sa_password }}" -n {{ target_namespace }}
+  shell: kubectl create secret generic mssql-sa-secret --from-literal=MSSQL_SA_PASSWORD="{{ sa_password }}" -n {{ target_namespace }} --dry-run=client -o yaml | kubectl apply -f -
+
+- name: Create configmap
+  kubernetes.core.k8s:
+    definition: "{{ CONFIGMAP_TEMPLATE }}"
 
 - name: Install Microsoft SQL Server
   kubernetes.core.k8s:
