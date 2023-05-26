@@ -1,2 +1,4 @@
+CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 STATEFULSET_TEMPLATE: "{{ lookup('template', 'statefulset.j2') | from_yaml }}"
 SERVICE_TEMPLATE: "{{ lookup('template', 'service.j2') | from_yaml }}"
+CONFIGMAP_TEMPLATE: "{{ lookup('template', 'configmap.j2') | from_yaml }}"

@@ -18,19 +18,13 @@ spec:
         fsGroup: 10001
       containers:
         - name: mssql 
-          image: mcr.microsoft.com/mssql/server:{{ release_version }}-latest
+          image: mcr.microsoft.com/mssql/server:{{ release_version }}
           ports:
             - containerPort: 1433
               name: tcpsql
           env:
             - name: MSSQL_PID
-              value: "Express"
-            - name: ACCEPT_EULA
-              value: "Y"
-            - name: MSSQL_ENABLE_HADR
-              value: "1"
-            - name: MSSQL_AGENT_ENABLED
-              value: "1"
+              value: "Developer"
             - name: MSSQL_SA_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -39,6 +33,29 @@ spec:
           volumeMounts:
             - name: mssql
               mountPath: "/var/opt/mssql"
+            - name: mssql-config-volume
+              mountPath: "/var/opt/mssql/mssql.conf"
+              subPath: mssql.conf
+            - name: mssql-certificate
+              mountPath: "/etc/ssl/certs/mssql.pem"
+              subPath: mssql.pem
+            - name: mssql-certificate
+              mountPath: "/etc/ssl/certs/mssql.key"
+              subPath: mssql.key
+
+      volumes:
+        - name: mssql-config-volume
+          configMap:
+            name: mssql-config
+        - name: mssql-certificate
+          secret:
+            items:
+              - key: tls.crt
+                path: mssql.pem
+              - key: tls.key
+                path: mssql.key
+            secretName: mssql-tls
+            defaultMode: 0755
 
 {% if not _kube.allow_scheduling %}
       tolerations:

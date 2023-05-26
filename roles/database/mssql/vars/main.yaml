@@ -1,6 +1,7 @@
-release_version: 2022
+release_version: 2022-latest
 sa_password: p@ssw0rd
 target_namespace: mssql-server
+domain: mssql.k8s.local
 
 # Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
 # Otherwise, set it to ClusterIP
