@@ -1,0 +1,21 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mssql-config
+  namespace: {{ target_namespace }}
+data:
+  mssql.conf: |
+    [EULA]
+    accepteula = Y
+
+    [hadr]
+    hadrenabled = 1
+
+    [sqlagent]
+    enabled = true
+
+    [network]
+    forceencryption = 0
+    tlscert = /etc/ssl/certs/mssql.pem
+    tlskey = /etc/ssl/certs/mssql.key
+    tlsprotocols = 1.2
