@@ -1,0 +1,16 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: minio-console-httpproxy
+  namespace: minio-operator
+spec:
+  virtualhost:
+    fqdn: console.{{ domain }}
+    tls:
+      secretName: minio-console-ingress-tls
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: console
+          port: 9090

@@ -16,30 +16,27 @@
     - role: metrics-server
     - role: csi/nfs
     # - role: csi/rook-ceph
+    # - role: devops/minio
     # - role: devops/gitlab
-    #   register_dns_to: kubernetes_control_planes
     # - role: devops/gitlab-runner
     # - role: devops/sonarqube
-    #   register_dns_to: kubernetes_control_planes
     # - role: devops/harbor
-    #   register_dns_to: kubernetes_control_planes
     # - role: devops/argocd
-    #   register_dns_to: kubernetes_control_planes
     # - role: logging/elastic-stack
     # - role: logging/fluentd
-
     # - role: awx/operator
     # - role: awx/register
     # - role: istio
     # - role: rabbitmq/operator
     # - role: rabbitmq/cluster
+    #- role: database/mssql
 
   # Create checkpoints for safety reasons. You can delete the checkpoints later.
-# - hosts: kubernetes_cluster
-#   gather_facts: no
+- hosts: kubernetes_cluster
+  gather_facts: no
 
-#   tasks:
-#     - import_tasks: ./tasks/task-checkpoint-vm.yaml
-#       vars:
-#         checkpoint_name: "Components installed."
-#       when: _checkpoint
+  tasks:
+    - import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "Components installed."
+      when: _checkpoint

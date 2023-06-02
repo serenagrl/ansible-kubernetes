@@ -43,7 +43,7 @@ runners:
         Shared = true
         MaxUploadedArchiveSize = 0
         [runners.cache.s3]
-          ServerAddress = "gitlab-minio-svc:9000"
+          ServerAddress = "gitlab-minio-hl:9000"
           Insecure = true
           AccessKey = "{{ minio.accesskey }}"
           SecretKey = "{{ minio.secretkey }}"
