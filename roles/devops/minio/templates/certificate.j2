@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-console-ingress-cert
+  namespace: minio-operator
+spec:
+  dnsNames:
+    - console.{{ domain }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: default-cluster-issuer
+  secretName: minio-console-ingress-tls

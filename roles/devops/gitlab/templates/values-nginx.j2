@@ -3,12 +3,53 @@ global:
   hosts:
     domain: {{ domain }}
   ingress:
+    enabled: true
 {% if has_issuer %}
     tls:
       secretName: gitlab-ingress-tls
 {% endif %}
     class: {{ ingress_name }}
     configureCertmanager: false
+
+{% if external_minio %}
+  minio:
+    enabled: false
+
+  appConfig:
+
+    lfs:
+      bucket: git-lfs
+      connection: 
+        secret: gitlab-storage-secret
+        key: connection
+    
+    artifacts:
+      bucket: gitlab-artifacts
+      connection: 
+        secret: gitlab-storage-secret
+        key: connection
+    
+    uploads:
+      bucket: gitlab-uploads
+      connection: 
+        secret: gitlab-storage-secret
+        key: connection
+    
+    packages:
+      bucket: gitlab-packages
+      connection: 
+        secret: gitlab-storage-secret
+        key: connection
+    
+    backups:
+      enabled: true
+      bucket: gitlab-backups
+      backend: s3
+      connection:
+        secret: gitlab-storage-secret
+        key: connection
+
+{% endif %}
 
 gitlab-runner:
   install: false
@@ -42,7 +83,7 @@ shared-secrets:
     node-role.kubernetes.io/control-plane: ""
 
 postgresql:
-  master: # Change this accordingly in new versions
+  primary: # Change this accordingly in new versions
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
@@ -86,6 +127,14 @@ gitlab:
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+
+{% if external_minio %}
+    backups:
+      objectStorage:
+        config:
+          secret: gitlab-storage-secret
+          key: connection 
+{% endif %}
 
   migrations:
     tolerations:

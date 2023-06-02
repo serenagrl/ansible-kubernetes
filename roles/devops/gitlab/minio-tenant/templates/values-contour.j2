@@ -1,0 +1,45 @@
+tenant:
+  name: gitlab-minio
+  pools:
+    - servers: 2
+      volumesPerServer: 2
+      size: 10Gi
+      storageClassName: nfs-storage
+{% if not _kube.allow_scheduling %}
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+  certificate:
+    requestAutoCert: false
+
+  buckets:
+    - name: git-lfs
+    - name: gitlab-artifacts
+    - name: gitlab-backups
+    - name: gitlab-ci-secure-files
+    - name: gitlab-dependency-proxy
+    - name: gitlab-mr-diffs
+    - name: gitlab-packages
+    - name: gitlab-pages
+    - name: gitlab-terraform-state
+    - name: gitlab-uploads
+    - name: registry
+    - name: runner-cache
+    - name: tmp
+
+ingress:
+  api:
+    enabled: false
+    host: gitlab.{{ domain }}
+    path: /
+    pathType: Prefix
+  console:
+    enabled: false
+    host: gitlab-console.{{ domain }}
+    path: /
+    pathType: Prefix

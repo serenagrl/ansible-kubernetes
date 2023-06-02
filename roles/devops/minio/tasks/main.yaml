@@ -10,74 +10,60 @@
   vars:
     ingress_type: "{{ _kube.ingress_type }}"
 
-- name: Add gitlab portal DNS entries to /etc/hosts
+- name: Add minio portal DNS entries to /etc/hosts
   become_user: root
   delegate_to: "{{ item }}"
   lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ cluster_address }} gitlab.{{ domain }}"
+    line: "{{ cluster_address }} console.{{ domain }}"
   loop: "{{ groups[register_dns_to] }}"
   ignore_errors: yes
   ignore_unreachable: yes
 
-- name: Create gitlab namespace
+- name: Create minio operator namespace
   kubernetes.core.k8s:
     kind: Namespace
-    name: gitlab 
+    name: minio-operator 
 
-- include_role: 
-    name: devops/gitlab/minio-tenant
-  when: external_minio
-
-- name: Install Gitlab
+- name: Install MinIO
   block:
-    - name: Add Gitlab chart repo
+    - name: Add minio chart repo
       kubernetes.core.helm_repository:
-        name: gitlab
-        repo_url: "https://charts.gitlab.io/"
+        name: minio
+        repo_url: "https://operator.min.io/"
 
     - include_tasks: ./tasks/task-create-certificate.yaml
       vars:
-        name: gitlab
+        name: minio-operator
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
     # Notes: Uses own domain names.    
     - name: Setup ingress
       include_tasks: "{{ INGRESS_SETUP }}"
 
-    - name: Deploying Gitlab
+    - name: Deploying minio
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
         version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
-        name: gitlab
+        name: minio-operator
         atomic: yes
-        chart_ref: gitlab/gitlab
+        chart_ref: minio/operator
         chart_version: "{{ version }}"
-        namespace: gitlab
+        namespace: minio-operator
         create_namespace: yes
         values: "{{ VALUES_FILE }}"
         timeout: 10m0s
         wait: yes
 
-    - name: Waiting for Gitlab deployments to be ready
+    - name: Waiting for minio deployments to be ready
       shell: |
-          for d in $(kubectl -n gitlab get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n gitlab deployment/$d; done;
+          for d in $(kubectl -n minio-operator get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n minio-operator deployment/$d; done;
 
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
-    name: "Gitlab root account password"
-    command: "kubectl get secret -n gitlab gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}'"
-    filename: "gitlab_root_password"
-
-- import_tasks: ./tasks/task-get-secret.yaml
-  vars:
-    name: "Minio credential keys"
-    command: 
-      "echo accesskey=$(kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.accesskey}' | base64 -d); 
-       echo -n secretkey=; kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.secretkey}'"
-    filename: "minio_credential_keys"
-
-
+    name: "minio console account token"
+    command: "kubectl -n minio-operator get secret console-sa-secret -o jsonpath='{.data.token}'"
+    filename: "minio_console_token"
