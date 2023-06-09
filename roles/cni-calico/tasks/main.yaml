@@ -22,7 +22,7 @@
     - name: Set CIDR network
       replace:
         path: "{{ _work_dir }}/{{ OPERATOR_CRD }}"
-        regexp: '192.168.0.0'
+        regexp: '192.168.0.0/16'
         replace: '{{ _kube.cluster.cidr_network }}'
 
 - become_user: "{{ _kube.user }}"
