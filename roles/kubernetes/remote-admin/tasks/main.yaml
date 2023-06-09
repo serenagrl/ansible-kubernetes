@@ -25,3 +25,12 @@
       blockinfile:
         path: ~/.bashrc
         block: "{{ ALIASES_TEMPLATE }}"
+
+- name: Installing kubectl
+  delegate_to: localhost
+  apt:
+    pkg:
+      - "kubectl"
+    state: latest
+    update_cache: true
+  when: install_kubectl

@@ -1,5 +1,6 @@
 release_version: latest # 2.4.12
 domain: argocd.k8s.local
+install_cli: yes
 nodeport: 32010
 register_dns_to: kubernetes_cluster
 cleanup: yes
