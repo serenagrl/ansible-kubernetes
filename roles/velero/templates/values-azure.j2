@@ -1,0 +1,61 @@
+{% if not _kube.allow_scheduling %}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+initContainers:
+   - name: azure
+     image: velero/velero-plugin-for-microsoft-azure:v1.7.0
+     imagePullPolicy: IfNotPresent
+     volumeMounts:
+       - mountPath: /target
+         name: plugins
+
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: azure
+      bucket: velero
+      prefix: {{ _kube.cluster.name }}
+      default: true
+      config:
+        resourceGroup: <REDACTED>
+        storageAccount: <REDACTED>
+        storageAccountKeyEnvVar: AZURE_STORAGE_ACCOUNT_ACCESS_KEY
+        subscriptionId: <REDACTED>
+
+  volumeSnapshotLocation:
+  - name: default
+    provider: azure
+    config:
+      apiTimeout: 5m
+
+  logLevel: warning
+
+credentials:
+  useSecret: true
+  name: cloud-credentials
+  secretContents:
+    cloud: |
+      AZURE_SUBSCRIPTION_ID=<REDACTED>
+      AZURE_RESOURCE_GROUP=<REDACTED>
+      AZURE_STORAGE_ACCOUNT_ACCESS_KEY=<REDACTED>
+      AZURE_CLOUD_NAME=AzurePublicCloud
+
+backupsEnabled: true
+snapshotsEnabled: true
+deployNodeAgent: true
+
+nodeAgent:
+{% if not _kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
