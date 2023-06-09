@@ -130,6 +130,7 @@
       wait_for:
         host: "{{ ansible_host }}"
         port: 22
+        msg: Timeout waiting for ssh port availability. You may want to set a higher timeout value.
 
     - name: Remove known_host entries from Ansible host (if exist)
       shell: |
