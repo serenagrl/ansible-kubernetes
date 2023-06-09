@@ -14,7 +14,7 @@ _kube:
     # You need to point this to a load balancer domain name and ip if you are running multiple control planes.
     name: k8s-cluster
     address: 192.168.0.200
-    cidr_network: 10.1.0.0
+    cidr_network: 10.1.0.0/16
 
   use_nodeport: no
   
