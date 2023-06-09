@@ -1,3 +1,0 @@
-INGRESSES:
-  contour: "ingress/roles/contour"
-  nginx: "ingress/roles/nginx"
