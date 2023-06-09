@@ -9,7 +9,6 @@
 - import_tasks: ./tasks/task-get-cluster-address.yaml
   vars:
     ingress_type: "{{ _kube.ingress_type }}"
-
     
 - name: Install Gitlab Runner
   block:

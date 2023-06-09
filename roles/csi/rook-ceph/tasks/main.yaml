@@ -77,7 +77,7 @@
                             - effect: NoSchedule
                               key: node-role.kubernetes.io/control-plane
                               operator: Exists
-                      
+
         - name: Configure operator to run on control-planes only
           replace:
             path: "{{ DEPLOY_DIR }}/operator.yaml"
