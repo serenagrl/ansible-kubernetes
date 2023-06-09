@@ -1,21 +1,25 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Join secondary control planes      
-  vars:
-    cmd_file: join_control_plane_command
-  block: 
-    - name: Initializing other control planes (if available)
-      copy:
-        src: "{{ _work_dir }}/{{ cmd_file }}"
-        dest: "/tmp/{{ cmd_file }}"
-        mode: 0777
+- name: Get control-plane join command
+  delegate_to: "{{ groups['primary_control_plane'][0] }}"
+  shell: echo $(kubeadm token create --print-join-command) --control-plane --certificate-key $(kubeadm init phase upload-certs --upload-certs | grep -vw -e upload-certs)
+  register: join_command
+  run_once: yes
 
-    - name: Joining other control planes to cluster
-      command: sh '/tmp/{{ cmd_file }}'
+- name: Join secondary control planes
+  shell: |
+    {{ join_command.stdout }}
+
+- become_user: "{{ _kube.user }}"
+  delegate_to: "{{ groups['primary_control_plane'][0] }}"
+  name: Wait for calico to be ready
+  shell: |
+    kubectl wait --for=condition=Available=True tigerastatuses.operator.tigera.io calico
+    kubectl wait --for=condition=Available=True tigerastatuses.operator.tigera.io apiserver
 
 - include_role:
     name: kubernetes/control-plane

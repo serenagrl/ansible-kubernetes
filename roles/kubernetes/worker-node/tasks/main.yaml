@@ -4,24 +4,22 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Join worker nodes      
-  vars:
-    cmd_file: join_node_command
-  block: 
-    - name: Copy join command from Ansible host to the nodes
-      copy:
-        src: "{{ _work_dir }}/{{ cmd_file }}"
-        dest: "/tmp/{{ cmd_file }}"
-        mode: 0777
+- name: Get join command
+  delegate_to: "{{ groups['primary_control_plane'][0] }}"
+  shell: echo $(kubeadm token create --print-join-command)
+  register: join_command
+  run_once: yes
 
-    - name: Joining kubernetes cluster
-      command: sh '/tmp/{{ cmd_file }}'
+- name: Join worker nodes
+  shell: |
+    {{ join_command.stdout }}
 
 - become_user: "{{ _kube.user }}"
   delegate_to: "{{ groups['primary_control_plane'][0] }}"
   block:
     - name: Wait for node to be ready
-      shell: kubectl wait --for=condition=Ready nodes {{ inventory_hostname }} --timeout=600s
+      shell: |
+        kubectl wait --for=condition=Ready nodes {{ inventory_hostname }} --timeout=600s
 
     - name: Add labels to node
       shell: kubectl label nodes {{ inventory_hostname }} {{ item }}
