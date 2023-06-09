@@ -4,7 +4,7 @@ release_version: latest #4.0.17
 shared: /data
 
 # The namespace to place the provisioner.
-provisioner_namespace: default
+provisioner_namespace: nfs
 
 # The name of the storage class to create.
 storage_name: nfs-storage
