@@ -43,6 +43,11 @@
 
 - name: Configure nfs provisioner on kubernetes cluster
   block:
+    - name: Create gitlab namespace
+      kubernetes.core.k8s:
+        kind: Namespace
+        name: "{{ provisioner_namespace }}" 
+
     - name: Apply configuration changes
       kubernetes.core.k8s:
         apply: yes
