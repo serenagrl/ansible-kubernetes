@@ -60,6 +60,11 @@
     namespace: "argocd"
     definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
 
+- name: Waiting for argocd to be ready
+  shell: |
+    for d in $(kubectl -n argocd get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n argocd deployment/$d; done;
+    for d in $(kubectl -n argocd get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n argocd statefulset/$d; done;
+
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
@@ -67,7 +72,7 @@
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: cleanup
-  
+
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "ArgoCD portal password"
