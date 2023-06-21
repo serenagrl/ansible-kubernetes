@@ -79,6 +79,5 @@
 
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
-    name: "awx portal password"
+    name: "AWX portal password"
     command: "kubectl get secret -n awx awx-admin-password -o jsonpath='{.data.password}'"
-    filename: "awx_password"

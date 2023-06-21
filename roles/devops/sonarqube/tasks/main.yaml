@@ -64,13 +64,13 @@
 
 - name: Extract certificates for applications
   block:
-    - import_tasks: ./tasks/task-get-secret.yaml
+    - import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "Sonarqube certificate"
         command: "kubectl get -n sonarqube secret sonar-ingress-tls -o jsonpath='{.data.tls\\.crt}'"
         filename: "{{ CERT_FILE }}"
 
-    - import_tasks: ./tasks/task-get-secret.yaml
+    - import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "Sonarqube certificate key"
         command: "kubectl get -n sonarqube secret sonar-ingress-tls -o jsonpath='{.data.tls\\.key}'"

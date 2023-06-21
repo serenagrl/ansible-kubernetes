@@ -51,7 +51,6 @@
 
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
-    name: "elastic password"
+    name: "Elastic password"
     command: kubectl get secret elasticsearch-es-elastic-user -n logging -o=jsonpath='{.data.elastic}'
-    filename: elastic_password
 

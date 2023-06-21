@@ -413,9 +413,8 @@
 
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
-    name: "ceph dashboard password"
+    name: "Ceph dashboard password"
     command: "kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath='{.data.password}'"
-    filename: "ceph_dashboard_password"
 
   # Notes: Use cluster's domain name and with custom route /ceph
 - name: Setup ingress
