@@ -1,7 +1,7 @@
   # The specification for each VM node.
   # Note: These are the recommended specifications. Anything lower may cause unexpected errors.
   specs:
-    ram_size: 8GB
+    ram_size: 12GB
     min_ram_size: 8GB
     disk_size: 127GB
     v_cpu: 4
