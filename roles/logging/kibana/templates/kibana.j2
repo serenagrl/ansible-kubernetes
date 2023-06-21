@@ -25,9 +25,7 @@ spec:
         node-role.kubernetes.io/control-plane: ""
 {% endif %}
 
-{% if has_issuer %}
   http:
     tls:
-      certificate:
-        secretName: elasticsearch-tls
-{% endif %}
+      selfSignedCertificate:
+        disabled: true

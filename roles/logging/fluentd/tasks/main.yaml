@@ -16,16 +16,11 @@
 
     - name: Create fluentd role
       shell: |
-          kubectl exec --stdin --tty elasticsearch-es-default-0 -n logging -- curl -XPOST "https://elasticsearch-es-http:9200/_security/role/{{ service_account.fluentd.role }}" -k -u "elastic:{{ elastic_password }}" -H 'Content-Type: application/json' -d'{  "cluster" : [ "monitor" ], "indices": [{ "names": [ "*" ], "privileges": [ "write", "create", "delete", "create_index" ] }] }'
+          kubectl exec --stdin --tty elasticsearch-es-default-0 -n logging -- curl -XPOST "http://elasticsearch-es-http:9200/_security/role/{{ service_account.fluentd.role }}" -k -u "elastic:{{ elastic_password }}" -H 'Content-Type: application/json' -d'{  "cluster" : [ "monitor" ], "indices": [{ "names": [ "*" ], "privileges": [ "write", "create", "delete", "create_index" ] }] }'
 
     - name: Create fluentd service account
       shell: |
-          kubectl exec --stdin --tty elasticsearch-es-default-0 -n logging -- curl -XPOST "https://elasticsearch-es-http:9200/_security/user/{{ service_account.fluentd.username }}" -k -u "elastic:{{ elastic_password }}" -H 'Content-Type: application/json' -d'{  "password" : "{{ service_account.fluentd.password }}",  "enabled": true,  "roles" : [ "{{ service_account.fluentd.role }}" ],  "full_name" : "Fluentd Service Account" }'
-
-- name: Check for custom certificate secret
-  shell: kubectl get secret -n logging elasticsearch-tls -o json | jq .metadata.name -r
-  register: secret_status
-  ignore_errors: yes
+          kubectl exec --stdin --tty elasticsearch-es-default-0 -n logging -- curl -XPOST "http://elasticsearch-es-http:9200/_security/user/{{ service_account.fluentd.username }}" -k -u "elastic:{{ elastic_password }}" -H 'Content-Type: application/json' -d'{  "password" : "{{ service_account.fluentd.password }}",  "enabled": true,  "roles" : [ "{{ service_account.fluentd.role }}" ],  "full_name" : "Fluentd Service Account" }'
 
 - name: Prepare fluentd manifest
   delegate_to: localhost
@@ -41,7 +36,7 @@
       shell: |
               sed -i 's/kube-system$/logging/g' {{ MANIFEST_FILE }}
               sed -i 's/"elasticsearch-logging"/"elasticsearch-es-http"/g' {{ MANIFEST_FILE }}
-              sed -i '/name: FLUENT_ELASTICSEARCH_SCHEME/{n;s/value:.*/value: https/}' {{ MANIFEST_FILE }}
+              sed -i '/name: FLUENT_ELASTICSEARCH_SCHEME/{n;s/value:.*/value: http/}' {{ MANIFEST_FILE }}
               sed -i '/name: FLUENT_ELASTICSEARCH_USER/{n;s/value:.*/value: {{ service_account.fluentd.username }}/}' {{ MANIFEST_FILE }}
               sed -i '/name: FLUENT_ELASTICSEARCH_PASSWORD/{n;s/value:.*/value: {{ service_account.fluentd.password }}/}' {{ MANIFEST_FILE }}
 
@@ -55,32 +50,6 @@
                       value: /var/log/containers/fluent*
                     - name: FLUENT_CONTAINER_TAIL_PARSER_TYPE
                       value: /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
-                    - name: SSL_CERT_FILE
-                      value: /usr/local/share/ca-certificates/elastic-ca.crt
-
-    - name: Configure cert in volumeMounts
-      blockinfile:
-        path: "{{ MANIFEST_FILE }}"
-        insertafter: 'volumeMounts:'
-        marker: "        # {mark} ANSIBLE MANAGED BLOCK"
-        block: |2
-                  - mountPath: /usr/local/share/ca-certificates
-                    name: elasticsearch-ca
-
-    - name: Configure cert in volumes
-      vars:
-        secret_name: "{% if secret_status.stdout %}elasticsearch-tls{% else %}elasticsearch-es-http-certs-internal{% endif %}"
-      blockinfile:
-        path: "{{ MANIFEST_FILE }}"
-        insertafter: 'volumes:'
-        marker: "      # {mark} ANSIBLE MANAGED BLOCK"
-        block: |2
-                - name: elasticsearch-ca
-                  secret:
-                    items:
-                      - key: ca.crt
-                        path: elastic-ca.crt
-                    secretName: "{{ secret_name }}"
 
 - name: Installing fluentd
   kubernetes.core.k8s:
