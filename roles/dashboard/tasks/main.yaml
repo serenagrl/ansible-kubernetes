@@ -114,9 +114,8 @@
 
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
-    name: "dashboard account token"
+    name: "kubernetes dashboard token"
     command: "kubectl -n kube-system get secret dashboard-admin -o jsonpath='{.data.token}'"
-    filename: "kubernetes_dashboard_token"
 
 - name: Waiting for kubernetes dashboard to be ready
   shell: kubectl rollout status -n kubernetes-dashboard deployment/kubernetes-dashboard

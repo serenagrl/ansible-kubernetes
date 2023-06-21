@@ -77,7 +77,6 @@
   vars:
     name: "ArgoCD portal password"
     command: "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}'"
-    filename: "argocd_password"
 
 - name: Patch argocd server to NodePort {{ nodeport }}
   kubernetes.core.k8s:

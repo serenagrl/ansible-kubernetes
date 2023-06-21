@@ -32,19 +32,19 @@
 
 - name: Extract certificates for applications
   block:
-    - import_tasks: ./tasks/task-get-secret.yaml
+    - import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ Certificate Authority (CA) cert"
         command: "kubectl get -n {{ rmq_namespace }} secret rmq-tls-secret -o jsonpath='{.data.ca\\.crt}'"
         filename: "{{ cert.ca }}"
 
-    - import_tasks: ./tasks/task-get-secret.yaml
+    - import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate"
         command: "kubectl get -n {{ rmq_namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.crt}'"
         filename: "{{ cert.cluster }}"
 
-    - import_tasks: ./tasks/task-get-secret.yaml
+    - import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate key"
         command: "kubectl get -n {{ rmq_namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.key}'"
@@ -69,4 +69,3 @@
   vars:
     name: "RabbitMQ cluster login"
     command: "kubectl get -n {{ rmq_namespace }} secret rabbitmq-default-user -o jsonpath='{.data.default_user\\.conf}'"
-    filename: "rabbitmq_cluster_login"

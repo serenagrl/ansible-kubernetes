@@ -66,4 +66,3 @@
   vars:
     name: "minio console account token"
     command: "kubectl -n minio-operator get secret console-sa-secret -o jsonpath='{.data.token}'"
-    filename: "minio_console_token"

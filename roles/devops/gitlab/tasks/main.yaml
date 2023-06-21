@@ -70,14 +70,12 @@
   vars:
     name: "Gitlab root account password"
     command: "kubectl get secret -n gitlab gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}'"
-    filename: "gitlab_root_password"
 
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
-    name: "Minio credential keys"
+    name: "Gitlab Minio tenant credential keys"
     command: 
       "echo accesskey=$(kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.accesskey}' | base64 -d); 
        echo -n secretkey=; kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.secretkey}'"
-    filename: "minio_credential_keys"
 
 
