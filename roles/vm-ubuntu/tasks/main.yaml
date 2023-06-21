@@ -8,6 +8,21 @@
   delegate_to: localhost
   run_once: yes
   block:
+    - name: Get "{{ _work_dir }}" details
+      stat:
+        path: "{{ _work_dir }}"
+      register: workdir_status
+
+    - name: Check if "{{ _work_dir }}" already exist (skipped when not exist)
+      fail:
+        msg: "Directory {{ _work_dir }} already exist. Please backup the data and remove it or set a different cluster name."
+      when: workdir_status.stat.exists
+
+    - name: Create working directory
+      file:
+        path: "{{ _work_dir }}"
+        state: directory        
+
     - name: Installing iso and image tools
       apt:
         pkg:
@@ -15,11 +30,6 @@
           - genisoimage
         state: latest
         update_cache: true
-
-    - name: Create working directory
-      file:
-        path: "{{ _work_dir }}"
-        state: directory        
 
     - name: Downloading ubuntu cloud image 
       get_url:
