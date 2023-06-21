@@ -1,2 +1,2 @@
-release_version: 3.24.6 # using 'latest' can sometimes cause problems
+release_version: 3.24.6 # 3.24.6 using 'latest' can sometimes cause problems i.e. 3.26.0 has lots of problems
 cleanup: yes
