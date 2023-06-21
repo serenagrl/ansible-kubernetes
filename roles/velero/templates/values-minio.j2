@@ -9,7 +9,7 @@ nodeSelector:
 
 initContainers:
    - name: azure
-     image: velero/velero-plugin-for-microsoft-azure:v1.7.0
+     image: velero/velero-plugin-for-aws:v1.7.0
      imagePullPolicy: IfNotPresent
      volumeMounts:
        - mountPath: /target
@@ -18,16 +18,15 @@ initContainers:
 configuration:
   backupStorageLocation:
     - name: default
-      provider: azure
+      provider: aws
       bucket: velero
       prefix: {{ _kube.cluster.name }}
       default: true
       config:
-        resourceGroup: <your-azure-resource-group>
-        storageAccount: <your-azure-storage-account-name>
-        storageAccountKeyEnvVar: AZURE_STORAGE_ACCOUNT_ACCESS_KEY
-        subscriptionId: <your-azure-subscription-id>
-  
+        region: minio
+        s3ForcePathStyle: "true"
+        s3Url: http://<minio-api-url>:9000
+
   uploaderType: kopia
   logLevel: warning
   defaultVolumesToFsBackup: true
@@ -37,10 +36,9 @@ credentials:
   name: cloud-credentials
   secretContents:
     cloud: |
-      AZURE_SUBSCRIPTION_ID=<your-azure-subscription-id>
-      AZURE_RESOURCE_GROUP=<your-azure-resource-group>
-      AZURE_STORAGE_ACCOUNT_ACCESS_KEY=<your-storage-account-access-key>
-      AZURE_CLOUD_NAME=AzurePublicCloud
+      [default]
+      aws_access_key_id = minioadmin
+      aws_secret_access_key = minioadmin
 
 backupsEnabled: true
 snapshotsEnabled: false

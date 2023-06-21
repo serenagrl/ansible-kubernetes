@@ -1,5 +1,5 @@
 # Note: Setup NFS before enabling the csi-nfs role.
-# - import_playbook: setup-nfs.yaml
+- import_playbook: setup-nfs.yaml
 
 - name: Install Kubernetes add-on components
   hosts: primary_control_plane[0]
@@ -32,7 +32,7 @@
     # - role: database/mssql
     # - role: velero
 
-  # Create checkpoints for safety reasons. You can delete the checkpoints later.
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
 - hosts: kubernetes_cluster
   gather_facts: no
 

@@ -1,1 +1,1 @@
-AZURE_VALUES_FILE: "{{ lookup('template', 'values-azure.j2') | from_yaml }}"
+VALUES_FILE: "{{ lookup('template', 'values-' + storage_provider + '.j2') | from_yaml }}"

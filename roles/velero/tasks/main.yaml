@@ -20,7 +20,7 @@
     chart_version: "{{ version }}"
     namespace: velero
     create_namespace: yes
-    values: "{{ AZURE_VALUES_FILE }}"
+    values: "{{ VALUES_FILE }}"
     timeout: 10m0s
     wait: yes
 
