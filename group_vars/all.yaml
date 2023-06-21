@@ -1,9 +1,3 @@
-# The working directory for the ansible tasks
-_work_dir: /tmp/automate
-
-# Creates VM checkpoints at specific stages of automation.
-_checkpoint: yes
-
 # Kubernetes configuration settings.
 # The user account to create. This account will be used to setup kubernetes.
 _kube:
@@ -27,3 +21,9 @@ _kube:
   #   yes - Remove the taints on all control-planes and allow all pods (including user applications) to be scheduled on any nodes.
   #   no - Keep the taints on all control-planes but will configure tolerations on add-on components to run on the control-planes.
   allow_scheduling: no
+
+# The working directory for the ansible tasks
+_work_dir: /tmp/automate/{{ _kube.cluster.name }}
+
+# Creates VM checkpoints at specific stages of automation.
+_checkpoint: yes
