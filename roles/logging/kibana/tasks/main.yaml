@@ -12,9 +12,10 @@
   register: release_tag
   when: release_version is undefined or not release_version or release_version == "latest"
 
-- include_tasks: "{{ INGRESS_SETUP }}"
+- name: Setup ingress
+  include_tasks: "{{ INGRESS_SETUP }}"
   vars:
-    name: kibana-ingress
+    name: kibana
     namespace: logging
     definition: "{{ INGRESS_TEMPLATE }}"
 
