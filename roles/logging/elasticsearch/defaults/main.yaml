@@ -1,2 +1,1 @@
-CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 TEMPLATE: "{{ lookup('template', 'elasticsearch.j2') | from_yaml }}"

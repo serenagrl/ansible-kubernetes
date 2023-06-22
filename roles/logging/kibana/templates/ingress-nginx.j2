@@ -1,12 +1,12 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ name }}
-  namespace: {{ namespace }}
+  name: kibana-ingress
+  namespace: logging
   labels:
-    app.kubernetes.io/name: {{ name }}
+    app.kubernetes.io/name: kibana-ingress
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header Accept-Encoding "";
       sub_filter '<base href="/">' '<base href="/kibana/">';
