@@ -11,7 +11,7 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
     | -------------- |:----:|  :----:   |     :----:      |
     | Control planes | 4    | 12GB      | 16GB            |
 
-    Recommended specifications for Control Plane with Worker Nodes configuration:
+    Recommended specifications for 3 Control Planes with Worker Nodes configuration:
 
     | Hosts          | vCPU | Min. RAM  | Recommended RAM |
     | -------------- |:----:|  :----:   |     :----:      |
@@ -19,50 +19,74 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
     | Worker Nodes   | 2    | 8GB       | 12GB            |
 
 3. **Ansible must be installed** - These playbooks were tested on a Windows host with Ubuntu running in WSL.
-
-    Note: You can run on a Windows 11 or Windows Server 2022 with Hyper-V enabled. 
-4. **WinRM must be configured** - The Windows host that manages the Hyper-V VMs must be configured with WinRM.
+    Note: You can run on a Windows 11 or Windows Server 2022 with Hyper-V enabled.
+4. **Windows Remote Management (WinRM) must be configured** - The Windows host that manages the Hyper-V VMs must be configured with WinRM.
 5. **A user with proper access rights** must be created in the **Windows host and WSL**.
-
-**Important!**: Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
+6. Some useful links:
+   - [Install Linux on Windows with WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
+   - [Installing Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
+   - [Setting up Ansible on a Windows Host](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html)
+   - [Using WinRM in Ansible Playbooks](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html)
+     
+    **Important!**: Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
 
 ### Notes
 * The Kubernetes cluster is currently setup to use Calico and Containerd.
 * Both control-planes only or control-planes with worker nodes configuration are supported.
 * Configure the IP addresses, host names and domain to your environment in the `\inventories\hosts.yaml`
 * The nfs server is not provisioned currently. You need to manually create it.
+* The playbook for creating 2 nodes with HAProxy and keepalived for load-balancing is available.
 * Some roles are deploying sample/example configurations only (although some may deploy production environments)
 * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
 * Version incompatibility may occur i.e. new Kubernetes version may break everything or some add-ons version may not be compatible with each other. Configure the desired versions in the `vars\main.yaml` of the role.
-* Be patient if you are running on a slow internet connection. Installation make take some time.
+* Be patient if you are running on a slow internet connection. Installation may take some time.
 * VM Checkpoints will be created to provide safety just in case your installation breaks. These checkpoint may consume a lot of disk space. You may remove the checkpoints when you feel everything is stable.
 
 ### Advice
 You are advised not to be so ambitious to run `setup-all.yaml` on your first try. Start with these in the following order:
-1. `setup-server.yaml` - Provisions the Ubuntu VMs on Hyper-V.
-2. `setup-kubernetes.yaml` - Sets up the Kubernetes cluster without any add-ons.
-3. ... and then specify the roles in the `setup-components.yaml`.
+1. `setup-loadbalancers.yaml` - (Optional) Provision the VMs and sets up a pair of HAProxy load balancers.
+2. `setup-server.yaml` - Provisions the Ubuntu VMs on Hyper-V.
+3. `setup-nfs.yaml` - Sets up a basic nfs server.
+4. `setup-kubernetes.yaml` - Sets up the Kubernetes cluster without any add-ons.
+5. ... and then specify the roles in the `setup-components.yaml` to install the add-ons that you want.
 
 You can rerun the `setup-components.yaml` after you have modified the roles to setup the add-ons you want. The installation order is important as some add-ons have dependencies on the others. Remember to comment out the NFS configuration if you are running it the second time.
 
 ### Add-ons stack
 * Metallb
-* Ingress Nginx or Contour
+* Ingress
+  * Nginx
+  * Contour
 * Cert Manager
 * Kubernetes Dashboard
 * Metrics Server
-* NFS Provisioner
-* Rook Ceph
-* Kube Prometheus (monitoring) - includes Prometheus, Grafana and AlertManager
-* Elasticsearch-Fluentd-Kibana (logging)
-* Gitlab - includes minio
-* Gitlab Runner
-* Sonarqube
-* Harbor
-* ArgoCD
+* Container Storage Interface (CSI)
+  * NFS Provisioner
+  * Rook Ceph
+* Kube Prometheus (monitoring)
+  * Prometheus
+  * Grafana
+  * AlertManager
+* EFK (logging)
+  * Elastic Operator
+  * Elasticsearch
+  * Kibana
+  * FluentD
+* DevOps
+  * ArgoCD
+  * Gitlab
+  * Gitlab Runner
+  * Harbor
+  * Minio
+  * Sonarqube
 * Istio
 * Ansible Tower (AWX)
-* RabbitMQ Cluster
+* RabbitMQ
+  * Rabbitmq Operator
+  * Rabbitmq Cluster
+* Database
+  * Microsoft SQL Server 
+* Velero
 
 ### Roles Guide
 
