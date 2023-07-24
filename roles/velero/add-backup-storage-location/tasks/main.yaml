@@ -1,0 +1,32 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Patch credential to an existing secret
+  kubernetes.core.k8s:
+    state: patched
+    namespace: velero
+    kind: secret
+    name: cloud-credentials
+    definition: |
+      data:
+        {{ storage_provider }}: {{ CREDENTIALS_TEMPLATE | b64encode }}
+  
+- name: Update credential file location
+  shell: |
+    kubectl set env deployment/velero {{ vars[storage_provider + '_environment_name'] }}=/credentials/{{ storage_provider }} -n velero -c='velero'
+    kubectl set env daemonset/node-agent {{ vars[storage_provider + '_environment_name'] }}=/credentials/{{ storage_provider }} -n velero -c='node-agent'
+
+- name: Add plug-in {{ storage_provider }}
+  shell: velero plugin add {{ vars['plugin_' + storage_provider] }}
+  delegate_to: localhost
+
+- name: Create backup storage location
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: |
+      {{ STORAGE_LOCATION_TEMPLATE }}

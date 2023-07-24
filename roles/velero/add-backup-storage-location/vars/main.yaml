@@ -1,0 +1,10 @@
+# The provider to use - azure or minio. 
+storage_provider: minio
+
+# Storage location plugin version.
+plugin_azure: velero/velero-plugin-for-microsoft-azure:v1.7.0
+plugin_minio: velero/velero-plugin-for-aws:v1.7.0
+
+# Environment variable name.
+azure_environment_name: AZURE_CREDENTIALS_FILE
+minio_environment_name: AWS_SHARED_CREDENTIALS_FILE

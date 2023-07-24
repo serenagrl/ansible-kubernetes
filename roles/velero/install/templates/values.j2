@@ -7,26 +7,7 @@ nodeSelector:
   node-role.kubernetes.io/control-plane: ""
 {% endif %}
 
-initContainers:
-   - name: azure
-     image: velero/velero-plugin-for-aws:v1.7.0
-     imagePullPolicy: IfNotPresent
-     volumeMounts:
-       - mountPath: /target
-         name: plugins
-
 configuration:
-  backupStorageLocation:
-    - name: default
-      provider: aws
-      bucket: velero
-      prefix: {{ _kube.cluster.name }}
-      default: true
-      config:
-        region: minio
-        s3ForcePathStyle: "true"
-        s3Url: http://<minio-api-url>:9000
-
   uploaderType: kopia
   logLevel: warning
   defaultVolumesToFsBackup: true
@@ -34,13 +15,8 @@ configuration:
 credentials:
   useSecret: true
   name: cloud-credentials
-  secretContents:
-    cloud: |
-      [default]
-      aws_access_key_id = minioadmin
-      aws_secret_access_key = minioadmin
 
-backupsEnabled: true
+backupsEnabled: false
 snapshotsEnabled: false
 deployNodeAgent: true
 upgradeCRDs: false

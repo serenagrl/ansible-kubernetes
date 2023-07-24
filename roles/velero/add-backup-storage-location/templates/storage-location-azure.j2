@@ -1,0 +1,20 @@
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: azure
+  namespace: velero
+spec:
+  accessMode: ReadWrite
+  credential:
+    key: azure
+    name: cloud-credentials
+  config:
+    resourceGroup: CS_RnD_Kubernetes
+    storageAccount: k8svelero
+    storageAccountKeyEnvVar: AZURE_STORAGE_ACCOUNT_ACCESS_KEY
+    subscriptionId: c09d5052-8b70-45c0-8150-f74cba84a9f1
+  default: {{ is_default | default(false) }}
+  objectStorage:
+    bucket: velero
+    prefix: {{ _kube.cluster.name }}
+  provider: azure

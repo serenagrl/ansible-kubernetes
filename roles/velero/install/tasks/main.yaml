@@ -54,3 +54,20 @@
       when: cleanup
 
   when: install_cli
+
+- name: Create credential secret 
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Secret
+    namespace: velero
+    name: cloud-credentials
+    state: present
+
+- include_role: 
+    name: velero/add-backup-storage-location
+  loop: "{{ storage_providers }}"
+  loop_control:
+    index_var: index
+  vars:
+    is_default: "{{ (index == 0) }}"
+    storage_provider: "{{ item }}"
