@@ -1,0 +1,19 @@
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: minio
+  namespace: velero
+spec:
+  accessMode: ReadWrite
+  credential:
+    key: minio
+    name: storage-credentials
+  config:
+    region: minio
+    s3ForcePathStyle: "true"
+    s3Url: http://<minio-api-url>:9000
+  default: {{ is_default | default(false) }}
+  objectStorage:
+    bucket: velero
+    prefix: {{ _kube.cluster.name }}
+  provider: aws

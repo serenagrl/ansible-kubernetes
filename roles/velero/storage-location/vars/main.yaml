@@ -1,0 +1,7 @@
+# The provider to use - azure or minio. 
+storage_provider: minio
+
+# Environment variable name.
+environment_name:
+  azure: AZURE_CREDENTIALS_FILE
+  minio: AWS_SHARED_CREDENTIALS_FILE
