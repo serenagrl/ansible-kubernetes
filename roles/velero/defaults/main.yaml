@@ -1,1 +1,0 @@
-VALUES_FILE: "{{ lookup('template', 'values-' + storage_provider + '.j2') | from_yaml }}"
