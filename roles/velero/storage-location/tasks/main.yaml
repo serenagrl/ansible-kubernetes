@@ -1,4 +1,5 @@
 # Author: Serena Yeoh
+# Co-Author: Jaryl Lan
 #
 # Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
@@ -20,19 +21,10 @@
     kubectl set env deployment/velero {{ environment_name[storage_provider] }}=/credentials/{{ storage_provider }} -n velero -c='velero'
     kubectl set env daemonset/node-agent {{ environment_name[storage_provider] }}=/credentials/{{ storage_provider }} -n velero -c='node-agent'
 
-- name: Add plugin
-  kubernetes.core.k8s:
-    state: patched
-    namespace: velero
-    kind: Deployment
-    name: velero
-    definition: |
-      spec:
-        template:
-          spec:
-            initContainers:
-              - {{ PLUGIN_TEMPLATE }}
-  
+- name: Add plug-in {{ storage_provider }}
+  delegate_to: localhost
+  shell: velero plugin add {{ plug_ins[storage_provider] }}
+
 - name: Create backup storage location
   kubernetes.core.k8s:
     apply: yes
