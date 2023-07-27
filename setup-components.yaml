@@ -30,7 +30,7 @@
     # - role: rabbitmq/operator
     # - role: rabbitmq/cluster
     # - role: database/mssql
-    # - role: velero
+    # - role: velero/server
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
 - hosts: kubernetes_cluster

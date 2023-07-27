@@ -1,28 +1,10 @@
 # Author: Serena Yeoh
+# Co-Author: Jaryl Lan
 #
 # Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-
-- name: Add vmware-tanzu chart repo
-  kubernetes.core.helm_repository:
-    name: vmware-tanzu
-    repo_url: "https://vmware-tanzu.github.io/helm-charts"
-
-- name: Deploying velero
-  vars:
-    version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
-  kubernetes.core.helm:
-    name: velero
-    atomic: yes
-    chart_ref: vmware-tanzu/velero
-    chart_version: "{{ version }}"
-    namespace: velero
-    create_namespace: yes
-    values: "{{ VALUES_FILE }}"
-    timeout: 10m0s
-    wait: yes
 
 - name: Install velero cli to ansible controller
   delegate_to: localhost
@@ -52,5 +34,3 @@
         path: "{{ cli_dir }}"
         state: absent
       when: cleanup
-
-  when: install_cli
