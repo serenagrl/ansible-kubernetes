@@ -1,0 +1,3 @@
+# Launch velero server installation.
+- include_role:
+    name: velero/server
