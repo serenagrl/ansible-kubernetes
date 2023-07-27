@@ -5,6 +5,9 @@ metadata:
   namespace: "{{ rmq_namespace }}"
 spec:
   dnsNames:
+    - "{{ rmq_cluster_name }}.{{ rmq_namespace }}.svc"
+    - "{{ rmq_cluster_name }}.{{ rmq_namespace }}.svc.cluster.local"
+    - "*.{{ rmq_cluster_name }}-nodes.{{ rmq_namespace }}.svc"
     - "*.{{ rmq_cluster_name }}-nodes.{{ rmq_namespace }}.svc.cluster.local"
   issuerRef:
     kind: ClusterIssuer

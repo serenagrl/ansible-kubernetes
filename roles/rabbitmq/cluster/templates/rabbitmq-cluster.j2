@@ -3,6 +3,8 @@ kind: RabbitmqCluster
 metadata:
   name: "{{ rmq_cluster_name }}"
   namespace: "{{ rmq_namespace }}"
+  annotations:
+    rabbitmq.com/topology-allowed-namespaces: "*"  
 spec:
   replicas: 3
   service:
