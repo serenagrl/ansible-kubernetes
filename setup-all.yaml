@@ -11,5 +11,8 @@
   # Setup kubernetes cluster 
 - import_playbook: setup-kubernetes.yaml
 
+  # Setup NFS server
+- import_playbook: setup-nfs.yaml
+
   # Setup kubernetes add-on components
 - import_playbook: setup-components.yaml
