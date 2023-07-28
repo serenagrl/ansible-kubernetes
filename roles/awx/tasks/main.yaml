@@ -1,0 +1,3 @@
+# Launches the AWX operator role.
+- include_role:
+    name: "awx/operator"

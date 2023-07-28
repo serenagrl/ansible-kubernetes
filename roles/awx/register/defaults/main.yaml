@@ -6,6 +6,4 @@ NAMES:
   HOST_CREDENTIAL: "{{ setup.name }} {{ groups['kubernetes_control_planes'].0 }} Host Credential"
   SCM_CREDENTIAL: "{{ setup.name }} Source Control Credential"
   API_CREDENTIAL: "{{ setup.name }} Gitlab API Access Token"
-AWX_USERNAME: admin
-AWX_PASSWORD: "{{ lookup('file', _work_dir + '/awx_password') }}"
 AWX_HOST: "https://{{ _kube.hostname }}/awx/"

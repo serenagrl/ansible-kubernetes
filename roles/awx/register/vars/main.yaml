@@ -1,3 +1,8 @@
+awx_username: admin
+# You can specify the awx_password to use for the admin user, if you have changed it.
+# Otherwise, the default password from the secret will be used.
+# awx_password: 
+
 setup:
   name: "(Pre-registered)"
   organization:

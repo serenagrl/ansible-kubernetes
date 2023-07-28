@@ -7,3 +7,4 @@ CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 HTTP_PROXY_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"
 
 INGRESS_SETUP: "{{ 'ingress-' + _kube.ingress_type + '.yaml' }}"
+AWX_HOST: "https://{{ _kube.hostname }}/awx/"

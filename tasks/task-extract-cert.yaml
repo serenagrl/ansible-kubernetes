@@ -3,10 +3,18 @@
           {{ command }} | base64 --decode; echo
   register: result
 
-- name: Copy {{ name }} to Ansible host
+- delegate_to: localhost
   become_user: root
-  copy:
-    content: "{{ result.stdout }}\n"
-    dest: "{{ _work_dir }}/{{ filename }}"
-    force: yes
-  delegate_to: localhost
+  vars:
+    out_dir: "{{ _work_dir }}/{{ _kube.cluster.name }}"
+  block:
+    - name: Create working directory
+      file:
+        path: "{{ out_dir }}"
+        state: directory     
+
+    - name: Copy {{ name }} to Ansible host
+      copy:
+        content: "{{ result.stdout }}\n"
+        dest: "{{ out_dir }}/{{ filename }}"
+        force: yes

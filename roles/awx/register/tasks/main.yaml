@@ -4,6 +4,11 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+- name: Get default AWX password from secret (if none provided)
+  shell: |
+    kubectl get secret -n awx awx-admin-password -o jsonpath='{.data.password}' | base64 --decode
+  register: password_result
+
 - name: Setup AWX environment
   delegate_to: localhost
   block:
@@ -16,13 +21,15 @@
       delay: 30
 
     - name: Get authentication token
+      vars:
+        password: "{{ (awx_password is not undefined and awx_password != None) | ternary(awx_password, password_result.stdout) }}"
       awx.awx.token:
         controller_host: "{{ AWX_HOST }}"
         description: 'Login token'
         scope: "write"
         state: present
-        controller_username: "{{ AWX_USERNAME }}"
-        controller_password: "{{ AWX_PASSWORD }}"
+        controller_username: "{{ awx_username }}"
+        controller_password: "{{ password }}"
 
     - name: Setup environment in AWX for basic kubernetes application deployment
       block:

@@ -50,6 +50,13 @@
 
 - name: Create self-signed certificate 
   block:
+    - name: Create working directory
+      delegate_to: localhost
+      become_user: root
+      file:
+        path: "{{ CERT_DIR }}"
+        state: directory  
+
     - name: Create self-signed-ca key and certificate
       delegate_to: localhost
       become_user: root

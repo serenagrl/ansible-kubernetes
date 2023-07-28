@@ -52,16 +52,18 @@
 
     - become_user: root
       delegate_to: localhost
+      vars:
+        out_dir: "{{ _work_dir }}/{{ _kube.cluster.name }}"      
       block:
         - name: Convert ca cert to DER (.crt)
           shell: "openssl x509 -outform der -in {{ cert.ca }} -out {{ cert.ca_crt }}"
           args:
-            chdir: "{{ _work_dir }}"
+            chdir: "{{ out_dir }}"
 
         - name: Create PKCS12 cert for dotnet clients (.pfx)
           shell: "openssl pkcs12 -inkey {{ cert.cluster_key }} -in {{ cert.cluster }} -export -out {{ cert.cluster_pfx }} -passout pass:"
           args:
-            chdir: "{{ _work_dir }}"
+            chdir: "{{ out_dir }}"
 
   when: export_certs
 
