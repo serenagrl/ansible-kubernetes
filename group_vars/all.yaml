@@ -6,7 +6,7 @@ _kube:
   pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
   cluster:
     # You need to point this to a load balancer domain name and ip if you are running multiple control planes.
-    name: k8s-cluster
+    name: temp-cluster
     address: 192.168.0.200
     cidr_network: 10.1.0.0/16
 
@@ -22,8 +22,34 @@ _kube:
   #   no - Keep the taints on all control-planes but will configure tolerations on add-on components to run on the control-planes.
   allow_scheduling: no
 
+  # Specify the name of the roles to which kubernetes add-on components to install
+  add_ons: 
+    - metallb
+    - cert-manager
+    - ingress
+    - dashboard
+    # - monitoring
+    - metrics-server
+    - csi/nfs # Remember to setup the NFS
+    # - csi/rook-ceph
+    # - devops/minio
+    # - devops/gitlab
+    # - devops/gitlab-runner
+    # - devops/sonarqube
+    # - devops/harbor
+    # - devops/argocd
+    # - logging/elastic-stack
+    # - logging/fluentd
+    # - awx/operator
+    # - awx/register
+    # - istio
+    # - rabbitmq/operator
+    # - rabbitmq/cluster
+    # - database/mssql
+    # - velero
+
 # The working directory for the ansible tasks
-_work_dir: /tmp/automate/{{ _kube.cluster.name }}
+_work_dir: /tmp/automate
 
 # Creates VM checkpoints at specific stages of automation.
 _checkpoint: yes
