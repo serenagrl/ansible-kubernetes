@@ -85,11 +85,25 @@
     path: ~/.bashrc
     block: "{{ ALIASES_TEMPLATE }}"
 
-- name: Installing kubectl
+- name: Install kubectl
   delegate_to: localhost
-  apt:
-    pkg:
-      - "kubectl"
-    state: latest
-    update_cache: true
+  block: 
+    - name: Get kubernetes gpg
+      get_url:
+        url:  https://dl.k8s.io/apt/doc/apt-key.gpg
+        dest: /usr/share/keyrings/kubernetes.gpg
+        mode: '0644'
+        force: true
+
+    - name: Register kubernetes repository
+      apt_repository:
+        filename: kubernetes
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/kubernetes.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
+
+    - name: Installing kubectl
+      apt:
+        pkg:
+          - "kubectl"
+        state: latest
+        update_cache: true
   when: install_kubectl
