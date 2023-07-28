@@ -48,9 +48,10 @@ You are advised not to be so ambitious to run `setup-all.yaml` on your first try
 2. `setup-server.yaml` - Provisions the Ubuntu VMs on Hyper-V.
 3. `setup-nfs.yaml` - Sets up a basic nfs server.
 4. `setup-kubernetes.yaml` - Sets up the Kubernetes cluster without any add-ons.
-5. ... and then specify the roles in the `setup-components.yaml` to install the add-ons that you want.
+5. Specify the addons to install in the `_kube.add_ons` collection in `group_vars\all.yaml`.
+6. `setup-components.yaml` to install the add-ons that you want.
 
-You can rerun the `setup-components.yaml` after you have modified the roles to setup the add-ons you want. The installation order is important as some add-ons have dependencies on the others. Remember to comment out the NFS configuration if you are running it the second time.
+You can rerun the `setup-components.yaml` after you have modified the `_kube.add_ons` collection to install the roles you want. The installation order is important as some add-ons have dependencies on the others. 
 
 ### Add-ons stack
 * Metallb
@@ -100,7 +101,7 @@ The roles folders are structured in the following manner:
 | templates      | The jinja2 templates that you can modify to add extra configurations. |
 | meta           | Role dependencies that you should not touch. |
 
-To install the specific add-on, specify them in the `setup-components.yaml`. Remember to comment out the NFS configuration if you are running it the second time.
+To install the specific add-on, specify them in the `_kube.add_ons` collection in `group_vars\all.yaml` before running `setup-components.yaml`. 
 
 ### Disclaimer
 Everything provided here is 'as-is' and with no warranty or support. 
