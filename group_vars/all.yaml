@@ -48,6 +48,13 @@ _kube:
     # - database/mssql
     # - velero
 
+  # Indicates whether to automatically register the control-planes to the HAproxy load balancers config file.
+  register_to_load_balancer: yes
+
+  # Enable this to allow remote administration from the Ansible host.
+  # Use 'kubectl config' to change the context to the cluster that you want to manage.
+  manage_from_ansible_controller: no
+
 # The working directory for the ansible tasks
 _work_dir: /tmp/automate
 

@@ -1,5 +1,5 @@
 haproxy:
-  version: 2.6
+  version: 2.8
   username: haproxy
   password: p@ssw0rd
   port: 80

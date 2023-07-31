@@ -1,3 +1,4 @@
 dependencies:
   - role: kubernetes/cluster-node
-  
+  - role: kubernetes/register-haproxy
+    when: _kube.register_to_load_balancer  

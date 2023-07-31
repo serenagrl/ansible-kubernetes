@@ -75,4 +75,3 @@
     - name: Remove taint to allow scheduling on control plane nodes 
       shell: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane-
       when: _kube.allow_scheduling
-  

@@ -9,9 +9,6 @@ backend k8s-apiserver-backend
    balance roundrobin
    option tcp-check
    default-server check check-ssl verify none
-{% for host in groups['kubernetes_control_planes'] %}
-   server {{ host }} {{ hostvars[host].ansible_host }}:6443
-{% endfor %}
 
 listen stats
    bind *:{{ haproxy.port }}

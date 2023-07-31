@@ -17,4 +17,4 @@
 
 - include_role:
     name: kubernetes/remote-admin
-  when: remote_admin
+  when: _kube.manage_from_ansible_controller

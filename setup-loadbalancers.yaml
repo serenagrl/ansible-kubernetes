@@ -5,10 +5,10 @@
   roles:
     - role: vm-ubuntu
       specs:
-        ram_size: 2GB
-        min_ram_size: 2GB
+        ram_size: 1GB
+        min_ram_size: 1GB
         disk_size: 127GB
-        v_cpu: 2
+        v_cpu: 1
 
     - role: infrastructure/haproxy
 

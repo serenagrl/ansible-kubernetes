@@ -1,3 +1,0 @@
-# Enable this to allow remote administration from the Ansible host.
-# Use 'kubectl config' to change the context to the cluster that you want to manage.
-remote_admin: no
