@@ -1,0 +1,16 @@
+- name: Set role variables as facts  
+  set_fact:  
+    "{{ role_vars.key }}": "{{ role_vars.value }}"  
+  with_dict: "{{ role.vars | default([]) }}"  
+  loop_control:  
+    loop_var: role_vars
+
+- ansible.builtin.include_role:
+    name: "{{ role.name }}"
+
+- name: Unset value in facts 
+  set_fact:  
+    "{{ role_vars.key }}":  
+  with_dict: "{{ role.vars | default([]) }}"  
+  loop_control:  
+    loop_var: role_vars

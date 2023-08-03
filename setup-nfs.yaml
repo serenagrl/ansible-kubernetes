@@ -1,3 +1,10 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
 # Pre-requisite for the csi-nfs. 
 # You should dedicate 1 server outside the kubernetes cluster to serve as an NFS server.
 - name: Setup the NFS Server
@@ -14,16 +21,4 @@
     #     v_cpu: 2
 
     # Configure servers that are allowed to access the NFS share
-    - role: nfs-server
-      share_to: kubernetes_cluster
-
-# Pre-requisite for the csi-nfs. 
-# Install the nfs package on clients.
-- name: Setup NFS clients
-  hosts: kubernetes_cluster
-  gather_facts: no
-
-  roles:
-    - role: nfs-client
-
-
+    - role: nfs/server

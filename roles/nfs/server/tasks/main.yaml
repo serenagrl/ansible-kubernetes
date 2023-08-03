@@ -4,6 +4,8 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+- include_vars: ../../vars/main.yaml
+
 - name: Installing nfs server package
   apt:
     pkg:
@@ -16,12 +18,6 @@
     path: "{{ shared }}"
     state: directory
     mode: '0777'
-
-- name: Export shared directory to kubernetes cluster nodes
-  lineinfile:
-    path: /etc/exports
-    line: "{{ shared }} {{ hostvars[item]['ansible_host'] }}(rw,no_subtree_check,no_root_squash)"
-  loop: "{{ groups[share_to] }}"
 
 - name: Enable nfs
   shell: |

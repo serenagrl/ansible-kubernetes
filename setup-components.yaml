@@ -1,15 +1,32 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Install nfs client to all kubernetes nodes.
+# Note: This is a pre-requisite if you want to install the csi/nfs role.
+- name: Configure NFS Clients
+  hosts: kubernetes_cluster
+  gather_facts: no
+
+  roles:
+    - role: nfs/client
+      when: "'csi/nfs' in _kube.add_ons"
+
 - name: Install Kubernetes add-on components
   hosts: primary_control_plane[0]
   become_user: "{{ _kube.user }}"
   gather_facts: no
 
   tasks:
-    - include_role:
-        name: "{{ role }}"
+    - name: Install Kubernetes add-on components
+      include_tasks: tasks/task-run-role.yaml
+      loop: "{{ _kube.add_ons }}"
       loop_control:
         loop_var: role
-      loop: "{{ _kube.add_ons }}"
-  
+
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
 - hosts: kubernetes_cluster
   gather_facts: no

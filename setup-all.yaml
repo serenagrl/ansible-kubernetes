@@ -8,11 +8,11 @@
   # Setup virtual environment in Hyper-V by installing from scratch
 - import_playbook: setup-servers.yaml
 
-  # Setup kubernetes cluster 
-- import_playbook: setup-kubernetes.yaml
-
   # Setup NFS server
 - import_playbook: setup-nfs.yaml
+
+  # Setup kubernetes cluster 
+- import_playbook: setup-kubernetes.yaml
 
   # Setup kubernetes add-on components
 - import_playbook: setup-components.yaml

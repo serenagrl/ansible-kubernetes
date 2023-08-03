@@ -24,29 +24,29 @@ _kube:
 
   # Specify the name of the roles to which kubernetes add-on components to install
   add_ons: 
-    - metallb
-    - cert-manager
-    - ingress
-    - dashboard
-    # - monitoring
-    - metrics-server
-    - csi/nfs # Remember to setup the NFS
-    # - csi/rook-ceph
-    # - devops/minio
-    # - devops/gitlab
-    # - devops/gitlab-runner
-    # - devops/sonarqube
-    # - devops/harbor
-    # - devops/argocd
-    # - logging/elastic-stack
-    # - logging/fluentd
-    # - awx/operator
-    # - awx/register
-    # - istio
-    # - rabbitmq/operator
-    # - rabbitmq/cluster
-    # - database/mssql
-    # - velero
+    - name: metallb
+    - name: cert-manager
+    - name: ingress
+    - name: dashboard
+    # - name: monitoring
+    - name: metrics-server
+    - name: csi/nfs
+    # - name: csi/rook-ceph
+    # - name: devops/minio
+    # - name: devops/gitlab
+    # - name: devops/gitlab-runner
+    # - name: devops/sonarqube
+    # - name: devops/harbor
+    # - name: devops/argocd
+    # - name: logging/elastic-stack
+    # - name: logging/fluentd
+    # - name: awx/operator
+    # - name: awx/register
+    # - name: istio
+    # - name: rabbitmq/operator
+    # - name: rabbitmq/cluster
+    # - name: database/mssql
+    # - name: velero
 
   # Indicates whether to automatically register the control-planes to the HAproxy load balancers config file.
   register_to_load_balancer: yes
