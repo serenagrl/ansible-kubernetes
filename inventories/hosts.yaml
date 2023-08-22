@@ -25,11 +25,11 @@ kubernetes_nodes:
   hosts:
     # You can comment out these nodes if you just want to run control planes but please make sure you 
     # have atleast 3 control plane hosts defined above. 
-    # k8s-01: 
+    # k8s-wk1: 
     #   ansible_host: 192.168.0.206
-    # k8s-02: 
+    # k8s-wk2: 
     #   ansible_host: 192.168.0.207
-    # k8s-03: 
+    # k8s-wk3: 
     #   ansible_host: 192.168.0.208
 
 # The kubernetes cluster group.
@@ -54,9 +54,9 @@ load_balancers:
     winrm_host: local_machine     
 
   hosts:
-    haproxy-01:
+    k8s-ha1:
       ansible_host: 192.168.0.201
-    haproxy-02:
+    k8s-ha2:
       ansible_host: 192.168.0.202
 
 # The nfs server to use. For this example, I just use the control plane because
@@ -64,7 +64,7 @@ load_balancers:
 nfs_server:
   hosts: # Only 1 host is supported
     k8s-nfs:
-      ansible_host: 192.168.0.200
+      ansible_host: 192.168.0.203
       ansible_user: root 
 
 # This should be your local machine or an Ansible host. Winrm must be setup correctly for this to work.

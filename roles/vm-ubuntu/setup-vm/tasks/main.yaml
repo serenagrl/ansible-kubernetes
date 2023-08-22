@@ -23,7 +23,7 @@
 
     - name: Downloading ubuntu cloud image 
       get_url:
-        url: "{{ ubuntu_img_url }}"
+        url: "{{ vm.ubuntu_img_url }}"
         dest: "{{ _work_dir }}/ubuntu-cloud.img"     
 
     - name: Generate ssh keys for Ansible host (if required)
@@ -35,8 +35,8 @@
   delegate_to: localhost
   vars:
     backslash: "\\"
-    vm_dir: "{{ '/mnt/' + (vm_folder[0] | lower) + (vm_folder[2:] | replace( backslash, '/')) }}"
-    iso_dir: "{{ '/mnt/' + (iso_folder[0] | lower) + (iso_folder[2:] | replace( backslash, '/')) }}"
+    vm_dir: "{{ '/mnt/' + (vm.vm_folder[0] | lower) + (vm.vm_folder[2:] | replace( backslash, '/')) }}"
+    iso_dir: "{{ '/mnt/' + (vm.iso_folder[0] | lower) + (vm.iso_folder[2:] | replace( backslash, '/')) }}"
   block:
     - name: Remove previous metadata directory (if any)
       file:
@@ -69,7 +69,7 @@
       file:
         path: "{{ METADATA_DIR }}"
         state: absent
-      when: cleanup
+      when: _cleanup
 
     - name: Create Virtual Hard Disks directory
       file:
@@ -79,7 +79,7 @@
     - name: Check for existing Virtual Hard Disks
       include_tasks: ./tasks/task-check-vhdx-exist.yaml
       vars:
-        win_folder: "{{ vm_folder }}"
+        win_folder: "{{ vm.vm_folder }}"
         host_name: "{{ inventory_hostname }}"
         disk_name: "{{ inventory_hostname }}"
 
@@ -92,33 +92,41 @@
         chdir: "{{ _work_dir }}"
 
 - name: Create and Launch Virtual Machines
+  vars:
+    vhd_disk: "{{ vm.vm_folder }}\\{{ inventory_hostname }}\\Virtual Hard Disks\\{{ inventory_hostname }}.vhdx"
   block:
-    - name: Provisioning Hyper-V Virtual Machines
-      vars:
-        vhd_disk: "{{ vm_folder }}\\{{ inventory_hostname }}\\Virtual Hard Disks\\{{ inventory_hostname }}.vhdx"
+    - name: Unset sparse flag of vhdx file (fix qemu-img conversion issue)
       ansible.windows.win_powershell:
         script: |
-          Resize-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ specs.disk_size }}
-          New-VM -Name {{ inventory_hostname }} -Generation 2 -MemoryStartupBytes {{ specs.ram_size }} -Path "{{ vm_folder }}" -VHDPath "{{ vhd_disk }}" -SwitchName "{{ switch }}" 
-          Add-VMDvdDrive {{ inventory_hostname }} -Path "{{ iso_folder }}\\{{ inventory_hostname }}-seed.iso"
-          Set-VMProcessor {{ inventory_hostname }} -Count {{ specs.v_cpu }}
+          fsutil sparse setflag "{{ vhd_disk }}" 0
+        error_action: stop
+
+    - name: Provisioning Hyper-V Virtual Machines
+      ansible.windows.win_powershell:
+        script: |
+          Resize-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ vm.specs.disk_size }}
+          New-VM -Name {{ inventory_hostname }} -Generation 2 -MemoryStartupBytes {{ vm.specs.ram_size }} -Path "{{ vm.vm_folder }}" -VHDPath "{{ vhd_disk }}" -SwitchName "{{ vm.switch }}" 
+          Add-VMDvdDrive {{ inventory_hostname }} -Path "{{ vm.iso_folder }}\\{{ inventory_hostname }}-seed.iso"
+          Set-VMProcessor {{ inventory_hostname }} -Count {{ vm.specs.v_cpu }}
           Set-VMFirmware -VMName {{ inventory_hostname }} -EnableSecureBoot Off 
-          Set-VMMemory {{ inventory_hostname }} -MinimumBytes {{ specs.min_ram_size }} -DynamicMemoryEnabled 1
+          Set-VMMemory {{ inventory_hostname }} -MinimumBytes {{ vm.specs.min_ram_size }} -DynamicMemoryEnabled 1
           Start-VM {{ inventory_hostname }}
+        error_action: stop
 
     - name: Waiting for ubuntu configuration to complete
       ansible.windows.win_powershell:
         script: |
           Wait-VM -Name {{ inventory_hostname }} -For Reboot
+        error_action: stop
 
     - name: Unmount and remove seed.iso 
       ansible.windows.win_powershell:
         script: |
           Get-VMDvdDrive -VMName "{{ inventory_hostname }}" | Remove-VMDvdDrive
           rm {{ inventory_hostname }}-seed.iso
-
-        chdir: "{{ iso_folder }}"
-      when: cleanup
+        error_action: stop
+        chdir: "{{ vm.iso_folder }}"
+      when: _cleanup
 
   delegate_to: "{{ winrm_host }}"
 

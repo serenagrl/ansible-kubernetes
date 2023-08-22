@@ -1,6 +1,6 @@
 SCRAPE_CONFIG: "prometheus-additional.yaml"
 SECRET_CONFIG: "additional-scrape-configs.yaml"
-RELEASE: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
+RELEASE: "{{ (istio.version is defined and istio.version and istio.version != 'latest') | ternary(istio.version, release_tag.stdout) }}"
 ISTIO_DIR: "{{ _work_dir }}/istio-{{ RELEASE }}"
 ADDONS_DIR: "{{ ISTIO_DIR }}/samples/addons"
 HAS_PROMETHEUS: "{{ prometheus_status.stdout == 'Available' }}"

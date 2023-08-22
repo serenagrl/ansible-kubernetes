@@ -1,1 +1,2 @@
-version: latest
+kibana:
+  version: latest

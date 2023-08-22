@@ -1,3 +1,2 @@
-release_version: latest
-
-cleanup: yes
+rabbitmq_operator:
+  version: latest

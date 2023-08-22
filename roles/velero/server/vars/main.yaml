@@ -1,12 +1,11 @@
-# The velero version
-release_version: latest # 1.11.0
+velero:
+  # The velero version
+  version: latest
 
-# The provider to use - azure, minio or both. 
-storage_providers:  
-  - minio
-  # - azure
+  # The provider to use - azure, minio or both. 
+  storage_providers:  
+    - minio
+    # - azure
 
-# Determines whether to install the velero cli on the andible controller host.
-install_cli: yes
-
-cleanup: yes
+  # Determines whether to install the velero cli on the andible controller host.
+  install_cli: yes

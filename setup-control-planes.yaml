@@ -5,8 +5,8 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# Setup control planes
-- import_playbook: setup-control-planes.yaml
+# Setup primary control plane
+- import_playbook: setup-control-plane-primary.yaml
 
-# Setup worker nodes.
-- import_playbook: setup-worker-nodes.yaml
+# Setup sencondary control planes
+- import_playbook: setup-control-plane-other.yaml

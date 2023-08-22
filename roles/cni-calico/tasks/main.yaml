@@ -11,7 +11,7 @@
       vars:
         name: "calico"
         repo_path: "projectcalico/calico"
-        pkg_version: "{{ release_version | default }}"
+        pkg_version: "{{ calico.version | default }}"
         version_prefix: "v"
         dest: "{{ _work_dir }}" 
         manifest_url: "https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/manifests"
@@ -58,4 +58,4 @@
   loop:
     - "{{ OPERATOR_MANIFEST_FILE }}"
     - "{{ OPERATOR_CRD_FILE }}"
-  when: cleanup
+  when: _cleanup

@@ -10,15 +10,16 @@
 
   roles:
     - role: vm-ubuntu
-      specs:
-        ram_size: 1GB
-        min_ram_size: 1GB
-        disk_size: 127GB
-        v_cpu: 1
+      vm:
+        specs:
+          ram_size: 1GB
+          min_ram_size: 1GB
+          disk_size: 127GB
+          v_cpu: 1
 
     - role: infrastructure/haproxy
 
-  # Create checkpoints for safety reasons. You can delete the checkpoints later.
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:
     - import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:

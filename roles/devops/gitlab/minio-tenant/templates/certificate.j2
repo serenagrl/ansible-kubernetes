@@ -5,8 +5,8 @@ metadata:
   namespace: gitlab
 spec:
   dnsNames:
-    - gitlab.{{ domain }}
-    - gitlab-console.{{ domain }}
+    - gitlab.{{ gitlab_minio.domain }}
+    - gitlab-console.{{ gitlab_minio.domain }}
   issuerRef:
     kind: ClusterIssuer
     name: default-cluster-issuer

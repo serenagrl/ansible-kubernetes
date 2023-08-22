@@ -13,7 +13,7 @@
 
   roles:
     - role: nfs/client
-      when: "'csi/nfs' in _kube.add_ons"
+      when: "'csi/nfs' in (_kube.add_ons | map(attribute='name') | list)"
 
 - name: Install Kubernetes add-on components
   hosts: primary_control_plane[0]
@@ -28,7 +28,7 @@
         loop_var: role
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
-- hosts: kubernetes_cluster
+- hosts: kubernetes_control_planes
   gather_facts: no
 
   tasks:

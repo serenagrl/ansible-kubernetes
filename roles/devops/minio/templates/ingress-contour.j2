@@ -5,7 +5,7 @@ metadata:
   namespace: minio-operator
 spec:
   virtualhost:
-    fqdn: console.{{ domain }}
+    fqdn: console.{{ minio.domain }}
     tls:
       secretName: minio-console-ingress-tls
   routes:

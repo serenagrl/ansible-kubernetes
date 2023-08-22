@@ -5,7 +5,7 @@ metadata:
   namespace: gitlab
 spec:
   virtualhost:
-    fqdn: registry.{{ domain }}
+    fqdn: registry.{{ gitlab.domain }}
     tls:
       secretName: gitlab-ingress-tls
   routes:

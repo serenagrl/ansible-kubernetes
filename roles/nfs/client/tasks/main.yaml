@@ -19,7 +19,7 @@
     - name: Export shared directory to kubernetes cluster nodes
       lineinfile:
         path: /etc/exports
-        line: "{{ shared }} {{ ansible_host }}(rw,no_subtree_check,no_root_squash)"
+        line: "{{ nfs.shared }} {{ ansible_host }}(rw,no_subtree_check,no_root_squash)"
 
     - name: Enable nfs
       shell: |

@@ -1,2 +1,5 @@
-kubernetes_version: latest #1.26.4
-containerd_version: latest #1.6.8
+kubernetes:
+  version: latest #1.26.4
+
+containerd:
+  version: latest #1.6.8

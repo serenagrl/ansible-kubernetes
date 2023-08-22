@@ -12,7 +12,7 @@
       vars:
         name: "kube prometheus"
         repo_path: "prometheus-operator/kube-prometheus"
-        pkg_version: "{{ release_version | default }}"
+        pkg_version: "{{ monitoring.version | default }}"
         version_prefix: "v"
         url: "https://github.com/prometheus-operator/kube-prometheus.git"
         dest: "{{ REPO_DIR }}"
@@ -80,25 +80,7 @@
     apply: yes
     force: yes
     definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
-  loop: "{{ q('fileglob', MANIFEST_DIR + '/*.yaml') | sort | difference(excludes)  }}"
-
-- name: Configure NodePorts for kube prometheus services
-  kubernetes.core.k8s:
-    state: patched
-    namespace: monitoring
-    kind: Service
-    name: "{{ item.name }}"
-    definition: |
-      spec:
-        type: NodePort
-        ports:
-        - nodePort: {{ item.nodePort }}
-          port: {{ item.port }}
-  loop:
-    - { name: grafana, nodePort: '{{ nodeports.grafana }}', port: 3000 }
-    - { name: prometheus-k8s, nodePort: '{{ nodeports.prometheus }}', port: 9090 }
-    - { name: alertmanager-main, nodePort: '{{ nodeports.alertmanager }}', port: 9093 }
-  when: _kube.use_nodeport
+  loop: "{{ q('fileglob', MANIFEST_DIR + '/*.yaml') | sort | difference(monitoring.excludes)  }}"
 
 # Notes: Use cluster's domain name and with custom route /prometheus, /grafana and /alerts
 - name: Setup ingress
@@ -181,4 +163,4 @@
   file:
     path: "{{ REPO_DIR }}"
     state: absent
-  when: cleanup
+  when: _cleanup

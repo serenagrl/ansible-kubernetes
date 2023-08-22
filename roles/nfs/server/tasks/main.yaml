@@ -15,7 +15,7 @@
 
 - name: Create shared directory
   file:
-    path: "{{ shared }}"
+    path: "{{ nfs.shared }}"
     state: directory
     mode: '0777'
 

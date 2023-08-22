@@ -1,3 +1,4 @@
+vm:
   # The specification for each VM node.
   # Note: These are the recommended specifications. Anything lower may cause unexpected errors.
   specs:
@@ -26,6 +27,3 @@
 
   # The hyper-v switch to use
   switch: LAN
-
-  # Disable this for debugging
-  cleanup: yes

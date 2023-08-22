@@ -16,9 +16,9 @@
         validate: 'visudo -cf %s'
 
     - name: Set up authorized keys for {{ _kube.user }}
-      authorized_key: user="{{ _kube.user }}" key="{{ item }}"
-      with_file:
-        - ~/.ssh/id_rsa.pub
+      authorized_key:
+        user: "{{ _kube.user }}"
+        key: "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
 
 - name: Configure DNS entries
   block:
@@ -110,9 +110,9 @@
         filename: containerd
         repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/containerd.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
 
-- name: Installing kubernetes ({{ kubernetes_version }})
+- name: Installing kubernetes ({{ kubernetes.version }})
   vars:
-    release: "{% if kubernetes_version is defined and kubernetes_version and kubernetes_version != 'latest' %}={{ kubernetes_version }}-00{% endif %}"
+    release: "{% if kubernetes.version is defined and kubernetes.version and kubernetes.version != 'latest' %}={{ kubernetes.version }}-00{% endif %}"
   apt:
     pkg:
       - "kubelet{{ release }}"
@@ -126,9 +126,9 @@
 
 - name: Install and configure containerd
   block:
-    - name: Installing containerd ({{ containerd_version }})
+    - name: Installing containerd ({{ containerd.version }})
       vars:
-          release: "{% if containerd_version is defined and containerd_version and containerd_version != 'latest' %}={{ containerd_version }}{% endif %}"
+          release: "{% if containerd.version is defined and containerd.version and containerd.version != 'latest' %}={{ containerd.version }}{% endif %}"
       apt:
         pkg:
           - "containerd.io{{ release }}"

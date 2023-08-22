@@ -1,14 +1,17 @@
 apiVersion: rabbitmq.com/v1beta1
 kind: RabbitmqCluster
 metadata:
-  name: "{{ rmq_cluster_name }}"
-  namespace: "{{ rmq_namespace }}"
+  name: "{{ rabbitmq_cluster.name }}"
+  namespace: "{{ rabbitmq_cluster.namespace }}"
   annotations:
     rabbitmq.com/topology-allowed-namespaces: "*"  
 spec:
   replicas: 3
   service:
-    type: "{{ service_type }}"
+    type: "{{ rabbitmq_cluster.service_type }}"
+
+  persistence:
+    storage: "{{ rabbitmq_cluster.storage_size }}"
 
   tls:
     secretName: rmq-tls-secret

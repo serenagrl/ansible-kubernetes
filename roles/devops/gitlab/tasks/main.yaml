@@ -16,8 +16,8 @@
   lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ cluster_address }} gitlab.{{ domain }}"
-  loop: "{{ groups[register_dns_to] }}"
+    line: "{{ cluster_address }} gitlab.{{ gitlab.domain }}"
+  loop: "{{ groups[gitlab.register_dns_to] }}"
   ignore_errors: yes
   ignore_unreachable: yes
 
@@ -28,7 +28,7 @@
 
 - include_role: 
     name: devops/gitlab/minio-tenant
-  when: external_minio
+  when: gitlab.external_minio
 
 - name: Install Gitlab
   block:
@@ -49,7 +49,7 @@
     - name: Deploying Gitlab
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
-        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+        version: "{% if gitlab.version is defined and gitlab.version and gitlab.version != 'latest' %}{{ gitlab.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: gitlab

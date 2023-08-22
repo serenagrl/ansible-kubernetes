@@ -6,13 +6,13 @@ expose:
     # For harbor api
     enabled: true
     auto:
-      commonName: {{ domain }}
+      commonName: {{ harbor.domain }}
     certSource: secret
     secret:
       secretName: "harbor-ingress-tls"
       notarySecretName: "harbor-ingress-tls"
 
-externalURL: https://core.{{ domain }}
+externalURL: https://core.{{ harbor.domain }}
 
 persistence:
   enabled: true

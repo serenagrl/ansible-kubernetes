@@ -12,7 +12,7 @@
         name: "rabbitmq operator"
         namespace: "rabbitmq"
         repo_path: "rabbitmq/cluster-operator"
-        pkg_version: "{{ release_version | default }}"
+        pkg_version: "{{ rabbitmq_operator.version | default }}"
         version_prefix: "v"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cluster-operator.yml"]
@@ -43,7 +43,7 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: cleanup
+  when: _cleanup
   
 - name: Waiting for rabbitmq-system to be ready
   shell: for d in $(kubectl -n rabbitmq-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n rabbitmq-system deployment/$d; done;

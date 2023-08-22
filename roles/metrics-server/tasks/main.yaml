@@ -49,7 +49,7 @@
       vars:
         name: "metrics server"
         repo_path: "kubernetes-sigs/metrics-server"
-        pkg_version: "{{ release_version | default }}"
+        pkg_version: "{{ metrics.version | default }}"
         version_prefix: "metrics-server-helm-chart-"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/components.yaml"]
@@ -95,7 +95,7 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: cleanup
+  when: _cleanup
   
 - name: Waiting for metrics server to be ready
   shell: |

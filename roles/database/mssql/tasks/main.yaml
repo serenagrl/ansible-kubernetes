@@ -7,7 +7,7 @@
 - name: Create namespace
   kubernetes.core.k8s:
     kind: Namespace
-    name: "{{ target_namespace }}"
+    name: "{{ mssql.target_namespace }}"
 
 - include_tasks: ./tasks/task-create-certificate.yaml
   vars:
@@ -15,7 +15,7 @@
     certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
 - name: Create secret (Please change password after install)
-  shell: kubectl create secret generic mssql-sa-secret --from-literal=MSSQL_SA_PASSWORD="{{ sa_password }}" -n {{ target_namespace }} --dry-run=client -o yaml | kubectl apply -f -
+  shell: kubectl create secret generic mssql-sa-secret --from-literal=MSSQL_SA_PASSWORD="{{ mssql.sa_password }}" -n {{ mssql.target_namespace }} --dry-run=client -o yaml | kubectl apply -f -
 
 - name: Create configmap
   kubernetes.core.k8s:

@@ -4,87 +4,6 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- delegate_to: localhost
-  become_user: root
-  block:
-    - name: Check if kube config file exists on ansible controller host
-      stat:
-        path: ~/.kube/config
-      register: file_stats
-
-    - name: Download kube config
-      block:
-        - name: Create .kube in home directory
-          file:
-            path: ~/.kube
-            state: directory
-            mode: 0700
-
-        - name: Copy admin.conf to home directory kube config
-          delegate_to: "{{ groups['primary_control_plane'][0] }}"
-          fetch:
-            src: /etc/kubernetes/admin.conf
-            dest: ~/.kube/config
-            flat: yes
-
-        - name: Replace default cluster name with {{ _kube.cluster.name }}
-          replace:
-            path: ~/.kube/config
-            regexp: 'kubernetes'
-            replace: "{{ _kube.cluster.name }}"           
-      
-      when: not file_stats.stat.exists
-
-    - name: Add cluster config to kube config file on ansible controller host
-      block:
-        - name: Get local kube config file
-          slurp:
-            src: ~/.kube/config
-          register: local_file
-
-        - name: Add cluster information to kube config
-          vars:
-            cluster_exist: "{{ local_file['content'] | b64decode | regex_search('cluster: ' + _kube.cluster.name) }}"
-            config: "{{ config_file['content'] | b64decode | replace('kubernetes', _kube.cluster.name) }}"
-          block:
-            - name: Get kube config file from control plane
-              delegate_to: "{{ groups['primary_control_plane'][0] }}"
-              slurp:
-                src: /etc/kubernetes/admin.conf
-              register: config_file
-
-            - name: Add cluster info to ansible controller host .kube config file
-              ansible.builtin.blockinfile:
-                path: ~/.kube/config
-                insertafter: "clusters:"
-                marker: "### {mark} {{ _kube.cluster.name }} configuration"
-                block: "{{ config | regex_search('(?<=clusters:\n)(?s)(.*)(?=contexts)') }}"
-
-            - name: Add context info to ansible controller host .kube config file
-              ansible.builtin.blockinfile:
-                path: ~/.kube/config
-                insertafter: "contexts:"
-                marker: "### {mark} {{ _kube.cluster.name }} context"
-                block: "{{ config | regex_search('(?<=contexts:\n)(?s)(.*)(?=current-)') }}"
-
-            - name: Add user info to ansible controller host .kube config file
-              ansible.builtin.blockinfile:
-                path: ~/.kube/config
-                insertafter: "users:"
-                marker: "### {mark} {{ _kube.cluster.name }} user"
-                block: "{{ config | regex_search('(?<=users:\n)(?s)(.*)') }}"
-          when: not cluster_exist
-      when: file_stats.stat.exists
-
-- name: Set context to cluster
-  delegate_to: localhost
-  shell: kubectl config use-context {{ _kube.cluster.name }}-admin@{{ _kube.cluster.name }}
-
-- name: Add autocomplete and aliases to shell
-  blockinfile:
-    path: ~/.bashrc
-    block: "{{ ALIASES_TEMPLATE }}"
-
 - name: Install kubectl
   delegate_to: localhost
   block: 
@@ -106,4 +25,92 @@
           - "kubectl"
         state: latest
         update_cache: true
-  when: install_kubectl
+  when: remote_admin.install_kubectl
+
+- delegate_to: localhost
+  become_user: root
+  block:
+    - name: Add kubernetes cluster DNS entry to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        insertafter: "127.0.0.1 localhost"
+        line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
+
+    - name: Check if kube config file exists on ansible controller host
+      stat:
+        path: /root/.kube/config
+      register: file_stats
+
+    - name: Download kube config
+      block:
+        - name: Create .kube in home directory
+          file:
+            path: /root/.kube
+            state: directory
+            mode: 0700
+
+        - name: Copy admin.conf to home directory kube config
+          delegate_to: "{{ groups['primary_control_plane'][0] }}"
+          fetch:
+            src: /etc/kubernetes/admin.conf
+            dest: /root/.kube/config
+            flat: yes
+
+        - name: Replace default cluster name with {{ _kube.cluster.name }}
+          replace:
+            path: /root/.kube/config
+            regexp: 'kubernetes'
+            replace: "{{ _kube.cluster.name }}"           
+      
+      when: not file_stats.stat.exists
+
+    - name: Add cluster config to kube config file on ansible controller host
+      block:
+        - name: Get local kube config file
+          slurp:
+            src: /root/.kube/config
+          register: local_file
+
+        - name: Add cluster information to kube config
+          vars:
+            cluster_exist: "{{ local_file['content'] | b64decode | regex_search('cluster: ' + _kube.cluster.name) }}"
+            config: "{{ config_file['content'] | b64decode | replace('kubernetes', _kube.cluster.name) }}"
+          block:
+            - name: Get kube config file from control plane
+              delegate_to: "{{ groups['primary_control_plane'][0] }}"
+              slurp:
+                src: /etc/kubernetes/admin.conf
+              register: config_file
+
+            - name: Add cluster info to ansible controller host .kube config file
+              ansible.builtin.blockinfile:
+                path: /root/.kube/config
+                insertafter: "clusters:"
+                marker: "### {mark} {{ _kube.cluster.name }} configuration"
+                block: "{{ config | regex_search('(?<=clusters:\n)(?s)(.*)(?=contexts)') }}"
+
+            - name: Add context info to ansible controller host .kube config file
+              ansible.builtin.blockinfile:
+                path: /root/.kube/config
+                insertafter: "contexts:"
+                marker: "### {mark} {{ _kube.cluster.name }} context"
+                block: "{{ config | regex_search('(?<=contexts:\n)(?s)(.*)(?=current-)') }}"
+
+            - name: Add user info to ansible controller host .kube config file
+              ansible.builtin.blockinfile:
+                path: /root/.kube/config
+                insertafter: "users:"
+                marker: "### {mark} {{ _kube.cluster.name }} user"
+                block: "{{ config | regex_search('(?<=users:\n)(?s)(.*)') }}"
+
+            - name: Set context to cluster
+              shell: kubectl config use-context {{ _kube.cluster.name }}-admin@{{ _kube.cluster.name }}
+              ignore_errors: yes
+
+          when: not cluster_exist
+      when: file_stats.stat.exists
+
+    - name: Add autocomplete and aliases to shell
+      blockinfile:
+        path: /root/.bashrc
+        block: "{{ ALIASES_TEMPLATE }}"

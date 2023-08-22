@@ -24,7 +24,7 @@
     - name: Deploying minio tenant for gitlab
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
-        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+        version: "{% if gitlab_minio.version is defined and gitlab_minio.version and gitlab_minio.version != 'latest' %}{{ gitlab_minio.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: gitlab-minio
@@ -53,7 +53,7 @@
           {% endif %}"
 
       shell: |
-        kubectl run --rm -i mc -n gitlab --restart=Never --image=minio/mc {{ overrides }} --command -- bash -c "mc alias set gitlab-minio http://gitlab-minio-hl:9000/ minio minio123 && mc admin user svcacct add gitlab-minio minio"
+        kubectl run --rm -i mc -n gitlab --restart=Never --image=minio/mc {{ overrides }} --command -- bash -c "mc alias set gitlab-minio {{ gitlab_minio.tenant_endpoint }} minio minio123 && mc admin user svcacct add gitlab-minio minio"
       register: minio_credentials
 
     - name: Create minio storage secret for gitlab

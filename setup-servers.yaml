@@ -4,37 +4,9 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Provision Virtual Machines for Kubernetes Control Planes
-  hosts: kubernetes_control_planes
-  gather_facts: no
 
-  roles:
-    - role: vm-ubuntu
-      specs:
-        ram_size: 12GB
-        min_ram_size: 8GB
-        disk_size: 127GB
-        v_cpu: 6
+# Setup Kubernetes Control Plane servers
+- import_playbook: setup-control-plane-servers.yaml
 
-- name: Provision Virtual Machines for Kubernetes Nodes
-  hosts: kubernetes_nodes
-  gather_facts: no
-
-  roles:
-    - role: vm-ubuntu
-      specs:
-        ram_size: 4GB
-        min_ram_size: 4GB
-        disk_size: 127GB
-        v_cpu: 2
-
-- name: Create Virtual Machine checkpoints
-  hosts: kubernetes_cluster
-  gather_facts: no
-
-  # Create checkpoints for safety reasons. You can delete the checkpoints later.
-  tasks:
-    - import_tasks: ./tasks/task-checkpoint-vm.yaml
-      vars:
-        checkpoint_name: "Ubuntu configured."
-      when: _checkpoint
+# Setup Kubernetes wWorker node servers
+- import_playbook: setup-worker-node-servers.yaml

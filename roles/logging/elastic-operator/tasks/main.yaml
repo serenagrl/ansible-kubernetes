@@ -13,10 +13,9 @@
         name: "eck-operator"
         namespace: "elastic-system"
         repo_path: "elastic/cloud-on-k8s"
-        pkg_version: "{{ operator_version | default }}"
-        tag_name: \"name\" # Due to non standard versioning, we need to use this.
+        pkg_version: "{{ elastic_operator.version | default }}"
         dest: "{{ _work_dir }}"
-        manifest_url: "https://download.elastic.co/downloads/eck/{{ release }}"
+        manifest_url: "https://download.elastic.co/downloads/eck/{{ release | replace('v','') }}"
         urls: 
           - "{{ manifest_url }}/crds.yaml"
           - "{{ manifest_url }}/operator.yaml"
@@ -54,7 +53,7 @@
   loop:
     - "{{ CRDS_MANIFEST_FILE }}"
     - "{{ OPERATOR_MANIFEST_FILE }}"
-  when: cleanup
+  when: _cleanup
     
 - name: Waiting for elastic-operator to be ready
   shell: kubectl rollout status -n elastic-system statefulset/elastic-operator

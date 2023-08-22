@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
 spec:
   virtualhost:
-    fqdn: {{ domain }}
+    fqdn: {{ argocd.domain }}
     tls:
       secretName: argocd-ingress-tls
   routes:

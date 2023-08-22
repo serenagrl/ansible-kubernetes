@@ -1,3 +1,4 @@
-release_version: latest 
-domain: k8s.local
-register_dns_to: kubernetes_cluster
+sonarqube:
+  version: latest 
+  domain: k8s.local
+  register_dns_to: kubernetes_cluster

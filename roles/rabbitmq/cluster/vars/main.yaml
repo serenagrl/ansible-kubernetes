@@ -1,13 +1,17 @@
-rmq_namespace: rabbitmq
-rmq_cluster_name: rabbitmq
+rabbitmq_cluster:
+  namespace: rabbitmq
+  name: rabbitmq
 
-# Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
-service_type: LoadBalancer
-export_certs: yes
+  # Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
+  service_type: LoadBalancer
 
-cert:
-  ca: rmq-ca-cert.pem
-  cluster: rmq-cluster-cert.pem
-  cluster_key: rmq-cluster-key.pem
-  ca_crt: rmq-ca.crt
-  cluster_pfx: rmq-cluster.pfx
+  # The storage size of the persistent volume claim
+  storage_size: 10Gi
+
+  export_certs: yes
+  cert:
+    ca: rmq-ca-cert.pem
+    cluster: rmq-cluster-cert.pem
+    cluster_key: rmq-cluster-key.pem
+    ca_crt: rmq-ca.crt
+    cluster_pfx: rmq-cluster.pfx

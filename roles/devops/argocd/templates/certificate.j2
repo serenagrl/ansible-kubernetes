@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
 spec:
   dnsNames:
-    - {{ domain }}
+    - {{ argocd.domain }}
   issuerRef:
     kind: ClusterIssuer
     name: default-cluster-issuer

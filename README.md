@@ -19,7 +19,7 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
     | Worker Nodes   | 2    | 8GB       | 12GB            |
 
 3. **Ansible must be installed** - These playbooks were tested on a Windows host with Ubuntu running in WSL.
-    Note: You can run on a Windows 11 or Windows Server 2022 with Hyper-V enabled.
+   Note: You can run on a Windows 11 or Windows Server 2022 with Hyper-V enabled.
 4. **Windows Remote Management (WinRM) must be configured** - The Windows host that manages the Hyper-V VMs must be configured with WinRM.
 5. **A user with proper access rights** must be created in the **Windows host and WSL**.
 6. Some useful links:
@@ -33,23 +33,45 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
 ### Notes
 * The Kubernetes cluster is currently setup to use Calico and Containerd.
 * Both control-planes only or control-planes with worker nodes configuration are supported.
+* Playbooks are defaulted to setup 2 HAProxy load balancers and 3 control-planes. 
 * Configure the IP addresses, host names and domain to your environment in the `\inventories\hosts.yaml`
 * The nfs server is not provisioned currently. You need to manually create it.
 * The playbook for creating 2 nodes with HAProxy and keepalived for load-balancing is available.
 * Some roles are deploying sample/example configurations only (although some may deploy production environments)
 * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
 * Version incompatibility may occur i.e. new Kubernetes version may break everything or some add-ons version may not be compatible with each other. Configure the desired versions in the `vars\main.yaml` of the role.
-* Be patient if you are running on a slow internet connection. Installation may take some time.
-* VM Checkpoints will be created to provide safety just in case your installation breaks. These checkpoint may consume a lot of disk space. You may remove the checkpoints when you feel everything is stable.
+* Be patient if you are running on a slow internet connection. Installation may take some time. Increase the timeout of tasks if your environment needs more time to complete certain tasks.
+* VM Checkpoints will be created to provide safety just in case your installation breaks. These checkpoint may consume a lot of disk space. You may remove the checkpoints when you feel everything is stable to recover disk space.
 
-### Advice
+### Playbooks
+
+* The following is a list of playbooks that you can run:
+
+    | Name | Description |
+    | ---- | ---- |
+    | `setup-all.yaml` | Sets up all kubernetes cluster VMs, creates kubernetes cluster, configures nfs server and install add-on components; all at-one-go. |
+    | `setup-components.yaml` | Install add-on components listed in `_kube.add_ons` in the `group_vars/all.yaml`. |
+    | `setup-control-plane-other.yaml` | Creates and joins secondary control planes to the kubernetes cluster. |
+    | `setup-control-plane-primary.yaml` | Creates the primary control plane in the kubernetes cluster. |
+    | `setup-control-plane-servers.yaml` | Provisions VMs for the kubernetes control planes. |
+    | `setup-control-planes.yaml` | Creates a kubernetes cluster with both primary and secondary control planes at-one-go. |
+    | `setup-kubernetes.yaml` | Creates a kubernetes cluster with all control planes and worker nodes at-one-go. |
+    | `setup-load-balancers.yaml` | Provisions the VMs and configure HAProxy and Keepalived. |
+    | `setup-nfs.yaml` | Installs NFS server to a designated server. Optionally, provisions a VM for it. |
+    | `setup-worker-node-servers.yaml` | Provisions VMs for the kubernetes worker nodes. |
+    | `setup-worker-nodes.yaml` | Creates/Joins worker nodes into the kubernetes cluster. |
+
+#### Advice
 You are advised not to be so ambitious to run `setup-all.yaml` on your first try. Start with these in the following order:
-1. `setup-loadbalancers.yaml` - (Optional) Provision the VMs and sets up a pair of HAProxy load balancers.
+1. `setup-load-balancers.yaml` - (Optional) Provision the VMs and sets up a pair of HAProxy load balancers. 
 2. `setup-server.yaml` - Provisions the Ubuntu VMs on Hyper-V.
 3. `setup-nfs.yaml` - Sets up a basic nfs server.
-4. `setup-kubernetes.yaml` - Sets up the Kubernetes cluster without any add-ons.
-5. Specify the addons to install in the `_kube.add_ons` collection in `group_vars\all.yaml`.
-6. `setup-components.yaml` to install the add-ons that you want.
+4. Set `_kube.register_to_load_balancer: no` and `_kube.cluster.address` to your cp1's IP address if you skipped the creation of load balancers earlier. 
+5. `setup-kubernetes.yaml` - Sets up the Kubernetes cluster without any add-ons. 
+6. Specify the addons to install in the `_kube.add_ons` collection in `group_vars\all.yaml`.
+7. `setup-components.yaml` to install the add-ons that you want.
+
+Note: You may run the more granula playbooks if you want to setup things slowly and steadily.
 
 You can rerun the `setup-components.yaml` after you have modified the `_kube.add_ons` collection to install the roles you want. The installation order is important as some add-ons have dependencies on the others. 
 

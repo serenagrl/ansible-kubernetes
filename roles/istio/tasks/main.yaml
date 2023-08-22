@@ -8,22 +8,22 @@
   shell: |
           curl -s https://api.github.com/repos/istio/istio/releases/latest | grep tag_name | cut -d '"' -f 4
   register: release_tag
-  when: release_version is undefined or not release_version or release_version == "latest"
+  when: istio.version is undefined or not istio.version or istio.version == "latest"
 
-- name: Install istioctl
+- name: Install istioctl {{ RELEASE }}
+  delegate_to: localhost
   become_user: root
   shell: | 
           curl -L https://istio.io/downloadIstio | ISTIO_VERSION={{ RELEASE }} sh -
   args:
     chdir: "{{ _work_dir }}"
 
-  delegate_to: localhost
 
 - name: Copy istioctl from Ansible host to the control plane
   become_user: root
   copy:
     src: "{{ ISTIO_DIR }}/bin/istioctl"
-    dest: "{{ istioctl_dir }}"
+    dest: "{{ istio.istioctl_dir }}"
     mode: 0777
 
 - name: Create working directory 
@@ -38,24 +38,8 @@
 
 - name: Installing istio
   shell: |
-         istioctl install --set profile={{ profile }} -y -f {{ MANIFEST_FILE }}
+         istioctl install --set profile={{ istio.profile }} -y -f {{ MANIFEST_FILE }}
           kubectl rollout status -n istio-system deployment/istiod
-
-- name: Patch istio ingress gateway to use NodePort
-  kubernetes.core.k8s:
-    state: patched
-    namespace: istio-system
-    kind: Service
-    name: istio-ingressgateway
-    definition: |
-      spec:
-        type: NodePort
-        ports:
-        - nodePort: {{ addons.nodeports.gateway.http }}
-          port: 80
-        - nodePort: {{ addons.nodeports.gateway.https }}
-          port: 443
-  when: _kube.use_nodeport                  
 
 - name: Labeling namespaces for istio injection (if any)
   kubernetes.core.k8s:
@@ -66,7 +50,7 @@
       metadata:
         labels:
           istio-injection: enabled
-  loop: "{{ inject if inject is iterable else [] }}"
+  loop: "{{ istio.inject if istio.inject is iterable else [] }}"
 
 - name: Check if Prometheus is installed
   shell: |
@@ -162,20 +146,6 @@
     - name: Waiting for kiali deployment to complete
       shell: kubectl rollout status -n istio-system deployment/kiali
 
-    - name: Patch kiali service to use NodePort {{ addons.nodeports.kiali }}
-      kubernetes.core.k8s:
-        state: patched
-        namespace: istio-system
-        kind: Service
-        name: kiali
-        definition: |
-          spec:
-            type: NodePort
-            ports:
-            - nodePort: {{ addons.nodeports.kiali }}
-              port: 20001
-      when: _kube.use_nodeport
-
     # Notes: Use cluster's domain name and with custom route /kiali
     - name: Setup ingress
       include_tasks: "{{ INGRESS_SETUP }}"
@@ -196,9 +166,9 @@
         - "{{ MANIFEST_DIR }}"
     
     - name: Cleanup 
+      delegate_to: localhost
       become_user: root
       file:
         path: "{{ ISTIO_DIR }}"
         state: absent
-      delegate_to: localhost
-  when: cleanup
+  when: _cleanup

@@ -11,7 +11,7 @@
       vars:
         name: "metallb"
         repo_path: "metallb/metallb"
-        pkg_version: "{{ release_version | default }}"
+        pkg_version: "{{ metallb.version | default }}"
         version_prefix: "v"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/config/manifests/metallb-native.yaml"]
@@ -61,7 +61,7 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: cleanup
+  when: _cleanup
   
 - name: Configure address pool 
   kubernetes.core.k8s:
@@ -71,10 +71,10 @@
       apiVersion: metallb.io/v1beta1
       kind: IPAddressPool
       metadata:
-        name: {{  address_pool_name }}
+        name: {{  metallb.address_pool_name }}
         namespace: metallb-system
       spec:
-        addresses: {{ addresses }} 
+        addresses: {{ metallb.addresses }} 
 
 - name: Configure layer 2 advertisement
   kubernetes.core.k8s:
@@ -88,4 +88,4 @@
         namespace: metallb-system
       spec:
         ipAddressPools:
-          - {{  address_pool_name }}
+          - {{  metallb.address_pool_name }}

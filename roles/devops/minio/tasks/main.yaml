@@ -16,8 +16,8 @@
   lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ cluster_address }} console.{{ domain }}"
-  loop: "{{ groups[register_dns_to] }}"
+    line: "{{ cluster_address }} console.{{ minio.domain }}"
+  loop: "{{ groups[minio.register_dns_to] }}"
   ignore_errors: yes
   ignore_unreachable: yes
 
@@ -45,7 +45,7 @@
     - name: Deploying minio
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
-        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+        version: "{% if minio.version is defined and minio.version and minio.version != 'latest' %}{{ minio.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: minio-operator

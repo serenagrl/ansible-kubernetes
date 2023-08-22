@@ -21,12 +21,12 @@ console:
   ingress:
     enabled: true
     ingressClassName: {{ ingress_name }}
-    host: console.{{ domain }}
+    host: console.{{ minio.domain }}
     path: /
     pathType: Prefix
 {% if has_issuer %}
     tls:
       - hosts:
-          - console.{{ domain }}
+          - console.{{ minio.domain }}
         secretName: minio-console-ingress-tls
 {% endif %}    

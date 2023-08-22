@@ -1,0 +1,24 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Configure Worker nodes
+- name: Join worker nodes
+  hosts: kubernetes_nodes
+  gather_facts: no
+
+  roles:
+    - kubernetes/worker-node
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+- hosts: kubernetes_cluster
+  gather_facts: no
+
+  tasks:
+    - import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "Worker node configured."
+      when: _checkpoint and (groups['kubernetes_nodes'] | length > 0)

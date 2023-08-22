@@ -12,7 +12,7 @@
         name: "contour ingress"
         namespace: "projectcontour"
         repo_path: "projectcontour/contour"
-        pkg_version: "{{ release_version | default }}"
+        pkg_version: "{{ contour.version | default }}"
         version_prefix: "v"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/render/contour.yaml"]
@@ -43,7 +43,7 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: cleanup
+  when: _cleanup
   
 - import_tasks: ./tasks/task-create-certificate.yaml
   vars:

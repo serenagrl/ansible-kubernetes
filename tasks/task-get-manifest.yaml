@@ -1,13 +1,14 @@
 - name: Download {{ name }} manifest
   vars:
     grep_tag: "{{ tag_name | default('tag_name', true) }}"  
-    release: "{% if pkg_version is defined and pkg_version and pkg_version != 'latest' %}{{ version_prefix | default() }}{{ pkg_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
+    has_version_specified: "{{ (pkg_version is defined and pkg_version and pkg_version != 'latest') | bool }}"
+    release: "{{ has_version_specified | ternary((version_prefix | default()) + pkg_version, release_tag.stdout) }}"
   block:
     - name: Get latest {{ name }} release tag
       shell: |
           curl -s "https://api.github.com/repos/{{ repo_path }}/releases/latest" | grep {{ grep_tag }} | cut -d '"' -f 4
       register: release_tag
-      when: pkg_version is undefined or not pkg_version or pkg_version == "latest"
+      when: not has_version_specified
 
     - name: Get {{ name }} ({{ release }}) manifest
       get_url:

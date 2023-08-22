@@ -13,7 +13,7 @@
 
 - name: Deploying velero
   vars:
-    version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+    version: "{% if velero.version is defined and velero.version and velero.version != 'latest' %}{{ velero.version }}{% endif %}"
   kubernetes.core.helm:
     name: velero
     atomic: yes
@@ -35,11 +35,11 @@
 
 - include_role: 
     name: velero/cli
-  when: install_cli
+  when: velero.install_cli
 
 - include_role: 
     name: velero/storage-location
-  loop: "{{ storage_providers }}"
+  loop: "{{ velero.storage_providers }}"
   loop_control:
     index_var: index
   vars:

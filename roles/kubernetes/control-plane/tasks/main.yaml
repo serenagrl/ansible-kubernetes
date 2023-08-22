@@ -36,16 +36,18 @@
         state: latest
         update_cache: true
 
-    # Prevents warnings when running ansible helm commands.
-    - name: Install helm diff
-      shell: helm plugin install https://github.com/databus23/helm-diff
+# Prevents warnings when running ansible helm commands.
+- become_user: "{{ _kube.user }}"
+  name: Install helm diff
+  shell: |
+    helm plugin install https://github.com/databus23/helm-diff
 
 - name: Configure kube config
   become_user: "{{ _kube.user }}"
   block:
     - name: Create .kube in home directory
       file:
-        path: $HOME/.kube
+        path: ~/.kube
         state: directory
         mode: 0700
 
@@ -70,7 +72,7 @@
   block:
     - name: Add labels to control planes
       shell: kubectl label nodes {{ inventory_hostname }} {{ item }}
-      loop: "{{ node_labels }}"
+      loop: "{{ kubernetes.control_plane_node_labels }}"
 
     - name: Remove taint to allow scheduling on control plane nodes 
       shell: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane-

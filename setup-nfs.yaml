@@ -14,11 +14,12 @@
   roles:
     # Uncomment to provision the nfs server.    
     # - role: vm-ubuntu
-    #   specs:
-    #     ram_size: 4GB
-    #     min_ram_size: 4GB
-    #     disk_size: 127GB
-    #     v_cpu: 2
+    #   vm:
+    #     specs:
+    #       ram_size: 4GB
+    #       min_ram_size: 4GB
+    #       disk_size: 127GB
+    #       v_cpu: 2
 
     # Configure servers that are allowed to access the NFS share
     - role: nfs/server

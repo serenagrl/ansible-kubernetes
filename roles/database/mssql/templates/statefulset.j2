@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mssql
-  namespace: {{ target_namespace }}
+  namespace: {{ mssql.target_namespace }}
 spec:
   serviceName: "mssql"
   replicas: 1
@@ -18,13 +18,13 @@ spec:
         fsGroup: 10001
       containers:
         - name: mssql 
-          image: mcr.microsoft.com/mssql/server:{{ release_version }}
+          image: mcr.microsoft.com/mssql/server:{{ mssql.version }}
           ports:
             - containerPort: 1433
               name: tcpsql
           env:
             - name: MSSQL_PID
-              value: "Developer"
+              value: "{{ mssql.edition}}"
             - name: MSSQL_SA_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -75,4 +75,4 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 8Gi
+            storage: {{ mssql.storage_size }}

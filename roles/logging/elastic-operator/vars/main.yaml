@@ -1,2 +1,2 @@
-operator_version: latest
-cleanup: yes
+elastic_operator:
+  version: latest

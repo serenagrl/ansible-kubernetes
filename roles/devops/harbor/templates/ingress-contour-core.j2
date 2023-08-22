@@ -5,7 +5,7 @@ metadata:
   namespace: harbor-system
 spec:
   virtualhost:
-    fqdn: core.{{ domain }}
+    fqdn: core.{{ harbor.domain }}
     tls:
       secretName: harbor-ingress-tls
   routes:

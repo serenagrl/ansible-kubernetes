@@ -15,7 +15,7 @@
     - name: Get minio credentials
       shell: | 
         kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data}'
-      register: minio_credentials
+      register: minio_secret
 
     - name: Add Gitlab chart repo
       kubernetes.core.helm_repository:
@@ -24,11 +24,11 @@
 
     - name: Deploying Gitlab Runner
       vars:
-        credentials: "{{ minio_credentials.stdout | from_json }}"
-        minio:
+        credentials: "{{ minio_secret.stdout | from_json }}"
+        minio_credentials:
           accesskey: "{{ credentials.accesskey | b64decode }}"
           secretkey: "{{ credentials.secretkey | b64decode }}"
-        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+        version: "{% if gitlab_runner.version is defined and gitlab_runner.version and gitlab_runner.version != 'latest' %}{{ gitlab_runner.version }}{% endif %}"
       kubernetes.core.helm:
         name: gitlab-runner
         atomic: yes

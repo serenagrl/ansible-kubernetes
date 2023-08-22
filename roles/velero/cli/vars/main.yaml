@@ -1,4 +1,3 @@
-# The velero version
-release_version: latest # 1.11.0
-
-cleanup: yes
+velero_cli:
+  # The velero version
+  version: latest # 1.11.0

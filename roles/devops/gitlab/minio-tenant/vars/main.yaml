@@ -1,2 +1,9 @@
-release_version: latest 
-domain: minio.k8s.local
+gitlab_minio:
+  version: latest 
+  domain: minio.k8s.local
+  tenant_endpoint: http://gitlab-minio-hl:9000/
+
+  pools:
+    servers: 2
+    volumes_per_server: 2
+    size: 10Gi

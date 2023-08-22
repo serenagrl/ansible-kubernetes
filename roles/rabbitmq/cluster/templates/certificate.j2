@@ -2,13 +2,13 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: rmq-cluster-cert
-  namespace: "{{ rmq_namespace }}"
+  namespace: "{{ rabbitmq_cluster.namespace }}"
 spec:
   dnsNames:
-    - "{{ rmq_cluster_name }}.{{ rmq_namespace }}.svc"
-    - "{{ rmq_cluster_name }}.{{ rmq_namespace }}.svc.cluster.local"
-    - "*.{{ rmq_cluster_name }}-nodes.{{ rmq_namespace }}.svc"
-    - "*.{{ rmq_cluster_name }}-nodes.{{ rmq_namespace }}.svc.cluster.local"
+    - "{{ rabbitmq_cluster.name }}.{{ rabbitmq_cluster.namespace }}.svc"
+    - "{{ rabbitmq_cluster.name }}.{{ rabbitmq_cluster.namespace }}.svc.cluster.local"
+    - "*.{{ rabbitmq_cluster.name }}-nodes.{{ rabbitmq_cluster.namespace }}.svc"
+    - "*.{{ rabbitmq_cluster.name }}-nodes.{{ rabbitmq_cluster.namespace }}.svc.cluster.local"
   issuerRef:
     kind: ClusterIssuer
     name: default-cluster-issuer

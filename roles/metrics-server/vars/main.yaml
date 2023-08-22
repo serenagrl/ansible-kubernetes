@@ -1,2 +1,2 @@
-release_version: latest #3.8.2
-cleanup: yes
+metrics:
+  version: latest #3.8.2

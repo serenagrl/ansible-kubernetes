@@ -16,8 +16,8 @@
   lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ cluster_address }} core.{{ domain }} notary.{{ domain }}"
-  loop: "{{ groups[register_dns_to] }}"
+    line: "{{ cluster_address }} core.{{ harbor.domain }} notary.{{ harbor.domain }}"
+  loop: "{{ groups[harbor.register_dns_to] }}"
   ignore_errors: yes
   ignore_unreachable: yes
 
@@ -45,7 +45,7 @@
     - name: Deploying harbor
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
-        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+        version: "{% if harbor.version is defined and harbor.version and harbor.version != 'latest' %}{{ harbor.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: harbor
@@ -64,8 +64,9 @@
 
     - name: Waiting for Harbor api to be up
       uri:
-        url: "https://core.{{ domain }}/api/v2.0/systeminfo/getcert"
+        url: "https://core.{{ harbor.domain }}/api/v2.0/systeminfo/getcert"
         validate_certs: no
+        return_content: true
       register: result
       until: result.status == 200
       retries: 15
@@ -74,18 +75,13 @@
 - name: Get harbor registry certificate
   delegate_to: localhost
   become_user: root
-  block:
-    - name: Get harbor registry certificate
-      get_url:
-        url: https://core.{{ domain }}/api/v2.0/systeminfo/getcert
-        dest: "{{ CERT_FILE }}"
-        mode: '0644'
-        force: true
-        validate_certs: no
+  copy:
+    content: "{{ result.content }}"
+    dest: "{{ CERT_FILE }}"
 
 - name: Configure kubernetes nodes to trust registry certificate
   include_tasks: trust-cert.yaml
-  loop: "{{ groups[register_dns_to] }}"
+  loop: "{{ groups[harbor.register_dns_to] }}"
 
 - name: Cleanup files
   delegate_to: localhost
@@ -95,4 +91,4 @@
     state: absent
   loop:
     - "{{ CERT_FILE }}"
-  when: cleanup
+  when: _cleanup

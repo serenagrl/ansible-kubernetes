@@ -45,12 +45,12 @@ runners:
         [runners.cache.s3]
           ServerAddress = "gitlab-minio-hl:9000"
           Insecure = true
-          AccessKey = "{{ minio.accesskey }}"
-          SecretKey = "{{ minio.secretkey }}"
+          AccessKey = "{{ minio_credentials.accesskey }}"
+          SecretKey = "{{ minio_credentials.secretkey }}"
           BucketName = "runner-cache"
           BucketLocation = "us-east-1"
       [runners.kubernetes]
-        image = "{{ image }}"
+        image = "{{ gitlab_runner.image }}"
         [[runners.kubernetes.host_aliases]]
           ip = "{{ cluster_address }}"
           hostnames = ["core.harbor.k8s.local"]

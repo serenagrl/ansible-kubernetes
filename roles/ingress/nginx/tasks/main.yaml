@@ -13,7 +13,7 @@
         name: "ingress nginx"
         namespace: "ingress-nginx"
         repo_path: "kubernetes/ingress-nginx"
-        pkg_version: "{{ release_version | default }}"
+        pkg_version: "{{ ingress_nginx.version | default }}"
         version_prefix: "helm-chart-"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/deploy/static/provider/baremetal/deploy.yaml"]
@@ -43,7 +43,7 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: cleanup
+  when: _cleanup
   
 # This is needed. Do not remove.
 - name: Check if metallb is installed
@@ -59,12 +59,12 @@
     name: ingress-nginx-controller
     definition: "{{ SERVICE_DEFINITION }}"
 
-- name: Scale ingress controller pods = {{ scale }}
+- name: Scale ingress controller pods = {{ ingress_nginx.scale }}
   vars:
     replicas: "{{ groups['kubernetes_control_planes'] | length }}"
   shell: | 
       kubectl scale deployment -n ingress-nginx ingress-nginx-controller --replicas={{ replicas }}
-  when: scale
+  when: ingress_nginx.scale
 
 - name: Configure default ingress nginx class
   kubernetes.core.k8s:

@@ -1,2 +1,3 @@
-# Path of the share.
-shared: /data
+nfs:
+  # Path of the share.
+  shared: /data

@@ -1,6 +1,5 @@
-release_version: latest #0.13.5
-# The IP range to give out
-address_pool_name: default-pool
-addresses: [ 192.168.0.240-192.168.0.250 ]
-
-cleanup: yes
+metallb:
+  version: latest #0.13.5
+  # The IP range to give out
+  address_pool_name: default-pool
+  addresses: [ 192.168.0.240-192.168.0.250 ]

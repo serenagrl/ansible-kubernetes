@@ -1,10 +1,9 @@
 tenant:
   name: gitlab-minio
   pools:
-    - servers: 2
-      volumesPerServer: 2
-      size: 10Gi
-      storageClassName: nfs-storage
+    - servers: {{ gitlab_minio.pools.servers }}
+      volumesPerServer: {{ gitlab_minio.pools.volumes_per_server }}
+      size: {{ gitlab_minio.pools.size }}
 {% if not _kube.allow_scheduling %}
       tolerations:
         - effect: NoSchedule
@@ -36,24 +35,24 @@ ingress:
   api:
     enabled: true
     ingressClassName: {{ ingress_name }}
-    host: gitlab.{{ domain }}
+    host: gitlab.{{ gitlab_minio.domain }}
     path: /
     pathType: Prefix
 {% if has_issuer %}
     tls:
       - hosts:
-          - gitlab.{{ domain }}
+          - gitlab.{{ gitlab_minio.domain }}
         secretName: gitlab-minio-ingress-tls
 {% endif %}       
   console:
     enabled: true
     ingressClassName: {{ ingress_name }}
-    host: gitlab-console.{{ domain }}
+    host: gitlab-console.{{ gitlab_minio.domain }}
     path: /
     pathType: Prefix
 {% if has_issuer %}
     tls:
       - hosts:
-          - gitlab-console.{{ domain }}
+          - gitlab-console.{{ gitlab_minio.domain }}
         secretName: gitlab-minio-ingress-tls
 {% endif %}       

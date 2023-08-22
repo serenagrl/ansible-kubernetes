@@ -1,3 +1,4 @@
-release_version: latest 
-domain: minio.k8s.local
-register_dns_to: kubernetes_cluster
+minio:
+  version: latest 
+  domain: minio.k8s.local
+  register_dns_to: kubernetes_cluster

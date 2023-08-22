@@ -18,12 +18,13 @@
   
 - name: Update credential file location
   shell: |
-    kubectl set env deployment/velero {{ environment_name[storage_provider] }}=/credentials/{{ storage_provider }} -n velero -c='velero'
-    kubectl set env daemonset/node-agent {{ environment_name[storage_provider] }}=/credentials/{{ storage_provider }} -n velero -c='node-agent'
+    kubectl set env deployment/velero {{ velero.environment_name[storage_provider] }}=/credentials/{{ storage_provider }} -n velero -c='velero'
+    kubectl set env daemonset/node-agent {{ velero.environment_name[storage_provider] }}=/credentials/{{ storage_provider }} -n velero -c='node-agent'
 
 - name: Add plug-in {{ storage_provider }}
   delegate_to: localhost
-  shell: velero plugin add {{ plug_ins[storage_provider] }}
+  become_user: root
+  shell: velero plugin add {{ velero.plug_ins[storage_provider] }} --kubeconfig /root/.kube/config
 
 - name: Create backup storage location
   kubernetes.core.k8s:

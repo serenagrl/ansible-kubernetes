@@ -2,7 +2,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: mssql-config
-  namespace: {{ target_namespace }}
+  namespace: {{ mssql.target_namespace }}
 data:
   mssql.conf: |
     [EULA]

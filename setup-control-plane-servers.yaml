@@ -1,0 +1,25 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Provision Virtual Machines for Kubernetes Control Planes
+  hosts: kubernetes_control_planes
+  gather_facts: no
+
+  roles:
+    - role: vm-ubuntu
+      vm:
+        specs:
+          ram_size: 12GB
+          min_ram_size: 8GB
+          disk_size: 127GB
+          v_cpu: 6
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+  post_tasks:
+    - import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "Ubuntu configured."
+      when: _checkpoint

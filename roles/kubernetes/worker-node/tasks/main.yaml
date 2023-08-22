@@ -23,4 +23,4 @@
 
     - name: Add labels to node
       shell: kubectl label nodes {{ inventory_hostname }} {{ item }}
-      loop: "{{ node_labels }}"
+      loop: "{{ kubernetes.worker_node_labels }}"

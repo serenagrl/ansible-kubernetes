@@ -1,2 +1,3 @@
-# Enter a list of labels you want to add to the control planes.
-node_labels:  [ ]
+kubernetes:
+  # Enter a list of labels you want to add to the control planes.
+  control_plane_node_labels:  [ ]

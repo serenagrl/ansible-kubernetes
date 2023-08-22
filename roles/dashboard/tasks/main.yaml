@@ -12,10 +12,11 @@
         name: "kubernetes dashboard"
         namespace: "kubernetes-dashboard"
         repo_path: "kubernetes/dashboard"
-        pkg_version: "{{ release_version | default }}"
+        pkg_version: "{{ dashboard.version | default }}"
         version_prefix: "v"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/aio/deploy/recommended.yaml"]
+        #urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/charts/kubernetes-dashboard.yaml"]
 
     - name: Configure to run on control-planes only
       block:    
@@ -51,24 +52,8 @@
   file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: cleanup
+  when: _cleanup
   
-- name: Patch dashboard service to NodePort {{ nodeport }}
-  kubernetes.core.k8s:
-    state: patched
-    namespace: kubernetes-dashboard
-    kind: Service
-    name: kubernetes-dashboard
-    definition: |
-      spec:
-        type: NodePort
-        ports:
-        - nodePort: {{ nodeport }}
-          port: 443
-          protocol: TCP
-          targetPort: 8443
-  when: _kube.use_nodeport
-
 - name: Create dashboard ServiceAccount
   kubernetes.core.k8s:
     apply: yes

@@ -16,8 +16,8 @@
   lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ cluster_address }} sonarqube.{{ domain }}"
-  loop: "{{ groups[register_dns_to] }}"
+    line: "{{ cluster_address }} sonarqube.{{ sonarqube.domain }}"
+  loop: "{{ groups[sonarqube.register_dns_to] }}"
   ignore_errors: yes
   ignore_unreachable: yes
 
@@ -45,7 +45,7 @@
     - name: Deploying sonarqube
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
-        version: "{% if release_version is defined and release_version and release_version != 'latest' %}{{ release_version }}{% endif %}"
+        version: "{% if sonarqube.version is defined and sonarqube.version and sonarqube.version != 'latest' %}{{ sonarqube.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: sonarqube

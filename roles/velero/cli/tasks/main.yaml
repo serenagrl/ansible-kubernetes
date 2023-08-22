@@ -10,7 +10,7 @@
   delegate_to: localhost
   vars:
     repo_path: vmware-tanzu/velero 
-    release: "{% if release_version is defined and release_version and release_version != 'latest' %}v{{ release_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
+    release: "{% if velero_cli.version is defined and velero_cli.version and velero_cli.version != 'latest' %}v{{ velero_cli.version }}{% else %}{{ release_tag.stdout }}{% endif %}"
     tar_file: velero-{{ release }}-linux-amd64.tar.gz
     cli_dir: "{{ _work_dir }}/velero-{{ release }}-linux-amd64"
   block:
@@ -18,7 +18,7 @@
       shell: |
           curl -s "https://api.github.com/repos/{{ repo_path }}/releases/latest" | grep tag_name | cut -d '"' -f 4
       register: release_tag
-      when: release_version is undefined or not release_version or release_version == "latest"
+      when: velero_cli.version is undefined or not velero_cli.version or velero_cli.version == "latest"
 
     - name: Downloading and extracting velero cli
       ansible.builtin.unarchive:
@@ -33,4 +33,4 @@
       file:
         path: "{{ cli_dir }}"
         state: absent
-      when: cleanup
+      when: _cleanup

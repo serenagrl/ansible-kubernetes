@@ -1,1 +1,2 @@
-install_kubectl: no
+remote_admin:
+  install_kubectl: no

@@ -1,8 +1,13 @@
-release_version: 2022-latest
-sa_password: p@ssw0rd
-target_namespace: mssql-server
-domain: mssql.k8s.local
+mssql:
+  version: 2022-latest
+  edition: Developer
+  sa_password: p@ssw0rd
+  target_namespace: mssql-server
+  domain: mssql.k8s.local
 
-# Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
-# Otherwise, set it to ClusterIP
-service_type: LoadBalancer
+  # Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
+  # Otherwise, set it to ClusterIP to limit to internal traffic only.
+  service_type: LoadBalancer
+
+  # The sotrage size to request.
+  storage_size: 8Gi

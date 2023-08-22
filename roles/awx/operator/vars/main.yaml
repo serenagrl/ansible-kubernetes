@@ -1,3 +1,2 @@
-release_version: latest #0.28.0
-
-cleanup: yes
+awx:
+  version: latest #0.28.0

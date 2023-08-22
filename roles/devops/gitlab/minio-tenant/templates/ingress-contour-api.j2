@@ -5,7 +5,7 @@ metadata:
   namespace: gitlab
 spec:
   virtualhost:
-    fqdn: gitlab.{{ domain }}
+    fqdn: gitlab.{{ gitlab_minio.domain }}
     tls:
       secretName: gitlab-minio-ingress-tls
   routes:

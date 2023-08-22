@@ -5,7 +5,7 @@ metadata:
   namespace: minio-operator
 spec:
   dnsNames:
-    - console.{{ domain }}
+    - console.{{ minio.domain }}
   issuerRef:
     kind: ClusterIssuer
     name: default-cluster-issuer

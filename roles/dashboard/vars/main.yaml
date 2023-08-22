@@ -1,3 +1,2 @@
-release_version: 2.7.0
-nodeport: 32000
-cleanup: yes
+dashboard:
+  version: 2.7.0 # latest not supported yet

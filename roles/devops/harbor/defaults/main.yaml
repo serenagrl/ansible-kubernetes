@@ -1,6 +1,6 @@
 CERT_FILE: "{{ _work_dir }}/harbor-ca.crt"
 CERT_DIR: "/usr/local/share/ca-certificates"
-CR_CERT_DIR: "/etc/containerd/certs.d/core.{{ domain }}"
+CR_CERT_DIR: "/etc/containerd/certs.d/core.{{ harbor.domain }}"
 
 CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 

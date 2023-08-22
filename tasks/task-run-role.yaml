@@ -1,16 +1,20 @@
-- name: Set role variables as facts  
-  set_fact:  
-    "{{ role_vars.key }}": "{{ role_vars.value }}"  
-  with_dict: "{{ role.vars | default([]) }}"  
-  loop_control:  
-    loop_var: role_vars
+- delegate_to: localhost
+  become_user: root
+  vars:
+    role_var_file: "{{ _work_dir}}/role-var-file"
+  block:
+    - name: Output role parameters to temporary var file
+      shell: |
+        echo "{{ role.vars | default() }}" >> "{{ role_var_file }}"
+
+    - name: Read in role parameters from temporary var file
+      include_vars: "{{ role_var_file }}"
+  
+    - name: Cleanup temporary var file
+      file:
+        path: "{{ role_var_file }}"
+        state: absent
+  when: role.vars is defined
 
 - ansible.builtin.include_role:
     name: "{{ role.name }}"
-
-- name: Unset value in facts 
-  set_fact:  
-    "{{ role_vars.key }}":  
-  with_dict: "{{ role.vars | default([]) }}"  
-  loop_control:  
-    loop_var: role_vars

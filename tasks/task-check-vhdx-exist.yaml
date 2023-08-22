@@ -6,7 +6,7 @@
     linux_dir: "{{ '/mnt/' + (win_folder[0] | lower) + (win_folder[2:] | replace( backslash, '/')) }}"
     vhd_disk: "{{ win_folder }}\\{{ host_name }}\\Virtual Hard Disks\\{{ disk_name }}.vhdx"
   block:
-    - name: Checking for {{ disk_name }}.vhdx on {{ host_name }}.
+    - name: Checking for existing vhdx file on hosts.
       find:
         paths: "{{ linux_dir }}/{{ host_name }}/Virtual Hard Disks/"
         patterns: "{{ disk_name }}.vhdx"

@@ -1,7 +1,7 @@
 fullnameOverride: gitlab
 global:
   hosts:
-    domain: {{ domain }}
+    domain: {{ gitlab.domain }}
   ingress:
     enabled: true
 {% if has_issuer %}
@@ -11,7 +11,7 @@ global:
     class: {{ ingress_name }}
     configureCertmanager: false
 
-{% if external_minio %}
+{% if gitlab.external_minio %}
   minio:
     enabled: false
 
@@ -90,6 +90,8 @@ postgresql:
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+  persistence:
+    size: {{ gitlab.postgres.storage_size }}
 
 minio:
   tolerations:
@@ -128,7 +130,7 @@ gitlab:
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
 
-{% if external_minio %}
+{% if gitlab.external_minio %}
     backups:
       objectStorage:
         config:

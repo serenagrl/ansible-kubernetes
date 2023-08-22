@@ -1,7 +1,11 @@
-release_version: latest 
-domain: k8s.local
-register_dns_to: kubernetes_cluster
+gitlab:
+  version: latest 
+  domain: k8s.local
+  register_dns_to: kubernetes_cluster
 
-# Make sure minio operator is installed before setting this to yes.
-# Note: You can use the minio role to setup the operator.
-external_minio: yes
+  # Make sure minio operator is installed before setting this to yes.
+  # Note: You can use the minio role to setup the operator.
+  external_minio: yes
+
+  postgres:
+    storage_size: 8Gi
