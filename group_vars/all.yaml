@@ -57,7 +57,7 @@ _kube:
 _work_dir: /var/automate
 
 # Creates VM checkpoints at specific stages of automation.
-_checkpoint: no
+_checkpoint: yes
 
 # Clean up residue files after installation. 
 _cleanup: yes
