@@ -7,7 +7,21 @@
 - name: Configure ssh connectivity for Ansible host
   delegate_to: localhost
   become_user: root
+  vars:
+    lock_file: "{{ _work_dir }}/ssh.lock"
   block:
+    - name: Ensure that file is not locked
+      ansible.builtin.wait_for:
+        path: "{{ lock_file }}"
+        state: absent
+        timeout: 5
+      ignore_errors: yes
+
+    - name: Acquiring lock (Create lock file)
+      file:
+        path: "{{ lock_file }}"
+        state: touch
+
     - name: Checking ssh port availability
       wait_for:
         host: "{{ ansible_host }}"
@@ -23,3 +37,8 @@
     - name: Register servers as known hosts to Ansible hosts
       shell: |
               ssh-keyscan -H {{ ansible_host }} >> /root/.ssh/known_hosts
+
+    - name: Releasing lock (lock file)
+      file:
+        path: "{{ lock_file }}"
+        state: absent
