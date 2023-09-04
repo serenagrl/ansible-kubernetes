@@ -107,6 +107,7 @@ You can rerun the `setup-components.yaml` after you have modified the `_kube.add
 * RabbitMQ
   * Rabbitmq Operator
   * Rabbitmq Cluster
+* Redis  
 * Database
   * Microsoft SQL Server 
 * Velero
