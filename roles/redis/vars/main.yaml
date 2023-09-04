@@ -1,0 +1,41 @@
+redis:
+  # The image tag version.
+  version: latest
+
+  # The desired namespace to install redis
+  namespace: redis
+
+  # Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
+  # Otherwise, set it to ClusterIP
+  service_type: LoadBalancer
+  
+  # The storage size of the persistent volume claim.
+  storage_size: 8Gi
+
+  # The High-Availability mode for Redis - cluster or sentinel.
+  ha_mode: cluster
+
+  # Determine whether tls is enabled
+  enable_tls: yes
+
+  # Determine whether metrics is enabled (requires Prometheus to be available)
+  enable_metrics: no
+
+  # Determine whether certs should be exported for application used.
+  export_certs: yes
+  
+  cert:
+    validity: 8640h
+    ca: redis-ca-cert.pem
+    cluster: redis-cert.pem
+    cluster_key: redis-key.pem
+    ca_crt: redis-ca.crt
+    cluster_pfx: redis.pfx
+
+  cluster:
+    name: redis-cluster
+
+  sentinel:
+    name: redis-sentinel
+    masterset: redismaster
+    replica: 3

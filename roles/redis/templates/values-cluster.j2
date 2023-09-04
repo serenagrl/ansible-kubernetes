@@ -1,0 +1,40 @@
+fullnameOverride: {{ redis.cluster.name }}
+
+image:
+  tag: {{ redis.version }}
+
+service:
+  type: {{ redis.service_type }}
+
+{% if redis.enable_tls %}
+tls:
+  enabled: true
+  existingSecret: redis-tls-secret
+  certFilename: tls.crt
+  certKeyFilename: tls.key
+  certCAFilename: ca.crt
+{% endif %}  
+
+persistence:
+  size: {{ redis.storage_size }}
+
+{% if not _kube.allow_scheduling %}
+redis:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+updateJob:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+metrics:
+  enabled: {{ redis.enable_metrics }}

@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: redis-cert
+  namespace: "{{ redis.namespace }}"
+spec:
+  duration: {{ redis.cert.validity }}
+  dnsNames:
+    - "{{ service_name }}.{{ redis.namespace }}.svc"
+    - "{{ service_name }}.{{ redis.namespace }}.svc.cluster.local"
+    - "*.{{ service_name }}-headless.{{ redis.namespace }}.svc"
+    - "*.{{ service_name }}-headless.{{ redis.namespace }}.svc.cluster.local"
+  issuerRef:
+    kind: ClusterIssuer
+    name: default-cluster-issuer
+  secretName: redis-tls-secret

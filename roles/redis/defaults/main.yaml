@@ -1,0 +1,14 @@
+CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
+VALUES_FILE: "{{ lookup('template', 'values-' + redis.ha_mode + '.j2') | from_yaml }}"
+
+SCRAPE_CONFIG: "prometheus-additional.yaml"
+SECRET_CONFIG: "additional-scrape-configs.yaml"
+HAS_PROMETHEUS: "{{ prometheus_status.stdout == 'Available' }}"
+
+REPO_URLS:
+  cluster: oci://registry-1.docker.io/bitnamicharts/redis-cluster
+  sentinel: oci://registry-1.docker.io/bitnamicharts/redis
+
+SERVICE_NAMES:
+  cluster: "{{ redis.cluster.name }}"
+  sentinel: "{{ redis.sentinel.name }}"
