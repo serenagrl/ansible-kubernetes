@@ -4,6 +4,7 @@ metadata:
   name: rmq-cluster-cert
   namespace: "{{ rabbitmq_cluster.namespace }}"
 spec:
+  duration: {{ rabbitmq_cluster.cert.validity }}
   dnsNames:
     - "{{ rabbitmq_cluster.name }}.{{ rabbitmq_cluster.namespace }}.svc"
     - "{{ rabbitmq_cluster.name }}.{{ rabbitmq_cluster.namespace }}.svc.cluster.local"
