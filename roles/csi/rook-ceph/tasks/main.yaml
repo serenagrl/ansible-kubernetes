@@ -417,7 +417,7 @@
     - name: Add istio scrape configs to scrape configs file
       blockinfile:
         path: "~/{{ SCRAPE_CONFIG }}"
-        marker: ""
+        marker: "# {mark} CEPH METRICS BLOCK"
         block: |
           - job_name: 'ceph'
             static_configs:
