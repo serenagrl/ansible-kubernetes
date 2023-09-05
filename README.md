@@ -9,14 +9,14 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
 
     | Hosts          | vCPU | Min. RAM  | Recommended RAM |
     | -------------- |:----:|  :----:   |     :----:      |
-    | Control planes | 4    | 12GB      | 16GB            |
+    | Control planes | 6    | 12GB      | 16GB            |
 
     Recommended specifications for 3 Control Planes with Worker Nodes configuration:
 
     | Hosts          | vCPU | Min. RAM  | Recommended RAM |
     | -------------- |:----:|  :----:   |     :----:      |
-    | Control planes | 4    | 8GB       | 12GB            |
-    | Worker Nodes   | 2    | 8GB       | 12GB            |
+    | Control planes | 6    | 12GB      | 16GB            |
+    | Worker Nodes   | 4    | 4GB       | 8GB             |
 
 3. **Ansible must be installed** - These playbooks were tested on a Windows host with Ubuntu running in WSL.
    Note: You can run on a Windows 11 or Windows Server 2022 with Hyper-V enabled.
