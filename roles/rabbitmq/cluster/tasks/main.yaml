@@ -4,7 +4,7 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Create a {{ rabbitmq_cluster.namespace }} namespace
+- name: Create {{ rabbitmq_cluster.namespace }} namespace
   kubernetes.core.k8s:
     name: "{{ rabbitmq_cluster.namespace }}"
     api_version: v1
@@ -14,6 +14,7 @@
 - name: Create RabbitMQ cluster certificate
   kubernetes.core.k8s:
     definition: "{{ CERTIFICATE_TEMPLATE }}"
+  when: rabbitmq_cluster.enable_tls
 
 - name: Create RabbitMQ cluster
   kubernetes.core.k8s:
@@ -36,38 +37,39 @@
       vars:
         name: "RabbitMQ Certificate Authority (CA) cert"
         command: "kubectl get -n {{ rabbitmq_cluster.namespace }} secret rmq-tls-secret -o jsonpath='{.data.ca\\.crt}'"
+        cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq_cluster.cert.ca }}"
 
     - import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate"
         command: "kubectl get -n {{ rabbitmq_cluster.namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.crt}'"
+        cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq_cluster.cert.cluster }}"
 
     - import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate key"
         command: "kubectl get -n {{ rabbitmq_cluster.namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.key}'"
+        cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq_cluster.cert.cluster_key }}"
 
     - become_user: root
       delegate_to: localhost
-      vars:
-        out_dir: "{{ _work_dir }}/{{ _kube.cluster.name }}"      
       block:
         - name: Convert ca cert to DER (.crt)
           shell: "openssl x509 -outform der -in {{ rabbitmq_cluster.cert.ca }} -out {{ rabbitmq_cluster.cert.ca_crt }}"
           args:
-            chdir: "{{ out_dir }}"
+            chdir: "{{ CERT_DIR }}"
 
         - name: Create PKCS12 cert for dotnet clients (.pfx)
           shell: "openssl pkcs12 -inkey {{ rabbitmq_cluster.cert.cluster_key }} -in {{ rabbitmq_cluster.cert.cluster }} -export -out {{ rabbitmq_cluster.cert.cluster_pfx }} -passout pass:"
           args:
-            chdir: "{{ out_dir }}"
+            chdir: "{{ CERT_DIR }}"
 
-  when: rabbitmq_cluster.export_certs
+  when: rabbitmq_cluster.enable_tls and rabbitmq_cluster.export_certs
 
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
-    name: "RabbitMQ cluster login"
+    name: "RabbitMQ cluster ({{ rabbitmq_cluster.namespace }}) login"
     command: "kubectl get -n {{ rabbitmq_cluster.namespace }} secret rabbitmq-default-user -o jsonpath='{.data.default_user\\.conf}'"

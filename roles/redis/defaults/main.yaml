@@ -1,6 +1,8 @@
 CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 VALUES_FILE: "{{ lookup('template', 'values-' + redis.ha_mode + '.j2') | from_yaml }}"
 
+CERT_DIR: "{{ _work_dir }}/{{ _kube.cluster.name }}/{{ redis.namespace }}"
+
 SCRAPE_CONFIG: "prometheus-additional.yaml"
 SECRET_CONFIG: "additional-scrape-configs.yaml"
 HAS_PROMETHEUS: "{{ prometheus_status.stdout == 'Available' }}"

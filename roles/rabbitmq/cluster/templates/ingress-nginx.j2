@@ -1,25 +1,25 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ name }}-ingress
+  name: {{ name }}-{{ namespace }}-ingress
   namespace: {{ namespace }}
   labels:
-    app.kubernetes.io/name: {{ name }}-ingress
+    app.kubernetes.io/name: {{ name }}-{{ namespace }}-ingress
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: HTTPS    
+    nginx.ingress.kubernetes.io/backend-protocol: {{ rabbitmq_cluster.enable_tls | ternary('HTTPS', 'HTTP') }}    
 spec:
   ingressClassName: {{ ingress_name }}
   rules:
     - host: {{ _kube.hostname }}
       http:
         paths:
-          - path: /rabbitmq
+          - path: /{{ namespace }}/rabbitmq
             pathType: Prefix
             backend:
               service:
                 name: rabbitmq
                 port:
-                  number: 15671
+                  number: {{ rabbitmq_cluster.enable_tls | ternary(15671, 15672) }}
 {% if has_issuer %}
   tls:
     - hosts:

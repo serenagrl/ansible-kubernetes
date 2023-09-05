@@ -4,18 +4,21 @@ rabbitmq_cluster:
 
   # Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
   # Otherwise, set it to ClusterIP
-  service_type: LoadBalancer
+  service_type: ClusterIP 
+
+  # Determine whether tls is enabled
+  enable_tls: yes
 
   # The storage size of the persistent volume claim
   storage_size: 10Gi
 
   # Determine whether certs should be exported for application used.
   export_certs: yes
-  
+
   cert:
     validity: 8640h
-    ca: rmq-ca-cert.pem
-    cluster: rmq-cluster-cert.pem
-    cluster_key: rmq-cluster-key.pem
-    ca_crt: rmq-ca.crt
-    cluster_pfx: rmq-cluster.pfx
+    ca: rabbitmq-ca.pem
+    cluster: rabbitmq-cert.pem
+    cluster_key: rabbitmq-key.pem
+    ca_crt: rabbitmq-ca.crt
+    cluster_pfx: rabbitmq.pfx

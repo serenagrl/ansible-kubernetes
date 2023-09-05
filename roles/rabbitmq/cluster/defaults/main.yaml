@@ -3,3 +3,5 @@ TEMPLATE: "{{ lookup('template', 'rabbitmq-cluster.j2') | from_yaml }}"
 
 INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + _kube.ingress_type + '.yaml' }}"
 INGRESS_TEMPLATE: "{{ lookup('template', 'ingress-' + _kube.ingress_type + '.j2') | from_yaml }}"
+
+CERT_DIR: "{{ _work_dir }}/{{ _kube.cluster.name }}/{{ rabbitmq_cluster.namespace }}"

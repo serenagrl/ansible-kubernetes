@@ -13,16 +13,20 @@ spec:
   persistence:
     storage: "{{ rabbitmq_cluster.storage_size }}"
 
+{%if rabbitmq_cluster.enable_tls %}
   tls:
     secretName: rmq-tls-secret
     caSecretName: rmq-tls-secret
     disableNonTLSListeners: true
+{% endif %}
 
   rabbitmq:
     additionalConfig: |
+{%if rabbitmq_cluster.enable_tls %}
       ssl_options.verify = verify_peer
       ssl_options.fail_if_no_peer_cert = true
-      management.path_prefix = /rabbitmq
+{% endif %}
+      management.path_prefix = /{{ rabbitmq_cluster.namespace }}/rabbitmq
 
 {% if not _kube.allow_scheduling %}
   tolerations:

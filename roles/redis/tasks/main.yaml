@@ -4,17 +4,17 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Create redis namespace
+- name: Create {{ redis.namespace }} namespace
   kubernetes.core.k8s:
     kind: Namespace
     name: "{{ redis.namespace }}"
-  when: redis.enable_tls
-
+  
 - include_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: redis
     service_name: "{{ SERVICE_NAMES[redis.ha_mode] }}"
     certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+  when: redis.enable_tls
 
 - name: Deploying redis {{ redis.ha_mode }}
   vars:
@@ -39,40 +39,41 @@
       vars:
         name: "Redis Certificate Authority (CA) cert"
         command: "kubectl get -n {{ redis.namespace }} secret redis-tls-secret -o jsonpath='{.data.ca\\.crt}'"
+        cert_dir: "{{ CERT_DIR }}"
         filename: "{{ redis.cert.ca }}"
 
     - import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "Redis certificate"
         command: "kubectl get -n {{ redis.namespace }} secret redis-tls-secret -o jsonpath='{.data.tls\\.crt}'"
+        cert_dir: "{{ CERT_DIR }}"
         filename: "{{ redis.cert.cluster }}"
 
     - import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "Redis certificate key"
         command: "kubectl get -n {{ redis.namespace }} secret redis-tls-secret -o jsonpath='{.data.tls\\.key}'"
+        cert_dir: "{{ CERT_DIR }}"
         filename: "{{ redis.cert.cluster_key }}"
 
     - become_user: root
       delegate_to: localhost
-      vars:
-        out_dir: "{{ _work_dir }}/{{ _kube.cluster.name }}"      
       block:
         - name: Convert ca cert to DER (.crt)
           shell: "openssl x509 -outform der -in {{ redis.cert.ca }} -out {{ redis.cert.ca_crt }}"
           args:
-            chdir: "{{ out_dir }}"
+            chdir: "{{ CERT_DIR }}"
 
         - name: Create PKCS12 cert for dotnet clients (.pfx)
           shell: "openssl pkcs12 -inkey {{ redis.cert.cluster_key }} -in {{ redis.cert.cluster }} -export -out {{ redis.cert.cluster_pfx }} -passout pass:"
           args:
-            chdir: "{{ out_dir }}"
+            chdir: "{{ CERT_DIR }}"
 
   when: redis.enable_tls and redis.export_certs
 
 - import_tasks: ./tasks/task-get-secret.yaml
   vars:
-    name: "Redis {{ redis.ha_mode }} password"
+    name: "Redis {{ redis.ha_mode }} ({{ redis.namespace }}) password"
     command: "kubectl get -n {{ redis.namespace }} secret {{ SERVICE_NAMES[redis.ha_mode] }} -o jsonpath='{.data.redis-password}'"
 
 - name: Enable metrics

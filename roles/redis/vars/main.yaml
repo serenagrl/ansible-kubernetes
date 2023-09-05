@@ -7,7 +7,7 @@ redis:
 
   # Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
   # Otherwise, set it to ClusterIP
-  service_type: LoadBalancer
+  service_type: ClusterIP
   
   # The storage size of the persistent volume claim.
   storage_size: 8Gi
