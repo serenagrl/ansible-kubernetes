@@ -1,14 +1,18 @@
 global_defs {
   notification_email {
+    {{ keepalived.email }}
   }
+  script_user root
+  enable_script_security
   router_id LVS_DEVEL
   vrrp_skip_check_adv_addr
-  vrrp_garp_interval 0
-  vrrp_gna_interval 0
+  vrrp_garp_interval 0.001
+  vrrp_gna_interval 0.000001
+  max_auto_priority 99
 }
 
 vrrp_script chk_haproxy {
-  script "killall -0 haproxy"
+  script "/usr/bin/killall -0 haproxy"
   interval 2
   weight 2
 }
