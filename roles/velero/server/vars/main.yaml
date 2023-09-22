@@ -1,5 +1,6 @@
 velero:
-  # The velero version
+  # The velero helm version
+  # Source: https://artifacthub.io/packages/helm/vmware-tanzu/velero
   version: latest
 
   # The provider to use - azure, minio or both. 

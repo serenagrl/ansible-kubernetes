@@ -11,7 +11,7 @@ spec:
   config:
     region: minio
     s3ForcePathStyle: "true"
-    s3Url: http://<minio-api-url>:9000
+    s3Url: {{ velero.providers.minio.url }}
   default: {{ is_default | default(false) }}
   objectStorage:
     bucket: velero

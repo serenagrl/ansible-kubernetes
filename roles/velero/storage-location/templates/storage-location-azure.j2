@@ -9,10 +9,10 @@ spec:
     key: azure
     name: storage-credentials
   config:
-    resourceGroup: <your-azure-resource-group>
-    storageAccount: <your-azure-storage-account-name>
+    resourceGroup: {{ velero.providers.azure.resource_group }}
+    storageAccount: {{ velero.providers.azure.storage_account }}
     storageAccountKeyEnvVar: AZURE_STORAGE_ACCOUNT_ACCESS_KEY
-    subscriptionId: <your-azure-subscription-id>
+    subscriptionId: {{ velero.providers.azure.subscription_id }}
   default: {{ is_default | default(false) }}
   objectStorage:
     bucket: velero

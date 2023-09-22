@@ -1,2 +1,7 @@
-CREDENTIALS_TEMPLATE: "{{ lookup('template', 'credential-' + storage_provider + '.j2') }}"
-STORAGE_LOCATION_TEMPLATE: "{{ lookup('template', 'storage-location-' + storage_provider + '.j2') | from_yaml }}"
+CREDENTIALS_TEMPLATE: "{{ lookup('template', 'credential-' + selected_provider + '.j2') }}"
+STORAGE_LOCATION_TEMPLATE: "{{ lookup('template', 'storage-location-' + selected_provider + '.j2') | from_yaml }}"
+
+# Environment variable name.
+ENVIRONMENT_NAME:
+  AZURE: AZURE_CREDENTIALS_FILE
+  MINIO: AWS_SHARED_CREDENTIALS_FILE

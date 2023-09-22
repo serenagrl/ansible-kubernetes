@@ -1,13 +1,15 @@
-# The provider to use - azure or minio. 
-storage_provider: minio
-
 velero:
-  # List of supported plug-ins
-  plug_ins:
-    azure: velero/velero-plugin-for-microsoft-azure:v1.7.0
-    minio: velero/velero-plugin-for-aws:v1.7.0
-
-  # Environment variable name.
-  environment_name:
-    azure: AZURE_CREDENTIALS_FILE
-    minio: AWS_SHARED_CREDENTIALS_FILE
+  # Configure to use the provider.
+  providers:
+    azure:
+      plug_in: velero/velero-plugin-for-microsoft-azure:v1.7.0
+      subscription_id: <your-azure-subscription-id>
+      resource_group: <your-azure-resource-group>
+      storage_account: <your-azure-storage-account-name>
+      access_key: <your-storage-account-access-key>
+    
+    minio:
+      plug_in: velero/velero-plugin-for-aws:v1.7.0
+      url: http://<minio-api-url>:9000
+      access_key_id: minioadmin
+      secret_access_key: minioadmin
