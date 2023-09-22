@@ -1,4 +1,3 @@
 elasticsearch:
   version: latest
-  use_virtual_memory: true
   configure_map_count_to: kubernetes_control_planes
