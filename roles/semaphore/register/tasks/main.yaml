@@ -328,7 +328,7 @@
         - { name: "6. Provision Worker Nodes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Provision worker node virtual machines." }
         - { name: "7. Setup Worker Nodes", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Join worker nodes into the kubernetes cluster." }
         - { name: "8. Setup Basic Components", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install basic kubernetes components." }
-        - { name: "Setup Semaphore Project", env_name: "Default Semaphore Project", create: yes, playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
+        - { name: "Setup Semaphore Project", env_name: "Default Semaphore Project", create: yes, playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
           # Miscellaneous
         - { name: "Setup Component - Gitlab", env_name: "Default Component - Gitlab", create: "{{ semaphore.project.create.misc_playbooks }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Gitlab and Gitlab Runner. (Also installs Minio)." }
