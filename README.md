@@ -35,11 +35,12 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
 * Both control-planes only or control-planes with worker nodes configuration are supported.
 * Playbooks are defaulted to setup 2 HAProxy load balancers and 3 control-planes. 
 * Configure the IP addresses, host names and domain to your environment in the `\inventories\hosts.yaml`
-* The nfs server is not provisioned currently. You need to manually create it.
+* The nfs server is configured to not provision currently. You need to manually enable it.
 * The playbook for creating 2 nodes with HAProxy and keepalived for load-balancing is available.
 * Some roles are deploying sample/example configurations only (although some may deploy production environments)
 * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
 * Version incompatibility may occur i.e. new Kubernetes version may break everything or some add-ons version may not be compatible with each other. Configure the desired versions in the `vars\main.yaml` of the role.
+* If a component fail to install, try using an older release of the component since the playbooks may not be compatible with the latest releases.
 * Be patient if you are running on a slow internet connection. Installation may take some time. Increase the timeout of tasks if your environment needs more time to complete certain tasks.
 * VM Checkpoints will be created to provide safety just in case your installation breaks. These checkpoint may consume a lot of disk space. You may remove the checkpoints when you feel everything is stable to recover disk space.
 
@@ -49,17 +50,19 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
 
     | Name | Description |
     | ---- | ---- |
-    | `setup-all.yaml` | Sets up all kubernetes cluster VMs, creates kubernetes cluster, configures nfs server and install add-on components; all at-one-go. |
-    | `setup-components.yaml` | Install add-on components listed in `_kube.add_ons` in the `group_vars/all.yaml`. |
-    | `setup-control-plane-other.yaml` | Creates and joins secondary control planes to the kubernetes cluster. |
-    | `setup-control-plane-primary.yaml` | Creates the primary control plane in the kubernetes cluster. |
-    | `setup-control-plane-servers.yaml` | Provisions VMs for the kubernetes control planes. |
-    | `setup-control-planes.yaml` | Creates a kubernetes cluster with both primary and secondary control planes at-one-go. |
-    | `setup-kubernetes.yaml` | Creates a kubernetes cluster with all control planes and worker nodes at-one-go. |
     | `setup-load-balancers.yaml` | Provisions the VMs and configure HAProxy and Keepalived. |
-    | `setup-nfs.yaml` | Installs NFS server to a designated server. Optionally, provisions a VM for it. |
+    | `setup-nfs.yaml` | Installs NFS server on a designated server. Optionally, provisions a VM for it. |
+    | `setup-control-plane-servers.yaml` | Provisions VMs for the kubernetes control planes. |
+    | `setup-control-plane-primary.yaml` | Creates the primary control plane in the kubernetes cluster. |
+    | `setup-control-plane-other.yaml` | Creates and joins secondary control planes to the kubernetes cluster. |
+    | `setup-control-planes.yaml` | Creates a kubernetes cluster with both primary and secondary control planes at-one-go. |
     | `setup-worker-node-servers.yaml` | Provisions VMs for the kubernetes worker nodes. |
     | `setup-worker-nodes.yaml` | Creates/Joins worker nodes into the kubernetes cluster. |
+    | `setup-all.yaml` | Sets up all kubernetes cluster VMs, creates kubernetes cluster, configures nfs server and install add-on components; all at-one-go. |
+    | `setup-components.yaml` | Install add-on components listed in `_kube.add_ons` in the `group_vars/all.yaml`. |
+    | `setup-kubernetes.yaml` | Creates a kubernetes cluster with all control planes and worker nodes at-one-go. |
+    | `setup-semaphore.yaml` | Installs Ansible Semaphore on a designated server. Optionally, provisions a VM for it. |
+    | `setup-semaphore-project.yaml` | Creates a new Semaphore project based on this repository. |
 
 #### Advice
 You are advised not to be so ambitious to run `setup-all.yaml` on your first try. Start with these in the following order:
