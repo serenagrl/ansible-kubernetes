@@ -237,8 +237,7 @@
               - { name: velero, vars: "{{ velero_cli_vars | combine(velero_svr_vars, recursive=true) | combine(velero_bsl_vars, recursive=true) }}" }         
 
             # semaphore register
-            semaphore_reg_vars:
-              - { name: semaphore/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml }}" }
+            semaphore_reg_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml | combine(settings, recursive=true) }}" 
 
             # logging
             logging_vars:
@@ -277,7 +276,7 @@
           loop:
             - { name: "Default Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no }
             - { name: "Default Setup Kubernetes", create: yes, content: "{{ k8s_cluster_vars }}", is_add_on: yes }
-            - { name: "Default Semaphore Project", create: yes, content: "{{ semaphore_reg_vars }}", is_add_on: yes }
+            - { name: "Default Semaphore Project", create: yes, content: "{{ semaphore_reg_vars }}", is_add_on: no }
             - { name: "Default Component - Gitlab", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes }
             - { name: "Default Component - Sonarqube", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes }
             - { name: "Default Component - Harbor", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ harbor_vars }}", is_add_on: yes }
