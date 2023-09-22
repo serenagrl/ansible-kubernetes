@@ -10,12 +10,6 @@
 
   roles:
     - role: vm-ubuntu
-      vm:
-        specs:
-          ram_size: 2GB
-          min_ram_size: 2GB
-          disk_size: 127GB
-          v_cpu: 2
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:

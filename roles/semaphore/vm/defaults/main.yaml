@@ -1,0 +1,2 @@
+CONFIG_TEMPLATE: "{{ lookup('template', 'config.j2') }}"
+SERVICE_TEMPLATE: "{{ lookup('template', 'service.j2') }}"

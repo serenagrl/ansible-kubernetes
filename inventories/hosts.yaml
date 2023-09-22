@@ -13,6 +13,13 @@ secondary_control_planes:
       ansible_host: 192.168.0.205
 
 kubernetes_control_planes:
+  vars:
+    # The VM settings for each host.
+    host_specs:
+      ram_size: 12GB
+      min_ram_size: 8GB
+      disk_size: 127GB
+      v_cpu: 6
 
   children:
     primary_control_plane:
@@ -22,6 +29,14 @@ kubernetes_control_planes:
     secondary_control_planes:
 
 kubernetes_nodes:
+  vars:
+    # The VM settings for each host.
+    host_specs:
+      ram_size: 4GB
+      min_ram_size: 4GB
+      disk_size: 127GB
+      v_cpu: 2
+
   hosts:
     # You can comment out these nodes if you just want to run control planes but please make sure you 
     # have atleast 3 control plane hosts defined above. 
@@ -51,7 +66,17 @@ load_balancers:
     ansible_become: yes
     # You can also set this in individual host if you are splitting the nodes to different physical
     # servers.
-    winrm_host: local_machine     
+    winrm_host: local_machine
+    
+    # The VM settings for each host.
+    host_specs:
+      ram_size: 1GB
+      min_ram_size: 1GB
+      disk_size: 127GB
+      v_cpu: 2
+
+    # Specify whether to provision the VMs.
+    provision_vm: yes
 
   hosts:
     k8s-ha1:
@@ -59,13 +84,40 @@ load_balancers:
     k8s-ha2:
       ansible_host: 192.168.0.202
 
+# Semaphore server used as an Ansible Controller Host.
+semaphore_server:
+  hosts: # Only 1 host is supported
+    ansible-semaphore:
+      ansible_host: 192.168.0.220
+      ansible_user: root 
+      winrm_host: local_machine
+
+      # The VM settings for each host.
+      host_specs:
+        ram_size: 1GB
+        min_ram_size: 1GB
+        disk_size: 127GB
+        v_cpu: 2
+      # Specify whether to provision the VMs.
+      provision_vm: yes
+
 # The nfs server to use. For this example, I just use the control plane because
 # I don't have enough server resources. Don't do this for production.
 nfs_server:
   hosts: # Only 1 host is supported
     k8s-nfs:
-      ansible_host: 192.168.0.203
+      ansible_host: 192.168.0.200
       ansible_user: root 
+      winrm_host: local_machine
+
+      # The VM settings for each host.
+      host_specs:
+        ram_size: 2GB
+        min_ram_size: 2GB
+        disk_size: 256GB
+        v_cpu: 2
+      # Specify whether to provision the VMs.
+      provision_vm: no
 
 # This should be your local machine or an Ansible host. Winrm must be setup correctly for this to work.
 # You can have more than 1 winrm host to distribute the kubernetes VMs; remember to set the winrm_host.

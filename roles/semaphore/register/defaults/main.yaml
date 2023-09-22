@@ -1,0 +1,18 @@
+SEMAPHORE_URL: http://localhost:3000/api
+SEMAPHORE_ACCESS_TOKEN: "{{ token_response.json.id }}"
+SEMAPHORE_PROJECT_ID: "{{ project_response.json.id }}"
+SEMAPHORE_KEY_ID: "{{ key_response.json.0.id }}"
+SEMAPHORE_REPO_ID: "{{ (local_repo_response | community.general.json_query('json[?name==`Local File System`].id')).0 }}"
+SEMAPHORE_INVENTORY_ID: "{{ (inventory_response | community.general.json_query('json[?name==`Default`].id'))[0] }}"
+GITHUB_REPO: https://www.github.com/serenagrl/ansible-kubernetes
+
+PLAYBOOKS:
+  SETUP_LOAD_BALANCERS: setup-load-balancers.yaml
+  SETUP_NFS: setup-nfs.yaml
+  SETUP_CONTROL_PLANE_SERVERS: setup-control-plane-servers.yaml
+  SETUP_CONTROL_PLANE_PRIMARY: setup-control-plane-primary.yaml
+  SETUP_CONTROL_PLANE_OTHER: setup-control-plane-other.yaml
+  SETUP_WORKER_NODE_SERVERS: setup-worker-node-servers.yaml
+  SETUP_WORKER_NODES: setup-worker-nodes.yaml
+  SETUP_COMPONENTS: setup-components.yaml
+  SETUP_SEMAPHORE_PROJECT: setup-semaphore-project.yaml

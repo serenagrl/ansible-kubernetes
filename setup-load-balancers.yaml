@@ -10,13 +10,7 @@
 
   roles:
     - role: vm-ubuntu
-      vm:
-        specs:
-          ram_size: 1GB
-          min_ram_size: 1GB
-          disk_size: 127GB
-          v_cpu: 1
-
+      when: provision_vm
     - role: infrastructure/haproxy
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.

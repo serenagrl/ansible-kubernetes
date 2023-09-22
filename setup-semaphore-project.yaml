@@ -1,0 +1,12 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Creates a new ansible-kubernetes project in Semaphore
+  hosts: semaphore_server
+  gather_facts: no
+
+  roles:
+    - role: semaphore/register

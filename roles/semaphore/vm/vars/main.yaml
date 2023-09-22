@@ -1,0 +1,27 @@
+semaphore:
+  version: latest
+
+  install_ansible: yes
+  install_postgres: yes
+
+  db_password: p@ssw0rd
+  install_dir: /usr/local/bin
+  config_dir: /root/semaphore
+
+  tmp_path: /tmp/semaphore
+  port: 3000
+
+  admin:
+    login: admin
+    name: "Default Admin"
+    email: "admin@example.com"
+    password: "p@ssw0rd" 
+
+  email:
+    alert: false
+    secure: false
+    sender: ""
+    host: ""
+    port: ""
+    username: ""
+    password: ""

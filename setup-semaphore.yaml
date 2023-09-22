@@ -4,14 +4,12 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-
-# Pre-requisite for the csi-nfs. 
-# You should dedicate 1 server outside the kubernetes cluster to serve as an NFS server.
-- name: Setup the NFS Server
-  hosts: nfs_server
+- name: Setup the Ansible Semaphore Server
+  hosts: semaphore_server
   gather_facts: no
 
   roles:
     - role: vm-ubuntu
       when: provision_vm
-    - role: nfs/server
+        
+    - role: semaphore/vm
