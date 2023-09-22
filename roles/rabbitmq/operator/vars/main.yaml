@@ -1,2 +1,2 @@
-rabbitmq_operator:
+rabbitmq:
   version: latest

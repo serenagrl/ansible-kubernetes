@@ -1,19 +1,19 @@
 apiVersion: rabbitmq.com/v1beta1
 kind: RabbitmqCluster
 metadata:
-  name: "{{ rabbitmq_cluster.name }}"
-  namespace: "{{ rabbitmq_cluster.namespace }}"
+  name: "{{ rabbitmq.name }}"
+  namespace: "{{ rabbitmq.namespace }}"
   annotations:
     rabbitmq.com/topology-allowed-namespaces: "*"  
 spec:
   replicas: 3
   service:
-    type: "{{ rabbitmq_cluster.service_type }}"
+    type: "{{ rabbitmq.service_type }}"
 
   persistence:
-    storage: "{{ rabbitmq_cluster.storage_size }}"
+    storage: "{{ rabbitmq.storage_size }}"
 
-{%if rabbitmq_cluster.enable_tls %}
+{%if rabbitmq.enable_tls %}
   tls:
     secretName: rmq-tls-secret
     caSecretName: rmq-tls-secret
@@ -22,11 +22,11 @@ spec:
 
   rabbitmq:
     additionalConfig: |
-{%if rabbitmq_cluster.enable_tls %}
+{%if rabbitmq.enable_tls %}
       ssl_options.verify = verify_peer
       ssl_options.fail_if_no_peer_cert = true
 {% endif %}
-      management.path_prefix = /{{ rabbitmq_cluster.namespace }}/rabbitmq
+      management.path_prefix = /{{ rabbitmq.namespace }}/rabbitmq
 
 {% if not _kube.allow_scheduling %}
   tolerations:

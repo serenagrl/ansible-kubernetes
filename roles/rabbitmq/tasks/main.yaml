@@ -1,0 +1,7 @@
+# Launch operator.
+- include_role:
+    name: rabbitmq/operator
+
+# Install cluster
+- include_role:
+    name: rabbitmq/cluster    

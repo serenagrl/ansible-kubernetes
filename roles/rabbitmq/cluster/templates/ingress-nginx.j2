@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: {{ name }}-{{ namespace }}-ingress
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: {{ rabbitmq_cluster.enable_tls | ternary('HTTPS', 'HTTP') }}    
+    nginx.ingress.kubernetes.io/backend-protocol: {{ rabbitmq.enable_tls | ternary('HTTPS', 'HTTP') }}    
 spec:
   ingressClassName: {{ ingress_name }}
   rules:
@@ -19,7 +19,7 @@ spec:
               service:
                 name: rabbitmq
                 port:
-                  number: {{ rabbitmq_cluster.enable_tls | ternary(15671, 15672) }}
+                  number: {{ rabbitmq.enable_tls | ternary(15671, 15672) }}
 {% if has_issuer %}
   tls:
     - hosts:

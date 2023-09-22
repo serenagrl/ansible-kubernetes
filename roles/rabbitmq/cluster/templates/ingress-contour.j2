@@ -9,5 +9,5 @@ spec:
         - prefix: /{{ namespace }}/rabbitmq
       services:
         - name: rabbitmq
-          port: {{ rabbitmq_cluster.enable_tls | ternary(15671, 15672) }}
+          port: {{ rabbitmq.enable_tls | ternary(15671, 15672) }}
           protocol: tls

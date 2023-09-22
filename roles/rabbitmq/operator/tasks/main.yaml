@@ -12,7 +12,7 @@
         name: "rabbitmq operator"
         namespace: "rabbitmq"
         repo_path: "rabbitmq/cluster-operator"
-        pkg_version: "{{ rabbitmq_operator.version | default }}"
+        pkg_version: "{{ rabbitmq.version | default }}"
         version_prefix: "v"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cluster-operator.yml"]
