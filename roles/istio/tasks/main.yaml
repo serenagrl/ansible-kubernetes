@@ -14,7 +14,7 @@
   delegate_to: localhost
   become_user: root
   shell: | 
-          curl -L https://istio.io/downloadIstio | ISTIO_VERSION={{ RELEASE }} sh -
+      curl -L https://istio.io/downloadIstio | ISTIO_VERSION={{ RELEASE }} sh -
   args:
     chdir: "{{ _work_dir }}"
 
@@ -38,8 +38,8 @@
 
 - name: Installing istio
   shell: |
-         istioctl install --set profile={{ istio.profile }} -y -f {{ MANIFEST_FILE }}
-          kubectl rollout status -n istio-system deployment/istiod
+      istioctl install --set profile={{ istio.profile }} -y -f {{ MANIFEST_FILE }}
+      kubectl rollout status -n istio-system deployment/istiod
 
 - name: Labeling namespaces for istio injection (if any)
   kubernetes.core.k8s:
