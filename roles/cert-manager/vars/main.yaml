@@ -12,4 +12,3 @@ cert_mgr:
     locality_name: "Kuala Lumpur"
     organization_name: "Kubernetes Local"
     organizational_unit_name: "Research and Development"
-    common_name: "{{ _kube.hostname }}"

@@ -62,7 +62,7 @@
       become_user: root
       shell: |
           openssl genrsa -out {{ KEY_FILE }} 4096
-          openssl req -new -x509 -sha256 -days 10950 -subj '/C={{ cert_mgr.cert.country_name }}/ST={{ cert_mgr.cert.state_or_province_name }}/L={{ cert_mgr.cert.locality_name }}/O={{ cert_mgr.cert.organization_name }}/OU={{ cert_mgr.cert.organizational_unit_name }}/CN={{ cert_mgr.cert.common_name }}' -out "{{ CRT_FILE }}" -key "{{ KEY_FILE }}" 
+          openssl req -new -x509 -sha256 -days 10950 -subj '/C={{ cert_mgr.cert.country_name }}/ST={{ cert_mgr.cert.state_or_province_name }}/L={{ cert_mgr.cert.locality_name }}/O={{ cert_mgr.cert.organization_name }}/OU={{ cert_mgr.cert.organizational_unit_name }}/CN={{ _kube.hostname }}' -out "{{ CRT_FILE }}" -key "{{ KEY_FILE }}" 
 
     - name: Create secret by certificate
       kubernetes.core.k8s:
