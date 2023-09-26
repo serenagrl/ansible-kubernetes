@@ -1,4 +1,6 @@
 gitlab_minio:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking change. Try reducing the version number if errors occur during installation.
   version: latest 
   domain: minio.k8s.local
   tenant_endpoint: http://gitlab-minio-hl:9000/

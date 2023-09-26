@@ -1,4 +1,6 @@
 contour:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking change. Try reducing the version number if errors occur during installation.
   version: latest #1.24.1
 
   # The name of the issuer for your cluster.
