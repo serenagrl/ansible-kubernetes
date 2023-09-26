@@ -90,7 +90,3 @@
         sudo systemctl daemon-reload
         sudo systemctl start semaphore
         sudo systemctl enable semaphore
-
-    - name: Enable ssh authorization to root user
-      shell: |
-        cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
