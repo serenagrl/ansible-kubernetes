@@ -1,5 +1,5 @@
 ingress_nginx:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
-  # releases with breaking change. Try reducing the version number if errors occur during installation.
-  version: 4.7.2 # not yet support the latest
+  # releases with breaking changess. Try reducing the version number if errors occur during installation.
+  version: latest # 4.7.2
   scale: no

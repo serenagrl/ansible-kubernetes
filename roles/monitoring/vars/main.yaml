@@ -1,6 +1,6 @@
 monitoring:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
-  # releases with breaking change. Try reducing the version number if errors occur during installation.
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
   version: latest #0.11.0
   excludes: [
     # Exclude the network policies to fix a bug that causes things to not work.
