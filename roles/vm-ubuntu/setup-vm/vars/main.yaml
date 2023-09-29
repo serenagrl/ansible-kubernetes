@@ -19,6 +19,16 @@ vm:
     dns: "8.8.8.8, 1.1.1.1"
     cidr: 24
 
+  # The Windows user credentials to use to access the shared folder on the winrm host.
+  mount:
+    username: Ansible
+    password: p@ssw0rd
+
+  # Indicates whether the winrm host (Hyper-V host) is the same as the Ansible Controller Host (i.e. WSL).
+  # Set this to 'yes' if you are provisioning on just one machine with WSL and Hyper-V to build your lab.
+  # When set to 'no'. All the winrm hosts will need to have the same shared folders name and user credentials configured.
+  local: no
+
   # The location where the seed isos will be placed
   iso_folder: "E:\\Installation Files\\Ubuntu"
 

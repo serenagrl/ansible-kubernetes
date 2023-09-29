@@ -2,8 +2,9 @@
   delegate_to: localhost
   become_user: root
   vars:
-    backslash: "\\"
-    linux_dir: "{{ '/mnt/' + (win_folder[0] | lower) + (win_folder[2:] | replace( backslash, '/')) }}"
+    backslash: '\'
+    linux_dir: "{{ is_local | default(true) | ternary('/mnt/' + (win_folder[0] | lower) + (win_folder[2:] | replace( backslash, '/')),
+                                                      '/mnt/' + hostvars[winrm_host]['ansible_host'] + '/' + (win_folder[3:] | replace( backslash, '/'))) }}"
     vhd_disk: "{{ win_folder }}\\{{ host_name }}\\Virtual Hard Disks\\{{ disk_name }}.vhdx"
   block:
     - name: Checking for existing vhdx file on hosts

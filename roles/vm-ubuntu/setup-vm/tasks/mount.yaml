@@ -1,0 +1,29 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Create mounts to share folders on Hyper-v host
+  become_user: root
+  vars:
+    share_host: "{{ hostvars[winrm_host]['ansible_host'] }}"
+    mount_folder: "{{ mount_path }}/{{ folder }}"
+  block:
+    - name: Create "{{ mount_folder }}"
+      file:
+        path: "{{ mount_folder }}"
+        state: directory
+
+    - name: Mount "{{ mount_folder }}"
+      shell: |
+        (
+            flock -x 9
+
+            mount | grep "{{ mount_folder }}"
+            if [ $? -eq "1" ]
+            then
+              sudo mount -t cifs "//{{ share_host }}/{{ folder }}" "{{ mount_folder }}" -o user={{ vm.mount.username }},password={{ vm.mount.password }}
+            fi
+        ) 9>/tmp/mount.lock

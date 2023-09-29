@@ -16,6 +16,7 @@
     - name: Installing iso and image tools
       apt:
         pkg:
+          - cifs-utils
           - qemu-utils
           - genisoimage
         state: latest
@@ -34,10 +35,22 @@
 - name: Prepare configuration metadata and seed iso
   delegate_to: localhost
   vars:
-    backslash: "\\"
-    vm_dir: "{{ '/mnt/' + (vm.vm_folder[0] | lower) + (vm.vm_folder[2:] | replace( backslash, '/')) }}"
-    iso_dir: "{{ '/mnt/' + (vm.iso_folder[0] | lower) + (vm.iso_folder[2:] | replace( backslash, '/')) }}"
+    backslash: '\'
+    mount_path: "/mnt/{{ hostvars[winrm_host]['ansible_host'] }}"
+    vm_dir: "{{ vm.local | ternary('/mnt/' + (vm.vm_folder[0] | lower) + (vm.vm_folder[2:] | replace( backslash, '/')),
+                                   mount_path + '/' + (vm.vm_folder[3:] | replace(backslash, '/'))) }}"
+    iso_dir: "{{ vm.local | ternary('/mnt/' + (vm.iso_folder[0] | lower) + (vm.iso_folder[2:] | replace( backslash, '/')),
+                                   mount_path + '/' + (vm.iso_folder[3:] | replace(backslash, '/'))) }}"
   block:
+    - name: Mount winrm_host (Hyper-V Host) shared folders 
+      include_tasks: mount.yaml
+      vars:
+        folder: "{{ item }}"
+      loop: 
+        - "{{ vm.vm_folder.split(backslash).1 }}"
+        - "{{ vm.iso_folder.split(backslash).1 }}"
+      when: not vm.local
+
     - name: Remove previous metadata directory (if any)
       file:
         path: "{{ METADATA_DIR }}"
@@ -79,6 +92,7 @@
     - name: Check for existing Virtual Hard Disks
       include_tasks: ./tasks/task-check-vhdx-exist.yaml
       vars:
+        is_local: "{{ vm.local }}"
         win_folder: "{{ vm.vm_folder }}"
         host_name: "{{ inventory_hostname }}"
         disk_name: "{{ inventory_hostname }}"
@@ -90,8 +104,27 @@
               qemu-img convert -f qcow2 ubuntu-cloud.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
       args:
         chdir: "{{ _work_dir }}"
+  
+  always:
+    - name: Unmount winrm_host (Hyper-V Host) shared folders 
+      vars:
+        folder: "{{ mount_path }}/{{ item }}"
+      shell: |
+        (
+            flock -x 9
+            mount | grep "{{ folder }}" > /dev/null
+            if [ $? -eq "0" ]
+            then
+              umount "{{ folder }}"
+            fi
+        ) 9>/tmp/mount.lock
+      loop: 
+        - "{{ vm.vm_folder.split(backslash).1 }}"
+        - "{{ vm.iso_folder.split(backslash).1 }}"
+      when: not vm.local
 
 - name: Create and Launch Virtual Machines
+  delegate_to: "{{ winrm_host }}"
   vars:
     vhd_disk: "{{ vm.vm_folder }}\\{{ inventory_hostname }}\\Virtual Hard Disks\\{{ inventory_hostname }}.vhdx"
   block:
@@ -127,8 +160,6 @@
         error_action: stop
         chdir: "{{ vm.iso_folder }}"
       when: _cleanup
-
-  delegate_to: "{{ winrm_host }}"
 
 - include_role:
     name: vm-ubuntu/setup-ssh
