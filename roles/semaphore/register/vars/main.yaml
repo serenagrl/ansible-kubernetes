@@ -5,16 +5,17 @@ semaphore:
 
     # Indicate whether to automatically clone the github repository.
     # Warning: Execution will fail if the repository is not available in the local file system.
-    clone_repository: yes
+    clone_repository: no
 
     # The root folder where the github repository will be cloned into.
     local_repo_dir: /ansible-playbooks/ansible-kubernetes
 
     # Specify whether miscellaneous environments and playbooks are automatically created.
-    # You may want to disable this to remove clutter if you are familiar with Semaphore.
+    # You may want to disable this to remove clutter if you are already familiar with Semaphore.
     create:
-      misc_environments: yes
-      misc_playbooks: yes
+      component_environments: yes
+      component_playbooks: yes # requires component_environments to be yes
+      setup_semaphore_project: yes
 
   # The login credentials to use to login to the Semaphore API.
   api_login:

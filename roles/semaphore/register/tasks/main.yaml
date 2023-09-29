@@ -277,19 +277,19 @@
           loop:
             - { name: "Default Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no }
             - { name: "Default Setup Kubernetes", create: yes, content: "{{ k8s_cluster_vars }}", is_add_on: yes }
-            - { name: "Default Semaphore Project", create: yes, content: "{{ semaphore_reg_vars }}", is_add_on: no }
-            - { name: "Default Component - Gitlab", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes }
-            - { name: "Default Component - Sonarqube", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes }
-            - { name: "Default Component - Harbor", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ harbor_vars }}", is_add_on: yes }
-            - { name: "Default Component - ArgoCD", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ argocd_vars }}", is_add_on: yes }
-            - { name: "Default Component - RabbitMQ", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ rabbitmq_vars }}", is_add_on: yes }
-            - { name: "Default Component - Redis", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ redis_vars }}", is_add_on: yes }
-            - { name: "Default Component - Velero", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ velero_vars }}", is_add_on: yes }
-            - { name: "Default Component - Logging", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ logging_vars }}", is_add_on: yes }
-            - { name: "Default Component - Istio", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ istio_vars }}", is_add_on: yes }
-            - { name: "Default Component - Rook-Ceph", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes }
-            - { name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ mssql_vars }}", is_add_on: yes }
-            - { name: "Default Component - AWX", create: "{{ semaphore.project.create.misc_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes }
+            - { name: "Default Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", content: "{{ semaphore_reg_vars }}", is_add_on: no }
+            - { name: "Default Component - Gitlab", create: "{{ semaphore.project.create.component_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes }
+            - { name: "Default Component - Sonarqube", create: "{{ semaphore.project.create.component_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes }
+            - { name: "Default Component - Harbor", create: "{{ semaphore.project.create.component_environments }}", content: "{{ harbor_vars }}", is_add_on: yes }
+            - { name: "Default Component - ArgoCD", create: "{{ semaphore.project.create.component_environments }}", content: "{{ argocd_vars }}", is_add_on: yes }
+            - { name: "Default Component - RabbitMQ", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rabbitmq_vars }}", is_add_on: yes }
+            - { name: "Default Component - Redis", create: "{{ semaphore.project.create.component_environments }}", content: "{{ redis_vars }}", is_add_on: yes }
+            - { name: "Default Component - Velero", create: "{{ semaphore.project.create.component_environments }}", content: "{{ velero_vars }}", is_add_on: yes }
+            - { name: "Default Component - Logging", create: "{{ semaphore.project.create.component_environments }}", content: "{{ logging_vars }}", is_add_on: yes }
+            - { name: "Default Component - Istio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ istio_vars }}", is_add_on: yes }
+            - { name: "Default Component - Rook-Ceph", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes }
+            - { name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes }
+            - { name: "Default Component - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes }
 
         - name: Query all environment records
           uri:
@@ -298,6 +298,8 @@
           register: environment_response
 
     - name: Create Default Setup tasks
+      vars:
+        setup_common_task: "{{ semaphore.project.create.component_environments and semaphore.project.create.component_playbooks }}"
       uri:
         url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/templates"
         <<: *http_post_request
@@ -328,31 +330,31 @@
         - { name: "6. Provision Worker Nodes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Provision worker node virtual machines." }
         - { name: "7. Setup Worker Nodes", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Join worker nodes into the kubernetes cluster." }
         - { name: "8. Setup Basic Components", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install basic kubernetes components." }
-        - { name: "Setup Semaphore Project", env_name: "Default Semaphore Project", create: yes, playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
+        - { name: "Setup Semaphore Project", env_name: "Default Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
           # Miscellaneous
-        - { name: "Setup Component - Gitlab", env_name: "Default Component - Gitlab", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - Gitlab", env_name: "Default Component - Gitlab", create: "{{ setup_common_task}}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Gitlab and Gitlab Runner. (Also installs Minio)." }
-        - { name: "Setup Component - Sonarqube", env_name: "Default Component - Sonarqube", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - Sonarqube", env_name: "Default Component - Sonarqube", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Sonarqube." }
-        - { name: "Setup Component - Harbor", env_name: "Default Component - Harbor", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - Harbor", env_name: "Default Component - Harbor", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Harbor container registry." }
-        - { name: "Setup Component - ArgoCD", env_name: "Default Component - ArgoCD", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - ArgoCD", env_name: "Default Component - ArgoCD", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install ArgoCD." }
-        - { name: "Setup Component - RabbitMQ", env_name: "Default Component - RabbitMQ", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - RabbitMQ", env_name: "Default Component - RabbitMQ", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install RabbitMQ Operator and creates a RabbitMQ Cluster." }
-        - { name: "Setup Component - Redis", env_name: "Default Component - Redis", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - Redis", env_name: "Default Component - Redis", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Create a Redis cluster or Sentinel." }
-        - { name: "Setup Component - Velero", env_name: "Default Component - Velero", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - Velero", env_name: "Default Component - Velero", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Velero." }
-        - { name: "Setup Component - Logging", env_name: "Default Component - Logging", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - Logging", env_name: "Default Component - Logging", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Logging components. (Elasticsearch, Kibana, Fluentd)" }
-        - { name: "Setup Component - Istio", env_name: "Default Component - Istio", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - Istio", env_name: "Default Component - Istio", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Istio" }
-        - { name: "Setup Component - Rook-Ceph", env_name: "Default Component - Rook-Ceph", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - Rook-Ceph", env_name: "Default Component - Rook-Ceph", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs the Rook-Ceph CSI." }
-        - { name: "Setup Component - MSSQL Server", env_name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - MSSQL Server", env_name: "Default Component - MSSQL Server", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Microsoft SQL Server." }
-        - { name: "Setup Component - AWX", env_name: "Default Component - AWX", create: "{{ semaphore.project.create.misc_playbooks }}", 
+        - { name: "Setup Component - AWX", env_name: "Default Component - AWX", create: "{{ ssetup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install AWX and register the environment for use." }
 
   always:
