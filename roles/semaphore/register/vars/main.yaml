@@ -1,12 +1,22 @@
 semaphore:
   project:
+    # Name of the Project to create in Semaphore.
     name: "Ansible-Kubernetes"
+
+    # Indicate whether to automatically clone the github repository.
+    # Warning: Execution will fail if the repository is not available in the local file system.
+    clone_repository: yes
+
+    # The root folder where the github repository will be cloned into.
     local_repo_dir: /ansible-playbooks/ansible-kubernetes
 
+    # Specify whether miscellaneous environments and playbooks are automatically created.
+    # You may want to disable this to remove clutter if you are familiar with Semaphore.
     create:
       misc_environments: yes
       misc_playbooks: yes
 
+  # The login credentials to use to login to the Semaphore API.
   api_login:
       username: admin
       password: p@ssw0rd

@@ -92,6 +92,7 @@
           git:
             repo: "{{ GITHUB_REPO }}"
             dest: "{{ local_repo_dir }}"
+          when: semaphore.project.clone_repository
 
         - name: Create repository (local file system)
           uri:
