@@ -354,7 +354,7 @@
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs the Rook-Ceph CSI." }
         - { name: "Setup Component - MSSQL Server", env_name: "Default Component - MSSQL Server", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Microsoft SQL Server." }
-        - { name: "Setup Component - AWX", env_name: "Default Component - AWX", create: "{{ ssetup_common_task }}", 
+        - { name: "Setup Component - AWX", env_name: "Default Component - AWX", create: "{{ setup_common_task }}", 
             playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install AWX and register the environment for use." }
 
   always:
