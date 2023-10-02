@@ -1,5 +1,5 @@
 - name: Check for existing cluster issuer
-  shell: |
+  ansible.builtin.shell: |
     kubectl get clusterissuer default-cluster-issuer -o json | jq .status.conditions[0].type -r
   register: issuer_status
   ignore_errors: yes

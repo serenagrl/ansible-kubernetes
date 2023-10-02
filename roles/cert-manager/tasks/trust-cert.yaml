@@ -2,13 +2,13 @@
   become_user: root
   block:
     - name: Copy ca certificate to shared certificate directory
-      copy:
+      ansible.builtin.copy:
         src: "{{ CRT_FILE }}"
         dest: "{{ CERT_STORE }}"
         mode: 0777
 
     - name: Update certificates
-      shell: update-ca-certificates
+      ansible.builtin.shell: update-ca-certificates
 
   ignore_errors: yes
   ignore_unreachable: yes

@@ -21,14 +21,14 @@
             {{ selected_provider }}: {{ CREDENTIALS_TEMPLATE | b64encode }}
       
     - name: Update credential file location
-      shell: |
+      ansible.builtin.shell: |
         kubectl set env deployment/velero {{ ENVIRONMENT_NAME[selected_provider | upper] }}=/credentials/{{ selected_provider }} -n velero -c='velero'
         kubectl set env daemonset/node-agent {{ ENVIRONMENT_NAME[selected_provider | upper] }}=/credentials/{{ selected_provider }} -n velero -c='node-agent'
 
     - name: Add plug-in {{ selected_provider }}
       delegate_to: localhost
       become_user: root
-      shell: velero plugin add {{ velero.providers[selected_provider].plug_in }} --kubeconfig /root/.kube/config
+      ansible.builtin.shell: velero plugin add {{ velero.providers[selected_provider].plug_in }} --kubeconfig /root/.kube/config
 
     - name: Create backup storage location
       kubernetes.core.k8s:

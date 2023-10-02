@@ -6,14 +6,14 @@
 #
 
 # Sets the cluster_address fact
-- import_tasks: ./tasks/task-get-cluster-address.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-cluster-address.yaml
   vars:
     ingress_type: "{{ _kube.ingress_type }}"
 
 - name: Add sonarqube portal DNS entries to /etc/hosts
   become_user: root
   delegate_to: "{{ item }}"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ cluster_address }} sonarqube.{{ sonarqube.domain }}"
@@ -33,14 +33,14 @@
         name: sonarqube
         repo_url: "https://SonarSource.github.io/helm-chart-sonarqube"
 
-    - include_tasks: ./tasks/task-create-certificate.yaml
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
       vars:
         name: sonarqube
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
     # Notes: Uses own domain name.    
     - name: Setup ingress
-      include_tasks: "{{ INGRESS_SETUP }}"
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying sonarqube
       vars:
@@ -59,18 +59,18 @@
         wait: yes
 
     - name: Waiting for sonarqube deployments to be ready
-      shell: |
+      ansible.builtin.shell: |
           for d in $(kubectl -n sonarqube get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n sonarqube deployment/$d; done;
 
 - name: Extract certificates for applications
   block:
-    - import_tasks: ./tasks/task-extract-cert.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "Sonarqube certificate"
         command: "kubectl get -n sonarqube secret sonar-ingress-tls -o jsonpath='{.data.tls\\.crt}'"
         filename: "{{ CERT_FILE }}"
 
-    - import_tasks: ./tasks/task-extract-cert.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "Sonarqube certificate key"
         command: "kubectl get -n sonarqube secret sonar-ingress-tls -o jsonpath='{.data.tls\\.key}'"

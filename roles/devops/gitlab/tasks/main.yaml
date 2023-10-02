@@ -6,14 +6,14 @@
 #
 
 # Sets the cluster_address fact
-- import_tasks: ./tasks/task-get-cluster-address.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-cluster-address.yaml
   vars:
     ingress_type: "{{ _kube.ingress_type }}"
 
 - name: Add gitlab portal DNS entries to /etc/hosts
   become_user: root
   delegate_to: "{{ item }}"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ cluster_address }} gitlab.{{ gitlab.domain }}"
@@ -26,7 +26,7 @@
     kind: Namespace
     name: gitlab 
 
-- include_role: 
+- ansible.builtin.include_role:
     name: devops/gitlab/minio-tenant
   when: gitlab.external_minio
 
@@ -37,14 +37,14 @@
         name: gitlab
         repo_url: "https://charts.gitlab.io/"
 
-    - include_tasks: ./tasks/task-create-certificate.yaml
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
       vars:
         name: gitlab
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
     # Notes: Uses own domain names.    
     - name: Setup ingress
-      include_tasks: "{{ INGRESS_SETUP }}"
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying Gitlab
       vars:
@@ -63,15 +63,15 @@
         wait: yes
 
     - name: Waiting for Gitlab deployments to be ready
-      shell: |
+      ansible.builtin.shell: |
           for d in $(kubectl -n gitlab get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n gitlab deployment/$d; done;
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "Gitlab root account password"
     command: "kubectl get secret -n gitlab gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}'"
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "Gitlab Minio tenant credential keys"
     command: 

@@ -18,12 +18,12 @@
       type: kubernetes.io/service-account-token
 
 - name: Get service token
-  shell: kubectl get secret default-token -n kube-system -o jsonpath='{.data.token}' | base64 --decode
+  ansible.builtin.shell: kubectl get secret default-token -n kube-system -o jsonpath='{.data.token}' | base64 --decode
   register: kubernetes_api_token
 
 - name: Enable aggregator routing at apiserver
   become_user: root
-  blockinfile:
+  ansible.builtin.blockinfile:
     path: /etc/kubernetes/manifests/kube-apiserver.yaml
     insertafter: "- kube-apiserver"
     marker: "    # ANSIBLE MANAGED BLOCK"
@@ -31,7 +31,7 @@
           - --enable-aggregator-routing=true
 
 - name: Waiting for apiserver to be restarted
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ _kube.cluster.name }}:6443/healthz"
     headers:
       Authorization: Bearer {{ kubernetes_api_token.stdout }}
@@ -45,7 +45,7 @@
   delegate_to: localhost
   become_user: root
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "metrics server"
         repo_path: "kubernetes-sigs/metrics-server"
@@ -55,7 +55,7 @@
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/components.yaml"]
 
     - name: Allow insecure tls
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: "{{ MANIFEST_FILE }}"
         insertafter: "- --secure-port=4443"
         marker: "        # ANSIBLE MANAGED BLOCK 1"
@@ -63,7 +63,7 @@
                   - --kubelet-insecure-tls
 
     - name: Enable host network
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: "{{ MANIFEST_FILE }}"
         insertbefore: "nodeSelector:"
         marker: "      # ANSIBLE MANAGED BLOCK 2"
@@ -71,7 +71,7 @@
                 hostNetwork: true
 
     - name: Configure to run on control-planes only
-      replace:
+      ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '^\s*(nodeSelector:)$'
         replace: |4-
@@ -92,11 +92,11 @@
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
   
 - name: Waiting for metrics server to be ready
-  shell: |
+  ansible.builtin.shell: |
           kubectl wait --for=jsonpath={.status.conditions[*].reason}=Passed apiservice v1beta1.metrics.k8s.io --timeout=600s

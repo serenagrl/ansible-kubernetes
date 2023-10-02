@@ -33,11 +33,11 @@
     name: storage-credentials
     state: present
 
-- include_role: 
+- ansible.builtin.include_role: 
     name: velero/cli
   when: velero.install_cli
 
-- include_role: 
+- ansible.builtin.include_role: 
     name: velero/storage-location
   loop: "{{ velero.storage_providers }}"
   loop_control:

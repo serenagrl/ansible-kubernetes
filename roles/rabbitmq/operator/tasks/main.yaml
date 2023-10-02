@@ -7,7 +7,7 @@
 - become_user: root
   delegate_to: localhost
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "rabbitmq operator"
         namespace: "rabbitmq"
@@ -18,7 +18,7 @@
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cluster-operator.yml"]
 
     - name: Configure to run on control-planes only
-      replace:
+      ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '^ {6}(containers:)$'
         replace: |4-
@@ -40,10 +40,10 @@
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
   
 - name: Waiting for rabbitmq-system to be ready
-  shell: for d in $(kubectl -n rabbitmq-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n rabbitmq-system deployment/$d; done;
+  ansible.builtin.shell: for d in $(kubectl -n rabbitmq-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n rabbitmq-system deployment/$d; done;

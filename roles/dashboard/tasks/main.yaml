@@ -7,7 +7,7 @@
 - become_user: root
   delegate_to: localhost
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "kubernetes dashboard"
         namespace: "kubernetes-dashboard"
@@ -21,7 +21,7 @@
     - name: Configure to run on control-planes only
       block:    
         - name: Patch tolerations 
-          replace:
+          ansible.builtin.replace:
             path: "{{ MANIFEST_FILE }}"
             regexp: '^\s*(tolerations:)$'
             replace: |4-
@@ -31,7 +31,7 @@
                           operator: Exists
 
         - name: Patch nodeSelectors
-          replace:
+          ansible.builtin.replace:
             path: "{{ MANIFEST_FILE }}"
             regexp: '^\s*(nodeSelector:)$'
             replace: |4-
@@ -49,7 +49,7 @@
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
@@ -97,17 +97,17 @@
           kubernetes.io/service-account.name: dashboard-admin
       type: kubernetes.io/service-account-token
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "kubernetes dashboard token"
     command: "kubectl -n kube-system get secret dashboard-admin -o jsonpath='{.data.token}'"
 
 - name: Waiting for kubernetes dashboard to be ready
-  shell: kubectl rollout status -n kubernetes-dashboard deployment/kubernetes-dashboard
+  ansible.builtin.shell: kubectl rollout status -n kubernetes-dashboard deployment/kubernetes-dashboard
 
   # Notes: Use cluster's domain name and with custom route /dashboard
 - name: Setup ingress
-  include_tasks: "{{ INGRESS_SETUP }}"
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
   vars:
     name: kubernetes-dashboard
     namespace: kubernetes-dashboard

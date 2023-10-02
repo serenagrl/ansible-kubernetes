@@ -7,7 +7,7 @@
 - become_user: root
   delegate_to: localhost
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "contour ingress"
         namespace: "projectcontour"
@@ -18,7 +18,7 @@
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/render/contour.yaml"]
 
     - name: Configure to run on control-planes only 
-      replace:
+      ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '^\s*(containers:)$'
         replace: |4-
@@ -40,12 +40,12 @@
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
   
-- import_tasks: ./tasks/task-create-certificate.yaml
+- ansible.builtin.import_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: projectcontour
     certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
@@ -66,7 +66,7 @@
   become_user: root
   vars:
     address: "{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ address }} {{ _kube.hostname }}"

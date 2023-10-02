@@ -13,7 +13,7 @@
     - name: Configure max_map_count in /etc/sysctl.conf
       become_user: root
       delegate_to: "{{ item }}"
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/sysctl.conf
         line: "vm.max_map_count=262144"
       loop: "{{ groups[elasticsearch.configure_map_count_to] }}"
@@ -21,7 +21,7 @@
     # Update max_map_count value without rebooting VM 
     - name: Configure max_map_count
       become_user: root
-      shell: |
+      ansible.builtin.shell: |
         sysctl -w vm.max_map_count=262144
       delegate_to: "{{ item }}"
       loop: "{{ groups[elasticsearch.configure_map_count_to] }}"
@@ -32,7 +32,7 @@
     release: "{{ has_version_specified | ternary(elasticsearch.version, release_tag.stdout) }}"
   block:
     - name: Get latest elasticsearch version
-      shell: |
+      ansible.builtin.shell: |
         curl -s https://api.github.com/repos/elastic/elasticsearch/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
       register: release_tag
       when: not has_version_specified
@@ -47,7 +47,7 @@
 - name: Waiting for elasticsearch to be ready
   shell: kubectl wait --for=jsonpath='{.status.health}'=green elasticsearch elasticsearch -n logging --timeout=300s && kubectl wait --for=condition=ready pods -n logging -l common.k8s.elastic.co/type=elasticsearch --timeout=300s
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "Elastic password"
     command: kubectl get secret elasticsearch-es-elastic-user -n logging -o=jsonpath='{.data.elastic}'

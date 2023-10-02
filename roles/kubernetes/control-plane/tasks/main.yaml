@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Installing python kubernetes module and dependencies for Ansible
-  pip:
+  ansible.builtin.pip:
     name:
       - pyyaml
       - kubernetes
@@ -15,22 +15,22 @@
   become_user: root
   block:
     - name: Get helm gpg
-      get_url:
+      ansible.builtin.get_url:
         url: https://baltocdn.com/helm/signing.asc
         dest: /tmp/helm.gpg
         mode: '0644'
         force: true
 
     - name: De-armor helm gpg
-      shell: gpg --dearmor < /tmp/helm.gpg > /usr/share/keyrings/helm.gpg
+      ansible.builtin.shell: gpg --dearmor < /tmp/helm.gpg > /usr/share/keyrings/helm.gpg
 
     - name: Register helm repository
-      apt_repository:
+      ansible.builtin.apt_repository:
         filename: helm
         repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
 
     - name: Installing helm
-      apt:
+      ansible.builtin.apt:
         pkg:
           - helm
         state: latest
@@ -39,21 +39,21 @@
 # Prevents warnings when running ansible helm commands.
 - become_user: "{{ _kube.user }}"
   name: Install helm diff
-  shell: |
+  ansible.builtin.shell: |
     helm plugin install https://github.com/databus23/helm-diff
 
 - name: Configure kube config
   become_user: "{{ _kube.user }}"
   block:
     - name: Create .kube in home directory
-      file:
+      ansible.builtin.file:
         path: ~/.kube
         state: directory
         mode: 0700
 
     - name: Copy admin.conf to home directory kube config
       become_user: root
-      copy:
+      ansible.builtin.copy:
         src: /etc/kubernetes/admin.conf
         dest: "/home/{{ _kube.user }}/.kube/config"
         remote_src: yes
@@ -61,19 +61,19 @@
         owner: "{{ _kube.user }}"
 
     - name: Add autocomplete and aliases to shell
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: ~/.bashrc
         block: "{{ ALIASES_TEMPLATE }}"
 
     - name: Apply changes
-      shell: . ~/.bashrc  
+      ansible.builtin.shell: . ~/.bashrc  
 
 - become_user: "{{ _kube.user }}"
   block:
     - name: Add labels to control planes
-      shell: kubectl label nodes {{ inventory_hostname }} {{ item }}
+      ansible.builtin.shell: kubectl label nodes {{ inventory_hostname }} {{ item }}
       loop: "{{ kubernetes.control_plane_node_labels }}"
 
     - name: Remove taint to allow scheduling on control plane nodes 
-      shell: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane-
+      ansible.builtin.shell: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane-
       when: _kube.allow_scheduling

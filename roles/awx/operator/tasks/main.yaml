@@ -4,26 +4,26 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-# Notes: If you set _kube.allow_scheduling to no, you will need to manually add tolerations 
+# Notes: If you set _kube.allow_scheduling to no, you will need to manually add tolerations
 #        to the Instance Group -> default -> custom pod spec from the AWX portal.
 
 - name: Create a awx namespace
   kubernetes.core.k8s:
     name: awx
     kind: Namespace
-    
+
 - name: Install AWX
   vars:
-    ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
     has_version_specified: "{{ (awx.version is defined and awx.version and awx.version != 'latest') | bool }}"
     release: "{{ has_version_specified | ternary(awx.version, release_tag.stdout) }}"
   block:
     # Notes: Uses cluster's domain name and with custom route /awx
     - name: Setup ingress
-      include_tasks: "{{ INGRESS_SETUP }}"
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Get latest awx release
-      shell: |
+      ansible.builtin.shell: |
           curl -s "https://api.github.com/repos/ansible/awx-operator/releases/latest" | grep tag_name | cut -d '"' -f 4
       register: release_tag
       when: not has_version_specified
@@ -32,12 +32,12 @@
       become_user: root
       block:
         - name: Create kustomize directory
-          file:
+          ansible.builtin.file:
             path: "{{ MANIFEST_FOLDER }}"
             state: directory
 
         - name: Create kustomization files
-          copy:
+          ansible.builtin.copy:
             content: "{{ item.content | to_nice_yaml }}"
             dest: "{{ MANIFEST_FOLDER }}/{{ item.filename }}"
           loop:
@@ -54,7 +54,7 @@
 - name: Cleanup manifest 
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FOLDER }}"
     state: absent
   when: _cleanup
@@ -64,30 +64,30 @@
   become_user: root
   block:
     - name: Installing dependency packages (may take a while)
-      apt:
+      ansible.builtin.apt:
         pkg:
           - python3-pip
         state: latest
         update_cache: true
 
     - name: Installing AWX cli on Ansible host
-      pip:
+      ansible.builtin.pip:
         name: awxkit
 
 - name: Waiting for AWX deployments to be ready
-  shell: |
-      for d in $(kubectl -n awx get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx deployment/$d; done;
-      for d in $(kubectl -n awx get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx statefulset/$d; done;
+  ansible.builtin.shell: |
+    for d in $(kubectl -n awx get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx deployment/$d; done;
+    for d in $(kubectl -n awx get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx statefulset/$d; done;
 
 - name: Waiting for AWX controller host to be up
-  uri:
+  ansible.builtin.uri:
     url: "{{ AWX_HOST }}"
   register: result
   until: result.status == 200
   retries: 20
   delay: 30
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "AWX portal password"
     command: "kubectl get secret -n awx awx-admin-password -o jsonpath='{.data.password}'"

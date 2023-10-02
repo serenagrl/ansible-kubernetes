@@ -8,7 +8,7 @@
 - become_user: root
   delegate_to: localhost
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "eck-operator"
         namespace: "elastic-system"
@@ -47,7 +47,7 @@
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   loop:
@@ -56,4 +56,4 @@
   when: _cleanup
     
 - name: Waiting for elastic-operator to be ready
-  shell: kubectl rollout status -n elastic-system statefulset/elastic-operator
+  ansible.builtin.shell: kubectl rollout status -n elastic-system statefulset/elastic-operator

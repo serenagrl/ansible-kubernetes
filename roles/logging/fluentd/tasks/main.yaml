@@ -11,15 +11,15 @@
     elastic_password: "{{ elastic_password_result.stdout }}"
   block:
     - name: Get elastic password
-      shell: kubectl get secret elasticsearch-es-elastic-user -n logging -o=jsonpath='{.data.elastic}' | base64 -d
+      ansible.builtin.shell: kubectl get secret elasticsearch-es-elastic-user -n logging -o=jsonpath='{.data.elastic}' | base64 -d
       register: elastic_password_result
 
     - name: Create fluentd role
-      shell: |
+      ansible.builtin.shell: |
           kubectl exec --stdin --tty elasticsearch-es-default-0 -n logging -- curl -XPOST "http://elasticsearch-es-http:9200/_security/role/{{ fluentd.elasticsearch.role }}" -k -u "elastic:{{ elastic_password }}" -H 'Content-Type: application/json' -d'{  "cluster" : [ "monitor" ], "indices": [{ "names": [ "*" ], "privileges": [ "write", "create", "delete", "create_index" ] }] }'
 
     - name: Create fluentd service account
-      shell: |
+      ansible.builtin.shell: |
           kubectl exec --stdin --tty elasticsearch-es-default-0 -n logging -- curl -XPOST "http://elasticsearch-es-http:9200/_security/user/{{ fluentd.elasticsearch.username }}" -k -u "elastic:{{ elastic_password }}" -H 'Content-Type: application/json' -d'{  "password" : "{{ fluentd.elasticsearch.password }}",  "enabled": true,  "roles" : [ "{{ fluentd.elasticsearch.role }}" ],  "full_name" : "Fluentd Service Account" }'
 
 - name: Prepare fluentd manifest
@@ -28,12 +28,12 @@
   block:
     - name: Get fluentd kubernetes daemonset manifest
       become_user: root
-      get_url:
+      ansible.builtin.get_url:
         url: "https://raw.githubusercontent.com/fluent/fluentd-kubernetes-daemonset/master/fluentd-daemonset-elasticsearch-rbac.yaml"
         dest: "{{ MANIFEST_FILE }}"
 
     - name: Modify manifest values
-      shell: |
+      ansible.builtin.shell: |
               sed -i 's/kube-system$/logging/g' {{ MANIFEST_FILE }}
               sed -i 's/"elasticsearch-logging"/"elasticsearch-es-http"/g' {{ MANIFEST_FILE }}
               sed -i '/name: FLUENT_ELASTICSEARCH_SCHEME/{n;s/value:.*/value: http/}' {{ MANIFEST_FILE }}
@@ -41,7 +41,7 @@
               sed -i '/name: FLUENT_ELASTICSEARCH_PASSWORD/{n;s/value:.*/value: {{ fluentd.elasticsearch.password }}/}' {{ MANIFEST_FILE }}
 
     - name: Configure container environment variables
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: "{{ MANIFEST_FILE }}"
         insertafter: 'value: "9200"'
         marker: "          # {mark} ANSIBLE MANAGED BLOCK"
@@ -60,7 +60,7 @@
 - name: Cleanup directories
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup

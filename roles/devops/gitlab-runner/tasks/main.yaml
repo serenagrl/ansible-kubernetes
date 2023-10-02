@@ -13,7 +13,7 @@
 - name: Install Gitlab Runner
   block:
     - name: Get minio credentials
-      shell: | 
+      ansible.builtin.shell: | 
         kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data}'
       register: minio_secret
 

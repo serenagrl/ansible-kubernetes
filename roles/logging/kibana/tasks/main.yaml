@@ -12,7 +12,7 @@
     release: "{{ has_version_specified | ternary(kibana.version, release_tag.stdout) }}"
   block:
     - name: Get kibana version
-      shell: |
+      ansible.builtin.shell: |
         curl -s https://api.github.com/repos/elastic/kibana/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
       register: release_tag
       when: not has_version_specified
@@ -25,10 +25,10 @@
           {{ TEMPLATE }}
 
 - name: Waiting for kibana to be ready
-  shell: kubectl wait --for=jsonpath='{.status.health}'=green kibana kibana -n logging --timeout=180s
+  ansible.builtin.shell: kubectl wait --for=jsonpath='{.status.health}'=green kibana kibana -n logging --timeout=180s
 
 - name: Setup ingress
-  include_tasks: "{{ INGRESS_SETUP }}"
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
   vars:
     name: kibana
     namespace: logging

@@ -6,14 +6,14 @@
 #
 
 # Sets the cluster_address fact
-- import_tasks: ./tasks/task-get-cluster-address.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-cluster-address.yaml
   vars:
     ingress_type: "{{ _kube.ingress_type }}"
 
 - name: Add harbor portal DNS entries to /etc/hosts
   become_user: root
   delegate_to: "{{ item }}"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ cluster_address }} core.{{ harbor.domain }} notary.{{ harbor.domain }}"
@@ -33,14 +33,14 @@
         name: harbor
         repo_url: "https://helm.goharbor.io"
 
-    - include_tasks: ./tasks/task-create-certificate.yaml
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
       vars:
         name: harbor
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
     # Notes: Uses own domain names.
     - name: Setup ingress
-      include_tasks: "{{ INGRESS_SETUP }}"
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying harbor
       vars:
@@ -59,11 +59,11 @@
         wait: yes
 
     - name: Waiting for harbor deployments to be ready
-      shell: |
+      ansible.builtin.shell: |
           for d in $(kubectl -n harbor-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n harbor-system deployment/$d; done;
 
     - name: Waiting for Harbor api to be up
-      uri:
+      ansible.builtin.uri:
         url: "https://core.{{ harbor.domain }}/api/v2.0/systeminfo/getcert"
         validate_certs: no
         return_content: true
@@ -75,18 +75,18 @@
 - name: Get harbor registry certificate
   delegate_to: localhost
   become_user: root
-  copy:
+  ansible.builtin.copy:
     content: "{{ result.content }}"
     dest: "{{ CERT_FILE }}"
 
 - name: Configure kubernetes nodes to trust registry certificate
-  include_tasks: trust-cert.yaml
+  ansible.builtin.include_tasks: trust-cert.yaml
   loop: "{{ groups[harbor.register_dns_to] }}"
 
 - name: Cleanup files
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   loop:

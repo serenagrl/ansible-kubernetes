@@ -4,23 +4,23 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- include_vars: ../../vars/main.yaml
+- ansible.builtin.include_vars: ../../vars/main.yaml
 
 - name: Installing nfs server package
-  apt:
+  ansible.builtin.apt:
     pkg:
       - nfs-server
     state: latest
     update_cache: true
 
 - name: Create shared directory
-  file:
+  ansible.builtin.file:
     path: "{{ nfs.shared }}"
     state: directory
     mode: '0777'
 
 - name: Enable nfs
-  shell: |
-          sudo systemctl enable --now nfs-server
-          sudo exportfs -ar
+  ansible.builtin.shell: |
+    sudo systemctl enable --now nfs-server
+    sudo exportfs -ar
 

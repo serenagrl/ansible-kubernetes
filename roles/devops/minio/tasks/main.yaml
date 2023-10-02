@@ -6,14 +6,14 @@
 #
 
 # Sets the cluster_address fact
-- import_tasks: ./tasks/task-get-cluster-address.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-cluster-address.yaml
   vars:
     ingress_type: "{{ _kube.ingress_type }}"
 
 - name: Add minio portal DNS entries to /etc/hosts
   become_user: root
   delegate_to: "{{ item }}"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ cluster_address }} console.{{ minio.domain }}"
@@ -33,14 +33,14 @@
         name: minio
         repo_url: "https://operator.min.io/"
 
-    - include_tasks: ./tasks/task-create-certificate.yaml
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
       vars:
         name: minio-operator
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
     # Notes: Uses own domain names.    
     - name: Setup ingress
-      include_tasks: "{{ INGRESS_SETUP }}"
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying minio
       vars:
@@ -59,10 +59,10 @@
         wait: yes
 
     - name: Waiting for minio deployments to be ready
-      shell: |
+      ansible.builtin.shell: |
           for d in $(kubectl -n minio-operator get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n minio-operator deployment/$d; done;
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "minio console account token"
     command: "kubectl -n minio-operator get secret console-sa-secret -o jsonpath='{.data.token}'"

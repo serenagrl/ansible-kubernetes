@@ -6,7 +6,7 @@
 #
 
 - name: Check for existing Virtual Hard Disks
-  include_tasks: ./tasks/task-check-vhdx-exist.yaml
+  ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
   vars:
     win_folder: "{{ csi_ceph.disk.vm_folder }}"
     host_name: "{{ item }}"
@@ -32,7 +32,7 @@
   delegate_to: localhost
   become_user: root
   block:
-    - import_tasks: ./tasks/task-git-clone.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-git-clone.yaml
       vars:
         name: "rook ceph"
         repo_path: "rook/rook"
@@ -44,7 +44,7 @@
     - name: Scale down the pods for lesser than 3 kubernetes_nodes configuration
       vars:
         node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length }}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
-      shell: |
+      ansible.builtin.shell: |
               sed -i 's/count: 2$/count: 1/g' cluster.yaml
               sed -i 's/count: 3$/count: 2/g' cluster.yaml
       args:
@@ -52,7 +52,7 @@
       when: node_count | int < 3
 
     - name: Configure manifest values
-      shell: |
+      ansible.builtin.shell: |
               sed -i 's/ROOK_LOG_LEVEL: "INFO"$/ROOK_LOG_LEVEL: "WARNING"/g' operator.yaml
       args:
         chdir: "{{ DEPLOY_DIR }}"
@@ -60,7 +60,7 @@
     - name: Patch tolerations and node selectors
       block:
         - name: Configure cluster to run on control-planes only 
-          replace:
+          ansible.builtin.replace:
             path: "{{ DEPLOY_DIR }}/cluster.yaml"
             regexp: '^(spec:)$'
             replace: |8-
@@ -79,7 +79,7 @@
                               operator: Exists
 
         - name: Configure operator to run on control-planes only
-          replace:
+          ansible.builtin.replace:
             path: "{{ DEPLOY_DIR }}/operator.yaml"
             regexp: '^(data:)$'
             replace: |8-
@@ -87,7 +87,7 @@
                     {{ OPERATOR_TOLERATIONS_TEMPLATE }}
 
         - name: Configure operator tolerations and node affinity environment variables
-          replace:
+          ansible.builtin.replace:
             path: "{{ DEPLOY_DIR }}/operator.yaml"
             regexp: '^\s*(env:)$'
             replace: |2-
@@ -101,7 +101,7 @@
                             value: "node-role.kubernetes.io/control-plane="
 
         - name: Configure operator deployment to run on control-planes only
-          replace:
+          ansible.builtin.replace:
             path: "{{ DEPLOY_DIR }}/operator.yaml"
             regexp: '^\s*(containers:)$'
             replace: |4-
@@ -114,7 +114,7 @@
                       \1
 
         - name: Configure toolbox to run on control-planes only
-          replace:
+          ansible.builtin.replace:
             path: "{{ DEPLOY_DIR }}/toolbox.yaml"
             regexp: '^\s*(tolerations:)$'
             replace: |4-
@@ -126,7 +126,7 @@
                           operator: Exists
 
         - name: Patch filesystem tolerations
-          replace:
+          ansible.builtin.replace:
             path: "{{ DEPLOY_DIR }}/filesystem.yaml"
             regexp: '^\s*(placement:)$'
             replace: |6-
@@ -146,7 +146,7 @@
       when: not _kube.allow_scheduling
 
     - name: Create rook config override 
-      blockinfile:
+      ansible.builtin.blockinfile:
         create: yes
         path: "{{ CONFIG_FILE }}"
         block: |
@@ -265,7 +265,7 @@
     - "{{ DEPLOY_DIR }}/operator.yaml"
 
 - name: Waiting for rook-ceph operator to be ready
-  shell: kubectl rollout status -n rook-ceph deployment/rook-ceph-operator
+  ansible.builtin.shell: kubectl rollout status -n rook-ceph deployment/rook-ceph-operator
 
 - name: Installing rook-ceph cluster
   kubernetes.core.k8s:
@@ -277,7 +277,7 @@
     - "{{ DEPLOY_DIR }}/cluster.yaml"
 
 - name: Waiting for ceph cluster to be ready (may timeout on slow servers)
-  shell: kubectl wait --for=jsonpath={.status.phase}=Ready cephclusters rook-ceph -n rook-ceph --timeout=900s
+  ansible.builtin.shell: kubectl wait --for=jsonpath={.status.phase}=Ready cephclusters rook-ceph -n rook-ceph --timeout=900s
 
 - name: Installing rook-ceph toolbox
   kubernetes.core.k8s:
@@ -315,7 +315,7 @@
   become_user: root
   block:
     - name: Set filesystem name and pvc sizes
-      shell: |
+      ansible.builtin.shell: |
               sed -i 's/name: myfs$/name: {{ csi_ceph.fs_name }}/g' filesystem.yaml
               sed -i 's/myfs/{{ csi_ceph.fs_name }}/g' ./csi/cephfs/storageclass.yaml
               sed -i 's/storage: 1Gi$/storage: {{ csi_ceph.pvc.fs_size }}/g' ./csi/cephfs/pvc.yaml
@@ -324,7 +324,7 @@
         chdir: "{{ DEPLOY_DIR }}"
 
     - name: Scale down replicas for lesser than 3 kubernetes_nodes configuration
-      shell: |
+      ansible.builtin.shell: |
               sed -i 's/size: 3$/size: 2/g' filesystem.yaml
       args:
         chdir: "{{ DEPLOY_DIR }}"
@@ -374,21 +374,21 @@
     - "ceph mgr module enable rook"
     # - "ceph orch set backend rook"
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "Ceph dashboard password"
     command: "kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath='{.data.password}'"
 
   # Notes: Use cluster's domain name and with custom route /ceph
 - name: Setup ingress
-  include_tasks: "{{ INGRESS_SETUP }}"
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
   vars:
     name: ceph-dashboard
     namespace: rook-ceph
     definition: "{{ INGRESS_TEMPLATE }}"  
 
 - name: Check if Prometheus is installed
-  shell: |
+  ansible.builtin.shell: |
       kubectl get prometheus k8s -n monitoring -o json | jq .status.conditions[0].type -r
   register: prometheus_status
   ignore_errors: yes
@@ -409,13 +409,13 @@
         - "ceph dashboard set-alertmanager-api-ssl-verify False"
 
     - name: Export existing additional scrape configs to file
-      shell: |
+      ansible.builtin.shell: |
         kubectl -n monitoring get secret additional-scrape-configs -o jsonpath="{['data']['prometheus-additional\.yaml']}" | base64 --decode > {{ SCRAPE_CONFIG }}
       args:
         chdir: $HOME  
 
     - name: Add istio scrape configs to scrape configs file
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: "~/{{ SCRAPE_CONFIG }}"
         marker: "# {mark} CEPH METRICS BLOCK"
         block: |
@@ -424,7 +424,7 @@
               - targets: ['rook-ceph-mgr.rook-ceph.svc:9283']
 
     - name: Create secret for additional Prometheus scrape configs
-      shell: |
+      ansible.builtin.shell: |
         kubectl create secret generic additional-scrape-configs --from-file={{ SCRAPE_CONFIG }} --dry-run=client -o yaml > {{ SECRET_CONFIG }}
       args:
         chdir: $HOME  
@@ -450,7 +450,7 @@
 - name: Cleanup
   block:
     - name: Cleanup config files
-      file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: absent
       loop:
@@ -459,7 +459,7 @@
 
     - name: Cleanup directories
       become_user: root
-      file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: absent
       loop:

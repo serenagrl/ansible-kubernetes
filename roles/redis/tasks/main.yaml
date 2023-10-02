@@ -9,7 +9,7 @@
     kind: Namespace
     name: "{{ redis.namespace }}"
   
-- include_tasks: ./tasks/task-create-certificate.yaml
+- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: redis
     service_name: "{{ SERVICE_NAMES[redis.ha_mode] }}"
@@ -30,26 +30,26 @@
     wait: yes
 
 - name: Waiting for redis pods to be ready
-  shell: |
+  ansible.builtin.shell: |
     for d in $(kubectl -n {{ redis.namespace }} get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n {{ redis.namespace }} statefulset/$d; done;
 
 - name: Extract certificates for applications
   block:
-    - import_tasks: ./tasks/task-extract-cert.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "Redis Certificate Authority (CA) cert"
         command: "kubectl get -n {{ redis.namespace }} secret redis-tls-secret -o jsonpath='{.data.ca\\.crt}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ redis.cert.ca }}"
 
-    - import_tasks: ./tasks/task-extract-cert.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "Redis certificate"
         command: "kubectl get -n {{ redis.namespace }} secret redis-tls-secret -o jsonpath='{.data.tls\\.crt}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ redis.cert.cluster }}"
 
-    - import_tasks: ./tasks/task-extract-cert.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "Redis certificate key"
         command: "kubectl get -n {{ redis.namespace }} secret redis-tls-secret -o jsonpath='{.data.tls\\.key}'"
@@ -60,18 +60,18 @@
       delegate_to: localhost
       block:
         - name: Convert ca cert to DER (.crt)
-          shell: "openssl x509 -outform der -in {{ redis.cert.ca }} -out {{ redis.cert.ca_crt }}"
+          ansible.builtin.shell: "openssl x509 -outform der -in {{ redis.cert.ca }} -out {{ redis.cert.ca_crt }}"
           args:
             chdir: "{{ CERT_DIR }}"
 
         - name: Create PKCS12 cert for dotnet clients (.pfx)
-          shell: "openssl pkcs12 -inkey {{ redis.cert.cluster_key }} -in {{ redis.cert.cluster }} -export -out {{ redis.cert.cluster_pfx }} -passout pass:"
+          ansible.builtin.shell: "openssl pkcs12 -inkey {{ redis.cert.cluster_key }} -in {{ redis.cert.cluster }} -export -out {{ redis.cert.cluster_pfx }} -passout pass:"
           args:
             chdir: "{{ CERT_DIR }}"
 
   when: redis.enable_tls and redis.export_certs
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "Redis {{ redis.ha_mode }} ({{ redis.namespace }}) password"
     command: "kubectl get -n {{ redis.namespace }} secret {{ SERVICE_NAMES[redis.ha_mode] }} -o jsonpath='{.data.redis-password}'"
@@ -79,7 +79,7 @@
 - name: Enable metrics
   block:
     - name: Check if Prometheus is installed
-      shell: |
+      ansible.builtin.shell: |
           kubectl get prometheus k8s -n monitoring -o json | jq .status.conditions[0].type -r
       register: prometheus_status
       ignore_errors: yes
@@ -87,14 +87,14 @@
     - name: Configure prometheus to scrape metrics endpoint
       block:
         - name: Export existing additional scrape configs to file
-          shell: |
+          ansible.builtin.shell: |
             kubectl -n monitoring get secret additional-scrape-configs -o jsonpath="{['data']['prometheus-additional\.yaml']}" | base64 -d > {{ SCRAPE_CONFIG }}
           args:
             chdir: $HOME  
 
         # Note: Need to manually delete the scrape config from Prometheus if you uninstall Redis.
         - name: Add istio scrape configs to scrape configs file
-          blockinfile:
+          ansible.builtin.blockinfile:
             path: "~/{{ SCRAPE_CONFIG }}"
             marker: "# {mark} {{ SERVICE_NAMES[redis.ha_mode] | upper }} METRICS BLOCK"
             block: |
@@ -103,7 +103,7 @@
                   - targets: ['{{ SERVICE_NAMES[redis.ha_mode] }}-metrics.{{ redis.namespace }}.svc.cluster.local:9121']
 
         - name: Create secret for additional Prometheus scrape configs
-          shell: |
+          ansible.builtin.shell: |
             kubectl create secret generic additional-scrape-configs --from-file={{ SCRAPE_CONFIG }} --dry-run=client -o yaml > {{ SECRET_CONFIG }}
           args:
             chdir: $HOME  

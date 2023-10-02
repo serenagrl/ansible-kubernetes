@@ -6,7 +6,7 @@
 #
 
 # Setup Kubernetes Control Plane servers
-- import_playbook: setup-control-plane-servers.yaml
+- ansible.builtin.import_playbook: setup-control-plane-servers.yaml
 
 # Setup Kubernetes wWorker node servers
-- import_playbook: setup-worker-node-servers.yaml
+- ansible.builtin.import_playbook: setup-worker-node-servers.yaml

@@ -8,7 +8,7 @@
   delegate_to: localhost
   become_user: root
   block:
-    - import_tasks: ./tasks/task-git-clone.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-git-clone.yaml
       vars:
         name: "kube prometheus"
         repo_path: "prometheus-operator/kube-prometheus"
@@ -18,24 +18,24 @@
         dest: "{{ REPO_DIR }}"
 
     - name: Fix malformed enum in 0alertmanagerConfigCustomResourceDefinition.yaml
-      shell: |
-              sed -i "s/- =$/- '='/g" 0alertmanagerConfigCustomResourceDefinition.yaml
+      ansible.builtin.shell: |
+        sed -i "s/- =$/- '='/g" 0alertmanagerConfigCustomResourceDefinition.yaml
       args:
         chdir: "{{ SETUP_DIR }}"
 
     - name: Scale down the pods for lesser than 3 kubernetes_nodes configuration
       vars:
         node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length }}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
-      shell: |
-              sed -i 's/replicas: 2/replicas: 1/g' prometheus-prometheus.yaml
-              sed -i 's/replicas: 2/replicas: 1/g' prometheusAdapter-deployment.yaml
-              sed -i 's/replicas: 3/replicas: 1/g' alertmanager-alertmanager.yaml
+      ansible.builtin.shell: |
+        sed -i 's/replicas: 2/replicas: 1/g' prometheus-prometheus.yaml
+        sed -i 's/replicas: 2/replicas: 1/g' prometheusAdapter-deployment.yaml
+        sed -i 's/replicas: 3/replicas: 1/g' alertmanager-alertmanager.yaml
       args:
         chdir: "{{ MANIFEST_DIR }}"
       when: node_count | int < 3
 
     - name: Configure to run on control-planes only
-      replace:
+      ansible.builtin.replace:
         path: "{{ MANIFEST_DIR }}/{{ item }}"
         regexp: '^\s*(nodeSelector:)$'
         replace: |4-
@@ -54,7 +54,7 @@
       when: not _kube.allow_scheduling
 
     - name: Configure to run on control-planes only
-      replace:
+      ansible.builtin.replace:
         path: "{{ MANIFEST_DIR }}/{{ item }}"
         regexp: '^\s*(nodeSelector:)$'
         replace: |8-
@@ -84,7 +84,7 @@
 
 # Notes: Use cluster's domain name and with custom route /prometheus, /grafana and /alerts
 - name: Setup ingress
-  include_tasks: "{{ INGRESS_SETUP }}"
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
   vars:
     name: monitoring
     namespace: monitoring
@@ -125,7 +125,7 @@
       become_user: root
       block:
         - name: Edit grafana configuration
-          blockinfile:
+          ansible.builtin.blockinfile:
             path: "{{ MANIFEST_DIR }}/grafana-config.yaml"
             insertafter: "default_timezone = UTC"
             marker: "    # ANSIBLE MANAGED BLOCK"
@@ -136,7 +136,7 @@
                   serve_from_sub_path = true
 
         - name: Patch grafana datasource url
-          replace:
+          ansible.builtin.replace:
             path: "{{ MANIFEST_DIR }}/grafana-dashboardDatasources.yaml"
             regexp: 'http://prometheus-k8s.monitoring.svc:9090'
             replace: 'http://prometheus-k8s.monitoring.svc:9090/prometheus'
@@ -151,16 +151,16 @@
         - "{{ MANIFEST_DIR }}/grafana-dashboardDatasources.yaml"
 
     - name: Waiting for grafana to be ready
-      shell: |
-              kubectl rollout restart deployment grafana -n monitoring
-              kubectl rollout status -n monitoring deployment/grafana
+      ansible.builtin.shell: |
+        kubectl rollout restart deployment grafana -n monitoring
+        kubectl rollout status -n monitoring deployment/grafana
 
   when: (ingress_result.resources | length > 0)
 
 - name: Cleanup directories
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ REPO_DIR }}"
     state: absent
   when: _cleanup

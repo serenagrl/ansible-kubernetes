@@ -5,45 +5,45 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Add Haproxy repository
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "ppa:vbernat/haproxy-{{ haproxy.version }}"
     state: present
 
 - name: Installing Haproxy
-  apt:
+  ansible.builtin.apt:
     name: haproxy
     state: latest
     update_cache: yes
 
 - name: Configure Haproxy for Kubernetes Control Planes
   become_user: root
-  blockinfile:
+  ansible.builtin.blockinfile:
     path: /etc/haproxy/haproxy.cfg
     block: |
       {{ HAPROXY_CONFIG_TEMPLATE }}
 
 - name: Restart Haproxy to let changes take effect
-  systemd:
+  ansible.builtin.systemd:
     enabled: yes
     state: restarted
     name: haproxy
 
 - name: Installing keepalived
-  apt:
+  ansible.builtin.apt:
     name: keepalived
     state: latest
     update_cache: yes
 
 - name: Configure virtual ip address for keepalived
   become_user: root
-  blockinfile:
+  ansible.builtin.blockinfile:
     create: yes
     path: /etc/keepalived/keepalived.conf
     block: |
       {{ KEEPALIVED_CONFIG_TEMPLATE }}
 
 - name: Restart keepalived to let changes take effect
-  systemd:
+  ansible.builtin.systemd:
     enabled: yes
     state: restarted
     name: keepalived

@@ -22,7 +22,7 @@
 
   tasks:
     - name: Install Kubernetes add-on components
-      include_tasks: tasks/task-run-role.yaml
+      ansible.builtin.include_tasks: tasks/task-run-role.yaml
       loop: "{{ _kube.add_ons }}"
       loop_control:
         loop_var: role
@@ -32,7 +32,7 @@
   gather_facts: no
 
   tasks:
-    - import_tasks: ./tasks/task-checkpoint-vm.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Components installed."
       when: _checkpoint

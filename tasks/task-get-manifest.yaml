@@ -5,13 +5,13 @@
     release: "{{ has_version_specified | ternary((version_prefix | default()) + pkg_version, release_tag.stdout) }}"
   block:
     - name: Get latest {{ name }} release tag
-      shell: |
-          curl -s "https://api.github.com/repos/{{ repo_path }}/releases/latest" | grep {{ grep_tag }} | cut -d '"' -f 4
+      ansible.builtin.shell: |
+        curl -s "https://api.github.com/repos/{{ repo_path }}/releases/latest" | grep {{ grep_tag }} | cut -d '"' -f 4
       register: release_tag
       when: not has_version_specified
 
     - name: Get {{ name }} ({{ release }}) manifest
-      get_url:
+      ansible.builtin.get_url:
         url: "{{ item }}"
         dest: "{{ dest }}"
       loop: "{{ urls }}" 

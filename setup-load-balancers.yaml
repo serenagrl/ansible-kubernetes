@@ -15,7 +15,7 @@
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:
-    - import_tasks: ./tasks/task-checkpoint-vm.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Haproxy configured."
       when: _checkpoint

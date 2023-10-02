@@ -8,7 +8,7 @@
   delegate_to: localhost
   become_user: root
   block:
-    - import_tasks: ./tasks/task-git-clone.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-git-clone.yaml
       vars:
         name: "nfs provisioner"
         repo_path: "kubernetes-sigs/nfs-subdir-external-provisioner"
@@ -18,7 +18,7 @@
         dest: "{{ REPO_DIR }}"
         
     - name: Configure nfs provisioner
-      shell: |
+      ansible.builtin.shell: |
               sed -i 's/nfs-subdir-external-provisioner$/nfs-provisioner/g' deployment.yaml
               sed -i "s/10.3.243.101$/{{ hostvars[groups['nfs_server'][0]]['ansible_host'] }}/g" deployment.yaml
               sed -i "s/\/ifs\/kubernetes$/\{{ csi_nfs.shared }}/g" deployment.yaml
@@ -29,7 +29,7 @@
         chdir: "{{ DEPLOY_DIR }}"
 
     - name: Configure to run on control-planes only
-      replace:
+      ansible.builtin.replace:
         path: "{{ DEPLOY_DIR }}/deployment.yaml"
         regexp: '^\s*(volumes:)$'
         replace: |4-
@@ -92,7 +92,7 @@
 - name: Cleanup directories
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ REPO_DIR }}"
     state: absent
   when: _cleanup

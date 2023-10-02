@@ -8,19 +8,19 @@
   delegate_to: localhost
   block: 
     - name: Get kubernetes gpg
-      get_url:
+      ansible.builtin.get_url:
         url:  https://dl.k8s.io/apt/doc/apt-key.gpg
         dest: /usr/share/keyrings/kubernetes.gpg
         mode: '0644'
         force: true
 
     - name: Register kubernetes repository
-      apt_repository:
+      ansible.builtin.apt_repository:
         filename: kubernetes
         repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/kubernetes.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
 
     - name: Installing kubectl
-      apt:
+      ansible.builtin.apt:
         pkg:
           - "kubectl"
         state: latest
@@ -31,33 +31,33 @@
   become_user: root
   block:
     - name: Add kubernetes cluster DNS entry to /etc/hosts
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/hosts
         insertafter: "127.0.0.1 localhost"
         line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
 
     - name: Check if kube config file exists on ansible controller host
-      stat:
+      ansible.builtin.stat:
         path: /root/.kube/config
       register: file_stats
 
     - name: Download kube config
       block:
         - name: Create .kube in home directory
-          file:
+          ansible.builtin.file:
             path: /root/.kube
             state: directory
             mode: 0700
 
         - name: Copy admin.conf to home directory kube config
           delegate_to: "{{ groups['primary_control_plane'][0] }}"
-          fetch:
+          ansible.builtin.fetch:
             src: /etc/kubernetes/admin.conf
             dest: /root/.kube/config
             flat: yes
 
         - name: Replace default cluster name with {{ _kube.cluster.name }}
-          replace:
+          ansible.builtin.replace:
             path: /root/.kube/config
             regexp: 'kubernetes'
             replace: "{{ _kube.cluster.name }}"           
@@ -67,7 +67,7 @@
     - name: Add cluster config to kube config file on ansible controller host
       block:
         - name: Get local kube config file
-          slurp:
+          ansible.builtin.slurp:
             src: /root/.kube/config
           register: local_file
 
@@ -78,7 +78,7 @@
           block:
             - name: Get kube config file from control plane
               delegate_to: "{{ groups['primary_control_plane'][0] }}"
-              slurp:
+              ansible.builtin.slurp:
                 src: /etc/kubernetes/admin.conf
               register: config_file
 
@@ -104,13 +104,14 @@
                 block: "{{ config | regex_search('(?<=users:\n)(?s)(.*)') }}"
 
             - name: Set context to cluster
-              shell: kubectl config use-context {{ _kube.cluster.name }}-admin@{{ _kube.cluster.name }}
+              ansible.builtin.shell: |
+                kubectl config use-context {{ _kube.cluster.name }}-admin@{{ _kube.cluster.name }}
               ignore_errors: yes
 
           when: not cluster_exist
       when: file_stats.stat.exists
 
     - name: Add autocomplete and aliases to shell
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: /root/.bashrc
         block: "{{ ALIASES_TEMPLATE }}"

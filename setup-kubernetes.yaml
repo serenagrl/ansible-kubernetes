@@ -6,7 +6,7 @@
 #
 
 # Setup control planes
-- import_playbook: setup-control-planes.yaml
+- ansible.builtin.import_playbook: setup-control-planes.yaml
 
 # Setup worker nodes.
-- import_playbook: setup-worker-nodes.yaml
+- ansible.builtin.import_playbook: setup-worker-nodes.yaml

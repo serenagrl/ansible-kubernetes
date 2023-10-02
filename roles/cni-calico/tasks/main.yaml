@@ -7,7 +7,7 @@
 - become_user: root
   delegate_to: localhost
   block:
-    - include_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.include_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "calico"
         repo_path: "projectcalico/calico"
@@ -20,7 +20,7 @@
           - "{{ manifest_url }}/{{ OPERATOR_CRD }}" 
       
     - name: Set CIDR network
-      replace:
+      ansible.builtin.replace:
         path: "{{ _work_dir }}/{{ OPERATOR_CRD }}"
         regexp: '192.168.0.0/16'
         replace: '{{ _kube.cluster.cidr_network }}'
@@ -36,23 +36,23 @@
       - "{{ OPERATOR_CRD_FILE }}"
 
   - name: Waiting for calico to be ready
-    shell: |
+    ansible.builtin.shell: |
             kubectl wait --for=condition=Ready nodes --all --timeout=600s
             for d in $(kubectl -n calico-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-system deployment/$d; done;
 
   - name: Wait for calico-apiserver deployment to start
     delegate_to: localhost
-    wait_for:
+    ansible.builtin.wait_for:
       timeout: 30
 
   - name: Waiting for kubernetes cluster to be ready
-    shell: |
+    ansible.builtin.shell: |
             for d in $(kubectl -n calico-apiserver get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-apiserver deployment/$d; done;
             for d in $(kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n kube-system deployment/$d; done;
 
 - name: Cleanup manifest files
   delegate_to: localhost
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   loop:

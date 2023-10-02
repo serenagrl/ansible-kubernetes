@@ -11,5 +11,5 @@
     kind: Namespace
     name: logging
 
-- include_role:
+- ansible.builtin.include_role:
     name: logging/kibana

@@ -8,7 +8,7 @@
 - become_user: root
   delegate_to: localhost
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "ingress nginx"
         namespace: "ingress-nginx"
@@ -19,7 +19,7 @@
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/deploy/static/provider/baremetal/deploy.yaml"]
 
     - name: Configure to run on control-planes only
-      replace:
+      ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '^\s*(nodeSelector:)$'
         replace: |4-
@@ -40,14 +40,14 @@
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
   
 # This is needed. Do not remove.
 - name: Check if metallb is installed
-  shell: kubectl get ns metallb-system -o json | jq .status.phase -r
+  ansible.builtin.shell: kubectl get ns metallb-system -o json | jq .status.phase -r
   register: lb_status
   ignore_errors: yes
         
@@ -62,7 +62,7 @@
 - name: Scale ingress controller pods = {{ ingress_nginx.scale }}
   vars:
     replicas: "{{ groups['kubernetes_control_planes'] | length }}"
-  shell: | 
+  ansible.builtin.shell: | 
       kubectl scale deployment -n ingress-nginx ingress-nginx-controller --replicas={{ replicas }}
   when: ingress_nginx.scale
 
@@ -81,7 +81,7 @@
         controller: k8s.io/ingress-nginx
 
 - name: Waiting for ingress-nginx-controller to be ready
-  shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller
+  ansible.builtin.shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller
 
 - name: Get ingress service information
   kubernetes.core.k8s_info:
@@ -95,7 +95,7 @@
   become_user: root
   vars:
     address: "{% if lb_status.stdout == 'Active' %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ ingress_service.resources[0].spec.externalIPs.0 }}{% endif %}"
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ address }} {{ _kube.hostname }}"

@@ -7,14 +7,14 @@
 - name: Initializing kubernetes cluster (primary control plane)
   vars:
     release: "{% if kubernetes_version is defined and kubernetes_version and kubernetes_version != 'latest' %}--kubernetes-version {{ kubernetes_version }}{% endif %}"
-  shell: |
+  ansible.builtin.shell: |
           kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }} \
           --upload-certs --cri-socket unix:///var/run/containerd/containerd.sock \
           --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}  
 
-- include_role:
+- ansible.builtin.include_role:
     name: kubernetes/control-plane
 
-- include_role:
+- ansible.builtin.include_role:
     name: kubernetes/remote-admin
   when: _kube.manage_from_ansible_controller

@@ -4,14 +4,14 @@
     role_var_file: "{{ _work_dir}}/role-var-file"
   block:
     - name: Output role parameters to temporary var file
-      shell: |
+      ansible.builtin.shell: |
         echo "{{ role.vars | default() }}" >> "{{ role_var_file }}"
 
     - name: Read in role parameters from temporary var file
-      include_vars: "{{ role_var_file }}"
+      ansible.builtin.include_vars: "{{ role_var_file }}"
   
     - name: Cleanup temporary var file
-      file:
+      ansible.builtin.file:
         path: "{{ role_var_file }}"
         state: absent
   when: role.vars is defined

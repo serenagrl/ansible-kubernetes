@@ -12,12 +12,12 @@
     mount_folder: "{{ mount_path }}/{{ folder }}"
   block:
     - name: Create "{{ mount_folder }}"
-      file:
+      ansible.builtin.file:
         path: "{{ mount_folder }}"
         state: directory
 
     - name: Mount "{{ mount_folder }}"
-      shell: |
+      ansible.builtin.shell: |
         (
             flock -x 9
 

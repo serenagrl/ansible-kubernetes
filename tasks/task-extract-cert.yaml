@@ -1,6 +1,6 @@
 - name: Get generated {{ name }}
-  shell: |
-          {{ command }} | base64 --decode; echo
+  ansible.builtin.shell: |
+    {{ command }} | base64 --decode; echo
   register: result
 
 - delegate_to: localhost
@@ -9,12 +9,12 @@
     out_dir: "{{ cert_dir | default(_work_dir + '/' +  _kube.cluster.name) }}"
   block:
     - name: Create working directory
-      file:
+      ansible.builtin.file:
         path: "{{ out_dir }}"
         state: directory     
 
     - name: Copy {{ name }} to Ansible host
-      copy:
+      ansible.builtin.copy:
         content: "{{ result.stdout }}\n"
         dest: "{{ out_dir }}/{{ filename }}"
         force: yes

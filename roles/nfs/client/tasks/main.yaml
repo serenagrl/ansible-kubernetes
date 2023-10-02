@@ -4,10 +4,10 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- include_vars: ../../vars/main.yaml
+- ansible.builtin.include_vars: ../../vars/main.yaml
 
 - name: Installing nfs client package
-  apt:
+  ansible.builtin.apt:
     pkg:
       - nfs-common
     state: latest
@@ -16,7 +16,7 @@
 - name: Export shared directory to kubernetes cluster nodes
   delegate_to: "{{ groups['nfs_server'][0] }}"
   become_user: root
-  shell: |
+  ansible.builtin.shell: |
     (
         flock -x 9
 

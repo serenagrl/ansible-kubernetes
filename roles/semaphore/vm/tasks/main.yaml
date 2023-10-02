@@ -7,12 +7,12 @@
 - name: Install Ansible
   block:
     - name: Add Ansible repository
-      apt_repository:
+      ansible.builtin.apt_repository:
         repo: "ppa:ansible/ansible"
         state: present  
 
     - name: Installing Ansible
-      apt:
+      ansible.builtin.apt:
         pkg:
           - software-properties-common
           - ansible
@@ -23,13 +23,13 @@
 - name: Install Postgres
   block:
     - name: Installing Postgres
-      apt:
+      ansible.builtin.apt:
         name: postgresql
         state: latest
         update_cache: yes
 
     - name: Configure postgres default password
-      shell: sudo -i -u postgres psql -c "ALTER USER postgres WITH password '{{ semaphore.db_password }}';"
+      ansible.builtin.shell: sudo -i -u postgres psql -c "ALTER USER postgres WITH password '{{ semaphore.db_password }}';"
   when: semaphore.install_postgres
 
 - name: Install Ansible Semaphore 
@@ -40,7 +40,7 @@
     config_file: "{{ semaphore.config_dir }}/config.json"
   block:
     - name: Get latest semaphore version
-      shell: |
+      ansible.builtin.shell: |
         curl -s https://api.github.com/repos/ansible-semaphore/semaphore/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
       register: release_tag
       when: not has_version_specified
@@ -52,12 +52,12 @@
         remote_src: yes
 
     - name: Create directory to store config
-      file:
+      ansible.builtin.file:
         path: "{{ semaphore.config_dir }}"
         state: directory
 
     - name: Create hashes and tokens
-      shell: | 
+      ansible.builtin.shell: | 
         head -c32 /dev/urandom | base64
         head -c32 /dev/urandom | base64
         head -c32 /dev/urandom | base64
@@ -68,25 +68,25 @@
         cookie_hash: "{{ tokens_result.stdout_lines[0] }}"
         cookie_encryption: "{{ tokens_result.stdout_lines[1] }}"
         access_key_encryption: "{{ tokens_result.stdout_lines[2] }}"
-      copy:
+      ansible.builtin.copy:
         content: |
           {{ CONFIG_TEMPLATE | to_nice_json(sort_keys=false) }}
         dest: "{{ config_file }}"
     
     - name: Run semaphore migrations
-      shell: sudo semaphore --config {{ config_file }} migrate
+      ansible.builtin.shell: sudo semaphore --config {{ config_file }} migrate
 
     - name: Add default semaphore admin
-      shell: sudo semaphore --config {{ config_file }} user add --admin --login {{ semaphore.admin.login }} --name "{{ semaphore.admin.name }}" --email {{ semaphore.admin.email }} --password {{ semaphore.admin.password }}
+      ansible.builtin.shell: sudo semaphore --config {{ config_file }} user add --admin --login {{ semaphore.admin.login }} --name "{{ semaphore.admin.name }}" --email {{ semaphore.admin.email }} --password {{ semaphore.admin.password }}
 
     - name: Create systemd service file
-      copy:
+      ansible.builtin.copy:
         content: |
           {{ SERVICE_TEMPLATE }}
         dest: "/etc/systemd/system/semaphore.service"
 
     - name: Enable semaphore service
-      shell: |
+      ansible.builtin.shell: |
         sudo systemctl daemon-reload
         sudo systemctl start semaphore
         sudo systemctl enable semaphore

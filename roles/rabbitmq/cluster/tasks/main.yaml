@@ -22,32 +22,32 @@
 
 # Notes: Use cluster's domain name and with custom route /prometheus, /grafana and /alerts
 - name: Setup ingress
-  include_tasks: "{{ INGRESS_SETUP }}"
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
   vars:
     name: rabbitmq-management
     namespace: "{{ rabbitmq.namespace }}"
     definition: "{{ INGRESS_TEMPLATE }}"
 
 - name: Waiting for rabbitmq cluster to be ready
-  shell: "kubectl rollout status -n {{ rabbitmq.namespace }} statefulset/{{ rabbitmq.name }}-server"
+  ansible.builtin.shell: "kubectl rollout status -n {{ rabbitmq.namespace }} statefulset/{{ rabbitmq.name }}-server"
 
 - name: Extract certificates for applications
   block:
-    - import_tasks: ./tasks/task-extract-cert.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ Certificate Authority (CA) cert"
         command: "kubectl get -n {{ rabbitmq.namespace }} secret rmq-tls-secret -o jsonpath='{.data.ca\\.crt}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq.cert.ca }}"
 
-    - import_tasks: ./tasks/task-extract-cert.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate"
         command: "kubectl get -n {{ rabbitmq.namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.crt}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq.cert.cluster }}"
 
-    - import_tasks: ./tasks/task-extract-cert.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate key"
         command: "kubectl get -n {{ rabbitmq.namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.key}'"
@@ -58,18 +58,18 @@
       delegate_to: localhost
       block:
         - name: Convert ca cert to DER (.crt)
-          shell: "openssl x509 -outform der -in {{ rabbitmq.cert.ca }} -out {{ rabbitmq.cert.ca_crt }}"
+          ansible.builtin.shell: "openssl x509 -outform der -in {{ rabbitmq.cert.ca }} -out {{ rabbitmq.cert.ca_crt }}"
           args:
             chdir: "{{ CERT_DIR }}"
 
         - name: Create PKCS12 cert for dotnet clients (.pfx)
-          shell: "openssl pkcs12 -inkey {{ rabbitmq.cert.cluster_key }} -in {{ rabbitmq.cert.cluster }} -export -out {{ rabbitmq.cert.cluster_pfx }} -passout pass:"
+          ansible.builtin.shell: "openssl pkcs12 -inkey {{ rabbitmq.cert.cluster_key }} -in {{ rabbitmq.cert.cluster }} -export -out {{ rabbitmq.cert.cluster_pfx }} -passout pass:"
           args:
             chdir: "{{ CERT_DIR }}"
 
   when: rabbitmq.enable_tls and rabbitmq.export_certs
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "RabbitMQ cluster ({{ rabbitmq.namespace }}) login"
     command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-default-user -o jsonpath='{.data.default_user\\.conf}'"

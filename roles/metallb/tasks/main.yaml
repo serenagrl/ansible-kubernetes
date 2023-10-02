@@ -7,7 +7,7 @@
 - become_user: root
   delegate_to: localhost
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "metallb"
         repo_path: "metallb/metallb"
@@ -17,13 +17,13 @@
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/config/manifests/metallb-native.yaml"]
 
     - name: Set metallb log level to reduce excessive logging
-      shell: |
-              sed -i 's/- --log-level=info$/- --log-level=error/g' "{{ MANIFEST_FILE }}"
+      ansible.builtin.shell: |
+        sed -i 's/- --log-level=info$/- --log-level=error/g' "{{ MANIFEST_FILE }}"
 
     - name: Configure to run on control-planes only
       block:
         - name: Patch tolerations
-          lineinfile:
+          ansible.builtin.lineinfile:
             path: "{{ MANIFEST_FILE }}"
             insertbefore: "nodeSelector:"
             firstmatch: yes
@@ -34,7 +34,7 @@
                         operator: Exists
 
         - name: Patch node selector
-          lineinfile:
+          ansible.builtin.lineinfile:
             path: "{{ MANIFEST_FILE }}"
             insertafter: "nodeSelector:"
             firstmatch: yes
@@ -51,14 +51,14 @@
     definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
 
 - name: Waiting for metallb-system to be ready
-  shell: |
+  ansible.builtin.shell: |
      for d in $(kubectl -n metallb-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n metallb-system deployment/$d; done;
      for d in $(kubectl -n metallb-system get daemonset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n metallb-system daemonset/$d; done;
 
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup

@@ -7,7 +7,7 @@
 - become_user: root
   delegate_to: localhost
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "cert manager"
         namespace: "cert-manager"
@@ -18,7 +18,7 @@
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cert-manager.yaml"]
 
     - name: Configure to run on control-planes only 
-      replace:
+      ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '^ {6}(nodeSelector:)$'
         replace: |4-
@@ -39,13 +39,13 @@
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
   
 - name: Waiting for cert manager deployments to be ready
-  shell: |
+  ansible.builtin.shell: |
     for d in $(kubectl -n cert-manager get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n cert-manager deployment/$d; done;
 
 - name: Create self-signed certificate 
@@ -53,14 +53,14 @@
     - name: Create working directory
       delegate_to: localhost
       become_user: root
-      file:
+      ansible.builtin.file:
         path: "{{ CERT_DIR }}"
         state: directory  
 
     - name: Create self-signed-ca key and certificate
       delegate_to: localhost
       become_user: root
-      shell: |
+      ansible.builtin.shell: |
           openssl genrsa -out {{ KEY_FILE }} 4096
           openssl req -new -x509 -sha256 -days 10950 -subj '/C={{ cert_mgr.cert.country_name }}/ST={{ cert_mgr.cert.state_or_province_name }}/L={{ cert_mgr.cert.locality_name }}/O={{ cert_mgr.cert.organization_name }}/OU={{ cert_mgr.cert.organizational_unit_name }}/CN={{ _kube.hostname }}' -out "{{ CRT_FILE }}" -key "{{ KEY_FILE }}" 
 
@@ -86,20 +86,20 @@
               secretName: self-signed-ca
 
     - name: Configure kubernetes nodes to trust ca certificate
-      include_tasks: trust-cert.yaml
+      ansible.builtin.include_tasks: trust-cert.yaml
       loop: "{{ groups['kubernetes_cluster'] }}"
 
     - delegate_to: localhost
       become_user: root
       block:
         - name: Copy ca certificate to ansible controller cert store
-          copy:
+          ansible.builtin.copy:
             src: "{{ CRT_FILE }}"
             dest: "{{ CERT_STORE }}"
             remote_src: yes
             mode: 0777
 
         - name: Update certificates
-          shell: update-ca-certificates
+          ansible.builtin.shell: update-ca-certificates
 
   when: cert_mgr.self_signed_ca

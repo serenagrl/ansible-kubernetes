@@ -5,25 +5,25 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Gather facts 
-  setup:
+  ansible.builtin.setup:
 
 - name: Configure the user to be used for kubernetes commands
   block:
     - name: Allow {{ _kube.user }} to use sudo without password
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: /etc/sudoers
         line: '{{ _kube.user }} ALL=(ALL) NOPASSWD: ALL'
         validate: 'visudo -cf %s'
 
     - name: Set up authorized keys for {{ _kube.user }}
-      authorized_key:
+      ansible.posix.authorized_key:
         user: "{{ _kube.user }}"
         key: "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
 
 - name: Configure DNS entries
   block:
     - name: Add kubernetes cluster DNS entry to /etc/hosts
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/hosts
         insertafter: "127.0.0.1 localhost"
         line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
@@ -31,7 +31,7 @@
     - name: Add kubernetes kubernetes_nodes DNS entries to /etc/hosts
       vars:
           node: "{{ hostvars[item] }}"
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/hosts
         insertafter: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
         line: "{{ node.ansible_host }} {{ item }}"
@@ -40,25 +40,25 @@
         - kubernetes_cluster
 
 - name: Disable swap
-  shell: |
+  ansible.builtin.shell: |
           swapoff -a
           sed -i '/swap/ s/^\(.*\)$/#\1/g' /etc/fstab
           update-initramfs -u
 
 - name: Enable modprobe modules
-  shell: |
+  ansible.builtin.shell: |
           modprobe overlay
           modprobe br_netfilter
 
 - name: Configure bridged traffic
-  copy:
+  ansible.builtin.copy:
     dest: "/etc/modules-load.d/kubernetes.conf"
     content: |
               overlay
               br_netfilter
 
 - name: Configure bridged traffic to persist across reboots
-  copy:
+  ansible.builtin.copy:
     dest: "/etc/sysctl.d/kubernetes.conf"
     content: |
               net.bridge.bridge-nf-call-ip6tables = 1
@@ -66,10 +66,10 @@
               net.ipv4.ip_forward = 1
 
 - name: Reload sysctl
-  command: sysctl --system
+  ansible.builtin.command: sysctl --system
 
 - name: Installing dependency packages (may take a while)
-  apt:
+  ansible.builtin.apt:
     pkg:
       - curl
       - apt-transport-https
@@ -83,37 +83,36 @@
 - name: Register repositories
   block:
     - name: Get kubernetes gpg
-      get_url:
-        # url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      ansible.builtin.get_url:
         url:  https://dl.k8s.io/apt/doc/apt-key.gpg
         dest: /usr/share/keyrings/kubernetes.gpg
         mode: '0644'
         force: true
 
     - name: Register kubernetes repository
-      apt_repository:
+      ansible.builtin.apt_repository:
         filename: kubernetes
         repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/kubernetes.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
 
     - name: Get containerd gpg
-      get_url:
+      ansible.builtin.get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
         dest: /tmp/containerd.gpg
         mode: '0644'
         force: true
 
     - name: De-armor containerd gpg
-      shell: gpg --dearmor < /tmp/containerd.gpg > /usr/share/keyrings/containerd.gpg
+      ansible.builtin.shell: gpg --dearmor < /tmp/containerd.gpg > /usr/share/keyrings/containerd.gpg
 
     - name: Register containerd repository
-      apt_repository:
+      ansible.builtin.apt_repository:
         filename: containerd
         repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/containerd.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
 
 - name: Installing kubernetes ({{ kubernetes.version }})
   vars:
     release: "{% if kubernetes.version is defined and kubernetes.version and kubernetes.version != 'latest' %}={{ kubernetes.version }}-00{% endif %}"
-  apt:
+  ansible.builtin.apt:
     pkg:
       - "kubelet{{ release }}"
       - "kubeadm{{ release }}"
@@ -122,49 +121,49 @@
     update_cache: true
 
 - name: Hold kubernetes
-  shell: apt-mark hold kubelet kubeadm kubectl
+  ansible.builtin.shell: apt-mark hold kubelet kubeadm kubectl
 
 - name: Install and configure containerd
   block:
     - name: Installing containerd ({{ containerd.version }})
       vars:
           release: "{% if containerd.version is defined and containerd.version and containerd.version != 'latest' %}={{ containerd.version }}{% endif %}"
-      apt:
+      ansible.builtin.apt:
         pkg:
           - "containerd.io{{ release }}"
         state: latest
         update_cache: true
 
     - name: Create containerd certificate directory
-      file:
+      ansible.builtin.file:
         path: "/etc/containerd/certs.d"
         state: directory
         mode: '0755'
 
     - name: Create containerd configuration file
-      shell: |
-              containerd config default | sudo tee /etc/containerd/config.toml
+      ansible.builtin.shell: |
+        containerd config default | sudo tee /etc/containerd/config.toml
 
     - name: Turn on SystemdCgroup
-      replace:
+      ansible.builtin.replace:
         path: /etc/containerd/config.toml
         regexp: 'SystemdCgroup = false'
         replace: 'SystemdCgroup = true'
 
     - name: Set the container certificates directory
-      replace:
+      ansible.builtin.replace:
         path: /etc/containerd/config.toml
         regexp: 'config_path = ""'
         replace: 'config_path = "/etc/containerd/certs.d"'
 
     - name: Restart containerd
-      systemd:
+      ansible.builtin.systemd:
         name: containerd
         state: restarted
         enabled: yes
 
     - name: Configure crictl default endpoint to containerd
-      copy:
+      ansible.builtin.copy:
         dest: "/etc/crictl.yaml"
         content: |
                   runtime-endpoint: unix:///run/containerd/containerd.sock

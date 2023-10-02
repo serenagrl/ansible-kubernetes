@@ -6,7 +6,7 @@
 #
 
 # Setup primary control plane
-- import_playbook: setup-control-plane-primary.yaml
+- ansible.builtin.import_playbook: setup-control-plane-primary.yaml
 
 # Setup sencondary control planes
-- import_playbook: setup-control-plane-other.yaml
+- ansible.builtin.import_playbook: setup-control-plane-other.yaml

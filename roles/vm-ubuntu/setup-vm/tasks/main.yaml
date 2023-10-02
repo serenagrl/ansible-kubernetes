@@ -9,12 +9,12 @@
   run_once: yes
   block:
     - name: Create working directory
-      file:
+      ansible.builtin.file:
         path: "{{ _work_dir }}"
         state: directory        
 
     - name: Installing iso and image tools
-      apt:
+      ansible.builtin.apt:
         pkg:
           - cifs-utils
           - qemu-utils
@@ -23,12 +23,12 @@
         update_cache: true
 
     - name: Downloading ubuntu cloud image 
-      get_url:
+      ansible.builtin.get_url:
         url: "{{ vm.ubuntu_img_url }}"
         dest: "{{ _work_dir }}/ubuntu-cloud.img"     
 
     - name: Generate ssh keys for Ansible host (if required)
-      shell: ssh-keygen -t rsa -q -f "/root/.ssh/id_rsa" -N ""
+      ansible.builtin.shell: ssh-keygen -t rsa -q -f "/root/.ssh/id_rsa" -N ""
       args:
         creates: /root/.ssh/id_rsa
 
@@ -43,7 +43,7 @@
                                    mount_path + '/' + (vm.iso_folder[3:] | replace(backslash, '/'))) }}"
   block:
     - name: Mount winrm_host (Hyper-V Host) shared folders 
-      include_tasks: mount.yaml
+      ansible.builtin.include_tasks: mount.yaml
       vars:
         folder: "{{ item }}"
       loop: 
@@ -52,12 +52,12 @@
       when: not vm.local
 
     - name: Remove previous metadata directory (if any)
-      file:
+      ansible.builtin.file:
         path: "{{ METADATA_DIR }}"
         state: absent
 
     - name: Create meta-data file
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: "{{ METADATA_DIR }}/meta-data"
         create: yes
         block: |
@@ -67,30 +67,30 @@
     - name: Create user-data file
       vars:
         id_rsa_pub: "{{ lookup('file','/root/.ssh/id_rsa.pub') }}"
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: "{{ METADATA_DIR }}/user-data"
         create: yes
         marker: ''
         block: "{{ CLOUD_INIT_TEMPLATE }}"
 
     - name: Create Seed iso
-      shell: |
+      ansible.builtin.shell: |
               mkdir -p "{{ iso_dir }}"
               genisoimage -output "{{ iso_dir }}/{{ inventory_hostname }}-seed.iso" -volid cidata -joliet -rock {{ METADATA_DIR }}
 
     - name: Remove metadata directory 
-      file:
+      ansible.builtin.file:
         path: "{{ METADATA_DIR }}"
         state: absent
       when: _cleanup
 
     - name: Create Virtual Hard Disks directory
-      file:
+      ansible.builtin.file:
         path: "{{ vm_dir }}/{{ inventory_hostname }}/Virtual Hard Disks"
         state: directory    
 
     - name: Check for existing Virtual Hard Disks
-      include_tasks: ./tasks/task-check-vhdx-exist.yaml
+      ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
       vars:
         is_local: "{{ vm.local }}"
         win_folder: "{{ vm.vm_folder }}"
@@ -100,8 +100,8 @@
     - name: Preparing vhdx files for the Virtual Machines
       vars:
         vhd_disk: "{{ vm_dir }}/{{ inventory_hostname }}/Virtual Hard Disks/{{ inventory_hostname }}.vhdx"
-      shell: |
-              qemu-img convert -f qcow2 ubuntu-cloud.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
+      ansible.builtin.shell: |
+        qemu-img convert -f qcow2 ubuntu-cloud.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
       args:
         chdir: "{{ _work_dir }}"
   
@@ -109,7 +109,7 @@
     - name: Unmount winrm_host (Hyper-V Host) shared folders 
       vars:
         folder: "{{ mount_path }}/{{ item }}"
-      shell: |
+      ansible.builtin.shell: |
         (
             flock -x 9
             mount | grep "{{ folder }}" > /dev/null
@@ -161,5 +161,5 @@
         chdir: "{{ vm.iso_folder }}"
       when: _cleanup
 
-- include_role:
+- ansible.builtin.include_role:
     name: vm-ubuntu/setup-ssh

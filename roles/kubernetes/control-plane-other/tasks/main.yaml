@@ -6,20 +6,20 @@
 #
 - name: Get control-plane join command
   delegate_to: "{{ groups['primary_control_plane'][0] }}"
-  shell: echo $(kubeadm token create --print-join-command) --control-plane --certificate-key $(kubeadm init phase upload-certs --upload-certs | grep -vw -e upload-certs)
+  ansible.builtin.shell: echo $(kubeadm token create --print-join-command) --control-plane --certificate-key $(kubeadm init phase upload-certs --upload-certs | grep -vw -e upload-certs)
   register: join_command
   run_once: yes
 
 - name: Join secondary control planes
-  shell: |
+  ansible.builtin.shell: |
     {{ join_command.stdout }}
 
 - become_user: "{{ _kube.user }}"
   delegate_to: "{{ groups['primary_control_plane'][0] }}"
   name: Wait for calico to be ready
-  shell: |
+  ansible.builtin.shell: |
     kubectl wait --for=condition=Available=True tigerastatuses.operator.tigera.io calico
     kubectl wait --for=condition=Available=True tigerastatuses.operator.tigera.io apiserver
 
-- include_role:
+- ansible.builtin.include_role:
     name: kubernetes/control-plane

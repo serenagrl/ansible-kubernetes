@@ -1,3 +1,3 @@
 # Launches the selected ingress type.
-- include_role:
+- ansible.builtin.include_role:
     name: "{{ 'ingress/' + _kube.ingress_type  }}"

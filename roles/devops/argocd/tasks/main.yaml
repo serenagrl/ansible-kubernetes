@@ -6,13 +6,13 @@
 #
 
 # Sets the cluster_address fact
-- import_tasks: ./tasks/task-get-cluster-address.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-cluster-address.yaml
   vars:
     ingress_type: "{{ _kube.ingress_type }}"
 
 - name: Add argocd portal DNS entries to /etc/hosts
   become_user: root
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ cluster_address }} {{ argocd.domain }}"
@@ -29,7 +29,7 @@
 - become_user: root
   delegate_to: localhost
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "argocd"
         namespace: "argocd"
@@ -61,19 +61,19 @@
     definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
 
 - name: Waiting for argocd to be ready
-  shell: |
+  ansible.builtin.shell: |
     for d in $(kubectl -n argocd get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n argocd deployment/$d; done;
     for d in $(kubectl -n argocd get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n argocd statefulset/$d; done;
 
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
 
-- import_tasks: ./tasks/task-get-secret.yaml
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "ArgoCD portal password"
     command: "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}'"
@@ -83,7 +83,7 @@
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
     has_issuer: issuer_status.stdout == "Ready"
   block:  
-    - include_tasks: ./tasks/task-create-certificate.yaml
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
       vars:
         name: argocd
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
@@ -108,14 +108,14 @@
     repo_path: argoproj/argo-cd 
   block:
     - name: Get latest argocd release
-      shell: |
+      ansible.builtin.shell: |
               curl -s https://api.github.com/repos/{{ repo_path }}/releases/latest | grep tag_name | cut -d '"' -f 4
       register: release_tag
       when: not has_version_specified
 
     - name: Download argocd cli
       become_user: root
-      shell: |
+      ansible.builtin.shell: |
         curl -sSL -o /usr/local/bin/argocd https://github.com/{{ repo_path }}/releases/download/{{ release }}/argocd-linux-amd64
         chmod +x /usr/local/bin/argocd
   when: argocd.install_cli

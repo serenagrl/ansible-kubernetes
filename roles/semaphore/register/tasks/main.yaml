@@ -28,7 +28,7 @@
     - name: Authenticate with Semaphore API
       block:
         - name: Login to Semaphore API
-          uri:
+          ansible.builtin.uri:
             url: "{{ SEMAPHORE_URL }}/auth/login"
             method: POST
             headers: 
@@ -41,7 +41,7 @@
           register: login_response
 
         - name: Create access token 
-          uri:
+          ansible.builtin.uri:
             url: "{{ SEMAPHORE_URL }}/user/tokens"
             method: POST
             headers: 
@@ -51,7 +51,7 @@
           register: token_response
 
     - name: Create Default project 
-      uri:
+      ansible.builtin.uri:
         url: "{{ SEMAPHORE_URL }}/projects"
         <<: *http_post_request
         body:
@@ -67,7 +67,7 @@
         key_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/keys"
       block:
         - name: Create key
-          uri:
+          ansible.builtin.uri:
             url: "{{ key_url }}"
             <<: *http_post_request
             body: |
@@ -79,7 +79,7 @@
             status_code: 204 # Access Key Created
 
         - name: Query empty key record
-          uri:
+          ansible.builtin.uri:
             url: "{{ key_url }}/?key%20type=none"
             <<: *http_get_request
           register: key_response
@@ -89,13 +89,13 @@
         repository_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/repositories"
       block:
         - name: Git clone Ansible-Kubernetes repository
-          git:
+          ansible.builtin.git:
             repo: "{{ GITHUB_REPO }}"
             dest: "{{ local_repo_dir }}"
           when: semaphore.project.clone_repository
 
         - name: Create repository (local file system)
-          uri:
+          ansible.builtin.uri:
             url: "{{ repository_url }}"
             <<: *http_post_request
             body: |
@@ -108,7 +108,7 @@
             status_code: 204 # Access Key Created
 
         - name: Query local repository record
-          uri:
+          ansible.builtin.uri:
             url: "{{ repository_url }}"
             <<: *http_get_request
           register: local_repo_response
@@ -118,12 +118,12 @@
         inventory_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/inventory"
       block:
         - name: Read inventory host file
-          slurp:
+          ansible.builtin.slurp:
             src: "{{ local_repo_dir }}/inventories/hosts.yaml"
           register: inventory_file
 
         - name: Create inventory
-          uri:
+          ansible.builtin.uri:
             url: "{{ inventory_url }}"
             <<: *http_post_request
             body: |
@@ -138,7 +138,7 @@
             status_code: 201 # Created
 
         - name: Query default inventory record
-          uri:
+          ansible.builtin.uri:
             url: "{{ inventory_url }}"
             <<: *http_get_request
           register: inventory_response
@@ -148,7 +148,7 @@
         environment_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/environment"
       block:
         - name: Read variable files
-          slurp:
+          ansible.builtin.slurp:
             src: "{{ item }}"
           register: var_files
           loop:
@@ -262,7 +262,7 @@
               - { name: awx/operator }
               - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }
 
-          uri:
+          ansible.builtin.uri:
             url: "{{ environment_url }}"
             <<: *http_post_request
             body: |
@@ -292,7 +292,7 @@
             - { name: "Default Component - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes }
 
         - name: Query all environment records
-          uri:
+          ansible.builtin.uri:
             url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/environment"
             <<: *http_get_request
           register: environment_response
@@ -300,7 +300,7 @@
     - name: Create Default Setup tasks
       vars:
         setup_common_task: "{{ semaphore.project.create.component_environments and semaphore.project.create.component_playbooks }}"
-      uri:
+      ansible.builtin.uri:
         url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/templates"
         <<: *http_post_request
         body: |
@@ -359,7 +359,7 @@
 
   always:
     - name: Delete access token 
-      uri:
+      ansible.builtin.uri:
         url: "{{ SEMAPHORE_URL }}/user/tokens/{{ SEMAPHORE_ACCESS_TOKEN }}"
         method: DELETE
         headers: 

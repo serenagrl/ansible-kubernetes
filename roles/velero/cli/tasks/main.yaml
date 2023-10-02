@@ -15,7 +15,7 @@
     cli_dir: "{{ _work_dir }}/velero-{{ release }}-linux-amd64"
   block:
     - name: Get latest velero release tag
-      shell: |
+      ansible.builtin.shell: |
           curl -s "https://api.github.com/repos/{{ repo_path }}/releases/latest" | grep tag_name | cut -d '"' -f 4
       register: release_tag
       when: velero.cli_version is undefined or not velero.cli_version or velero.cli_version == "latest"
@@ -27,10 +27,10 @@
         remote_src: yes
 
     - name: Move velero cli to /usr/local/bin 
-      shell: mv {{ cli_dir }}/velero /usr/local/bin
+      ansible.builtin.shell: mv {{ cli_dir }}/velero /usr/local/bin
 
     - name: Cleanup files
-      file:
+      ansible.builtin.file:
         path: "{{ cli_dir }}"
         state: absent
       when: _cleanup
