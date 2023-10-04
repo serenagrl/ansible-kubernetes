@@ -17,5 +17,5 @@
   post_tasks:
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
-        checkpoint_name: "Haproxy configured."
+        checkpoint_name: "Load-Balancer configured."
       when: _checkpoint

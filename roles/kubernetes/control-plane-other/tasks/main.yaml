@@ -10,7 +10,8 @@
   register: join_command
   run_once: yes
 
-- name: Join secondary control planes
+# Note: Need to make sure the nodes are joined 1-by-1 to prevent etcd timeout.
+- name: Joining secondary control plane (may take a while)
   ansible.builtin.shell: |
     {{ join_command.stdout }}
 
@@ -20,6 +21,3 @@
   ansible.builtin.shell: |
     kubectl wait --for=condition=Available=True tigerastatuses.operator.tigera.io calico
     kubectl wait --for=condition=Available=True tigerastatuses.operator.tigera.io apiserver
-
-- ansible.builtin.include_role:
-    name: kubernetes/control-plane

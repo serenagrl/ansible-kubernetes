@@ -11,12 +11,15 @@
   gather_facts: no
 
   roles:
-    - kubernetes/control-plane-primary
-    - cni-calico
+    - role: kubernetes/control-plane-primary
+    - role: kubernetes/control-plane
+    - role: kubernetes/remote-admin
+      when: _kube.manage_from_ansible_controller
+    - role: cni-calico
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
-        checkpoint_name: "Control-Plane configured."
+        checkpoint_name: "Kubernetes Cluster Created."
       when: _checkpoint

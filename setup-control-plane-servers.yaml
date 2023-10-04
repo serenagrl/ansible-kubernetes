@@ -10,10 +10,13 @@
 
   roles:
     - role: vm-ubuntu
+    - role: kubernetes/cluster-node
+    - role: kubernetes/register-haproxy
+      when: _kube.register_to_load_balancer
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
-        checkpoint_name: "Ubuntu configured."
+        checkpoint_name: "Pre-requisites installed."
       when: _checkpoint

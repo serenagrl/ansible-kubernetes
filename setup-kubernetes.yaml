@@ -5,8 +5,11 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# Setup control planes
-- ansible.builtin.import_playbook: setup-control-planes.yaml
+# Setup primary control plane
+- ansible.builtin.import_playbook: setup-control-plane-primary.yaml
+
+# Setup sencondary control planes
+- ansible.builtin.import_playbook: setup-control-plane-other.yaml
 
 # Setup worker nodes.
 - ansible.builtin.import_playbook: setup-worker-nodes.yaml

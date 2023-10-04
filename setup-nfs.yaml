@@ -15,3 +15,10 @@
     - role: vm-ubuntu
       when: provision_vm
     - role: nfs/server
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+  post_tasks:
+    - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "NFS Server configured."
+      when: _checkpoint

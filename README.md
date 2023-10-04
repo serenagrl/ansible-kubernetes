@@ -1,82 +1,114 @@
 # Ansible Kubernetes Lab on Hyper-V
-A collection of amateurish-crafted Ansible playbooks and roles to provision a bare metal Kubernetes cluster on Hyper-V for testing/learning purposes. The playbooks and add-ons were tailored to my lab environment and is not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize or enhance it to your needs if you find them useful.
+A collection of amateurish-crafted Ansible playbooks and roles to provision a bare metal Kubernetes cluster on Hyper-V for testing/learning purposes. The playbooks and add-ons were tailored to my lab environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize or enhance them to your needs if you find them useful.
 
-### Pre-requisites
-1. **Knowledge of Ansible is required**.
-2. A Windows machine with lots of processing power, RAM and disk space.
+### Pre-requisites / Setup
+1. A Windows machine with lots of processing power, RAM and disk space with [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed. These playbooks were tested on a Windows host with Ubuntu 22.04 running in WSL.
 
-    Recommended specifications for 3 Control Plane configuration:
+2. [Install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu) on the Ubuntu OS in your WSL. 
 
-    | Hosts          | vCPU | Min. RAM  | Recommended RAM |
-    | -------------- |:----:|  :----:   |     :----:      |
-    | Control planes | 6    | 12GB      | 16GB            |
+3. [Configure Windows Remote Management (WinRM)](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html) on your Windows host that has Hyper-V feature enabled. You can run on Windows 11 or Windows Server 2022 with Hyper-V enabled. You may pool multiple Windows Hyper-V servers together to host the virtual machines but each of them will need to be configured with WinRM properly.
+   
+   **Important!**: Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
 
-    Recommended specifications for 3 Control Planes with Worker Nodes configuration:
+5. Create a Windows user with Administrator (or proper) access rights for ansible in the Windows Hyper-V machine. Example:
 
-    | Hosts          | vCPU | Min. RAM  | Recommended RAM |
-    | -------------- |:----:|  :----:   |     :----:      |
-    | Control planes | 6    | 12GB      | 16GB            |
-    | Worker Nodes   | 4    | 4GB       | 8GB             |
+   ```
+   $username = "ansible"
+   $password = ConvertTo-SecureString "p@ssw0rd" -AsPlainText -Force
+    
+   New-LocalUser -Name $username -Password $password -FullName $username -Description "Ansible Controller Host Account" -AccountNeverExpires -PasswordNeverExpires -UserMayNotChangePassword
+    
+   Add-LocalGroupMember -Group Administrators -Member $username
+   ```
+6. Clone this repository into a directory of your choice in the WSL and [configure the WinRM access](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html) in the `\inventories\hosts.yaml` file. You may need to configure the necessary access rights for the directory.
 
-3. **Ansible must be installed** - These playbooks were tested on a Windows host with Ubuntu running in WSL.
-   Note: You can run on a Windows 11 or Windows Server 2022 with Hyper-V enabled.
-4. **Windows Remote Management (WinRM) must be configured** - The Windows host that manages the Hyper-V VMs must be configured with WinRM.
-5. **A user with proper access rights** must be created in the **Windows host and WSL**.
-6. Some useful links:
-   - [Install Linux on Windows with WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
-   - [Installing Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
-   - [Setting up Ansible on a Windows Host](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html)
-   - [Using WinRM in Ansible Playbooks](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html)
-     
-    **Important!**: Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
+   ```
+   git clone https://github.com/serenagrl/ansible-kubernetes.git 
+   ```
 
-### Notes
+### Requirements for Kubernetes VMs
+1. The specifications for each Kubernetes VM is depending on how much add-ons you wish to install on the Kubernetes Cluster. The following specifications will give you a rough guide on what to set but you are free to adjust them accordingly to your needs:
+
+    Recommended specifications for learning the basics of kubernetes with minimal add-ons installed: 
+
+    | Hosts           | vCPU | Min. RAM  | Recommended RAM |
+    | --------------- |:----:|  :----:   |     :----:      |
+    | Control plane 1 | 4    | 6GB       | 8GB             |
+    | Control plane 2 | 4    | 6GB       | 8GB             |
+    | Control plane 3 | 4    | 6GB       | 8GB             |
+
+    Recommended specifications for a test-lab with majority of the add-ons installed: 
+
+    | Hosts           | vCPU | Min. RAM  | Recommended RAM |
+    | --------------- |:----:|  :----:   |     :----:      |
+    | Control plane 1 | 6    | 8GB       | 12GB            |
+    | Control plane 2 | 6    | 8GB       | 12GB            |
+    | Control plane 3 | 6    | 8GB       | 12GB            |
+
+    Recommended specifications for an SIT environment with nearly all of the add-ons installed and with worker nodes:
+
+    | Hosts           | vCPU | Min. RAM  | Recommended RAM |
+    | --------------- |:----:|  :----:   |     :----:      |
+    | HA Proxy 1      | 2    | 1GB       | 2GB             |
+    | HA Proxy 2      | 2    | 1GB       | 2GB             |
+    | Control plane 1 | 6    | 12GB      | 16GB            |
+    | Control plane 2 | 6    | 12GB      | 16GB            |
+    | Control plane 3 | 6    | 12GB      | 16GB            |
+    | Worker Node 1   | 4    | 4GB       | 8GB             |
+    | *Worker Node 2  | 4    | 4GB       | 8GB             |
+
+    **Note**: You may need to increase the specifications of the worker nodes depending on what you plan to host on them. The number of worker nodes is depending on your requirements and machine resources. If you have enough RAM, it is recommended to allocate 24GBs of RAM to the control planes.
+
+### About These Playbooks
 * The Kubernetes cluster is currently setup to use Calico and Containerd.
 * Both control-planes only or control-planes with worker nodes configuration are supported.
 * Playbooks are defaulted to setup 2 HAProxy load balancers and 3 control-planes. 
 * Configure the IP addresses, host names and domain to your environment in the `\inventories\hosts.yaml`
 * The nfs server is configured to not provision currently. You need to manually enable it.
-* The playbook for creating 2 nodes with HAProxy and keepalived for load-balancing is available.
 * Some roles are deploying sample/example configurations only (although some may deploy production environments)
 * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
 * Version incompatibility may occur i.e. new Kubernetes version may break everything or some add-ons version may not be compatible with each other. Configure the desired versions in the `vars\main.yaml` of the role.
 * If a component fail to install, try using an older release of the component since the playbooks may not be compatible with the latest releases.
 * Be patient if you are running on a slow internet connection. Installation may take some time. Increase the timeout of tasks if your environment needs more time to complete certain tasks.
-* VM Checkpoints will be created to provide safety just in case your installation breaks. These checkpoint may consume a lot of disk space. You may remove the checkpoints when you feel everything is stable to recover disk space.
+* VM Checkpoints will be created to provide safety just in case your installation breaks. These checkpoints may consume a lot of disk space. You may remove the checkpoints when you feel everything is stable to recover the disk space.
 
 ### Playbooks
 
-* The following is a list of playbooks that you can run:
+* The following is a list of playbooks that you can run in sequence:
+
+    | No. | Name | Description |
+    |  :-:| ---- | ---- |
+    |  1. | `setup-load-balancers.yaml` | Optional. Provisions the VMs and configure HAProxy and Keepalived. |
+    |  2. | `setup-control-plane-servers.yaml` | Provisions VMs for the kubernetes control planes and installs the pre-requisites. |
+    |  3. | `setup-control-plane-primary.yaml` | Creates the primary control plane in the kubernetes cluster. |
+    |  4. | `setup-control-plane-other.yaml` | Creates and joins secondary control planes to the kubernetes cluster. |
+    |  5. | `setup-worker-node-servers.yaml` | Optional. Provisions VMs for the kubernetes worker nodes and installs the pre-requisites. |
+    |  6. | `setup-worker-nodes.yaml` | Optional. Creates/Joins worker nodes into the kubernetes cluster. |
+    |  7. | `setup-nfs.yaml` | Installs NFS server on a designated server. Optionally, you can provision a VM for it. |
+    |  8. | `setup-components.yaml` | Install add-on components listed in `_kube.add_ons` in the `group_vars/all.yaml`. |
+
+  **Reminder**
+  1. Set `_kube.register_to_load_balancer: no` and `_kube.cluster.address` to your cp1's IP address if you skipped the creation of load balancers. 
+  2. Specify the addons to install in the `_kube.add_ons` collection in `group_vars\all.yaml`.
+  3. You may rerun the `setup-components.yaml` everytime you change the `_kube.add_ons` but keep an eye on the checkpoints.
+  4. The installation order is important as some add-ons have dependencies on the others. 
+
+* The following is a list of playbooks that merges some of the steps above for convenience:
 
     | Name | Description |
     | ---- | ---- |
-    | `setup-load-balancers.yaml` | Provisions the VMs and configure HAProxy and Keepalived. |
-    | `setup-nfs.yaml` | Installs NFS server on a designated server. Optionally, provisions a VM for it. |
-    | `setup-control-plane-servers.yaml` | Provisions VMs for the kubernetes control planes. |
-    | `setup-control-plane-primary.yaml` | Creates the primary control plane in the kubernetes cluster. |
-    | `setup-control-plane-other.yaml` | Creates and joins secondary control planes to the kubernetes cluster. |
     | `setup-control-planes.yaml` | Creates a kubernetes cluster with both primary and secondary control planes at-one-go. |
-    | `setup-worker-node-servers.yaml` | Provisions VMs for the kubernetes worker nodes. |
-    | `setup-worker-nodes.yaml` | Creates/Joins worker nodes into the kubernetes cluster. |
-    | `setup-all.yaml` | Sets up all kubernetes cluster VMs, creates kubernetes cluster, configures nfs server and install add-on components; all at-one-go. |
-    | `setup-components.yaml` | Install add-on components listed in `_kube.add_ons` in the `group_vars/all.yaml`. |
+    | `setup-kubernetes-servers.yaml` | Provision VMs and install pre-requisites for the control planes and worker nodes at-one-go. |
     | `setup-kubernetes.yaml` | Creates a kubernetes cluster with all control planes and worker nodes at-one-go. |
-    | `setup-semaphore.yaml` | Installs Ansible Semaphore on a designated server. Optionally, provisions a VM for it. |
+
+* The following is a list of playbooks that creates a separate Ansible Semaphore and Controller Host VM (Experimental):
+
+    | Name | Description |
+    | ---- | ---- |
+    | `setup-semaphore.yaml` | Installs Ansible Semaphore on a designated server. Optionally, you can provision a VM for it. |
     | `setup-semaphore-project.yaml` | Creates a new Semaphore project based on this repository. |
 
-#### Advice
-You are advised not to be so ambitious to run `setup-all.yaml` on your first try. Start with these in the following order:
-1. `setup-load-balancers.yaml` - (Optional) Provision the VMs and sets up a pair of HAProxy load balancers. 
-2. `setup-server.yaml` - Provisions the Ubuntu VMs on Hyper-V.
-3. `setup-nfs.yaml` - Sets up a basic nfs server.
-4. Set `_kube.register_to_load_balancer: no` and `_kube.cluster.address` to your cp1's IP address if you skipped the creation of load balancers earlier. 
-5. `setup-kubernetes.yaml` - Sets up the Kubernetes cluster without any add-ons. 
-6. Specify the addons to install in the `_kube.add_ons` collection in `group_vars\all.yaml`.
-7. `setup-components.yaml` to install the add-ons that you want.
-
-Note: You may run the more granula playbooks if you want to setup things slowly and steadily.
-
-You can rerun the `setup-components.yaml` after you have modified the `_kube.add_ons` collection to install the roles you want. The installation order is important as some add-ons have dependencies on the others. 
+  **Note**: These playbooks were made to create an environment for absolute beginners as the Semaphore will provide a User Interface on-top of the playbooks in this repository. However, you are required to configure WinRM and create 2 share folders (Installation Files and Virtual Machines) on each Windows Hyper-V host.
 
 ### Add-ons stack
 * Metallb
@@ -110,7 +142,7 @@ You can rerun the `setup-components.yaml` after you have modified the `_kube.add
 * RabbitMQ
   * Rabbitmq Operator
   * Rabbitmq Cluster
-* Redis  
+* Redis (Cluster or Sentinel)
 * Database
   * Microsoft SQL Server 
 * Velero
