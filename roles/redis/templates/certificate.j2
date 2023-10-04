@@ -12,5 +12,5 @@ spec:
     - "*.{{ service_name }}-headless.{{ redis.namespace }}.svc.cluster.local"
   issuerRef:
     kind: ClusterIssuer
-    name: default-cluster-issuer
+    name: {{ fact_cluster_issuer_name }}
   secretName: redis-tls-secret

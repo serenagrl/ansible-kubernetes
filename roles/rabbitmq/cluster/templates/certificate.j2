@@ -12,5 +12,5 @@ spec:
     - "*.{{ rabbitmq.name }}-nodes.{{ rabbitmq.namespace }}.svc.cluster.local"
   issuerRef:
     kind: ClusterIssuer
-    name: default-cluster-issuer
+    name: {{ fact_cluster_issuer_name }}
   secretName: rmq-tls-secret

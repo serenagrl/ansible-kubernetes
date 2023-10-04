@@ -8,5 +8,5 @@ spec:
     - {{ _kube.hostname }}
   issuerRef:
     kind: ClusterIssuer
-    name: {{ contour.issuer_name }}
+    name: {{ fact_cluster_issuer_name }}
   secretName: root-httpproxy-tls

@@ -12,8 +12,10 @@
     state: present
 
 - name: Create RabbitMQ cluster certificate
-  kubernetes.core.k8s:
-    definition: "{{ CERTIFICATE_TEMPLATE }}"
+  ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: RabbitMQ Cluster
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
   when: rabbitmq.enable_tls
 
 - name: Create RabbitMQ cluster

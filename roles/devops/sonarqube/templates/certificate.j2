@@ -8,5 +8,5 @@ spec:
     - sonarqube.{{ sonarqube.domain }}
   issuerRef:
     kind: ClusterIssuer
-    name: default-cluster-issuer
+    name: {{ fact_cluster_issuer_name }}
   secretName: sonarqube-ingress-tls

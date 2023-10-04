@@ -8,5 +8,5 @@ spec:
     - {{ mssql.domain }}
   issuerRef:
     kind: ClusterIssuer
-    name: default-cluster-issuer
+    name: {{ fact_cluster_issuer_name }}
   secretName: mssql-tls
