@@ -51,6 +51,19 @@
         - "{{ vm.iso_folder.split(backslash).1 }}"
       when: not vm.local
 
+    - name: Create Virtual Hard Disks directory
+      ansible.builtin.file:
+        path: "{{ vm_dir }}/{{ inventory_hostname }}/Virtual Hard Disks"
+        state: directory    
+
+    - name: Check for existing Virtual Hard Disks
+      ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
+      vars:
+        is_local: "{{ vm.local }}"
+        win_folder: "{{ vm.vm_folder }}"
+        host_name: "{{ inventory_hostname }}"
+        disk_name: "{{ inventory_hostname }}"
+
     - name: Remove previous metadata directory (if any)
       ansible.builtin.file:
         path: "{{ METADATA_DIR }}"
@@ -83,19 +96,6 @@
         path: "{{ METADATA_DIR }}"
         state: absent
       when: _cleanup
-
-    - name: Create Virtual Hard Disks directory
-      ansible.builtin.file:
-        path: "{{ vm_dir }}/{{ inventory_hostname }}/Virtual Hard Disks"
-        state: directory    
-
-    - name: Check for existing Virtual Hard Disks
-      ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
-      vars:
-        is_local: "{{ vm.local }}"
-        win_folder: "{{ vm.vm_folder }}"
-        host_name: "{{ inventory_hostname }}"
-        disk_name: "{{ inventory_hostname }}"
 
     - name: Preparing vhdx files for the Virtual Machines
       vars:
@@ -161,5 +161,13 @@
         chdir: "{{ vm.iso_folder }}"
       when: _cleanup
 
-- ansible.builtin.include_role:
+- name: Setup SSH
+  ansible.builtin.include_role:
     name: vm-ubuntu/setup-ssh
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+- name: Checkpoint VM
+  ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
+  vars:
+    checkpoint_name: "Ubuntu configured."
+  when: _checkpoint
