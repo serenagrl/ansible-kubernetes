@@ -322,14 +322,16 @@
         status_code: 201 # Created
       when: item.create
       loop:
-        - { name: "1. Setup Load-Balancers", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_LOAD_BALANCERS }}", desc: "Provision virtual machines and setup HAProxy and Keepalived." }
-        - { name: "2. Setup NFS Server", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Sets up a basic NFS server." }
-        - { name: "3. Provision Control-Planes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_SERVERS }}", desc: "Provision control-plane virtual machines." }
-        - { name: "4. Setup Control-Plane (Primary)", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_PRIMARY }}", desc: "Create primary control-plane in kubernetes cluster." }
-        - { name: "5. Setup Control-Planes (Secondary)", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_OTHER }}", desc: "Join secondary control-planes into kubernetes cluster." }
-        - { name: "6. Provision Worker Nodes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Provision worker node virtual machines." }
-        - { name: "7. Setup Worker Nodes", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Join worker nodes into the kubernetes cluster." }
+        - { name: "1. Setup Load-Balancers", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_LOAD_BALANCERS }}", desc: "Provision Load Balancer VMs, install/configure HAProxy and Keepalived." }
+        - { name: "2. Provision Control-Planes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_SERVERS }}", desc: "Provision control-plane virtual machines." }
+        - { name: "3. Setup Control-Plane (Primary)", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_PRIMARY }}", desc: "Create primary control-plane in kubernetes cluster." }
+        - { name: "4. Setup Control-Planes (Secondary)", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_OTHER }}", desc: "Join secondary control-planes into kubernetes cluster." }
+        - { name: "5. Provision Worker Nodes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Provision worker node virtual machines." }
+        - { name: "6. Setup Worker Nodes", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Join worker nodes into the kubernetes cluster." }
+        - { name: "7. Setup NFS Server", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
         - { name: "8. Setup Basic Components", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install basic kubernetes components." }
+        - { name: "Provision Kubernetes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES_SERVERS }}", desc: "Provision all the virtual machines for the kubernetes cluster." }
+        - { name: "Setup Kubernetes Cluster", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes." }
         - { name: "Setup Semaphore Project", env_name: "Default Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
           # Miscellaneous
         - { name: "Setup Component - Gitlab", env_name: "Default Component - Gitlab", create: "{{ setup_common_task}}", 
