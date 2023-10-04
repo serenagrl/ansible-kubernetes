@@ -20,9 +20,10 @@
     (
         flock -x 9
 
-        mount | grep "{{ nfs.shared }} {{ ansible_host }}"
-        if [ $? -eq "1" ]
+        cat /etc/exports | grep "{{ nfs.shared }} {{ ansible_host }}"
+        if [ $? -eq 1 ]
         then
           echo "{{ nfs.shared }} {{ ansible_host }}(rw,no_subtree_check,no_root_squash)" >> /etc/exports
         fi
+        sudo exportfs -ar
     ) 9>/tmp/nfs.lock
