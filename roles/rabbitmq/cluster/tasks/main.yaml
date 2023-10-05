@@ -38,21 +38,21 @@
     - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ Certificate Authority (CA) cert"
-        command: "kubectl get -n {{ rabbitmq.namespace }} secret rmq-tls-secret -o jsonpath='{.data.ca\\.crt}'"
+        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.ca\\.crt}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq.cert.ca }}"
 
     - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate"
-        command: "kubectl get -n {{ rabbitmq.namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.crt}'"
+        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.tls\\.crt}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq.cert.cluster }}"
 
     - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate key"
-        command: "kubectl get -n {{ rabbitmq.namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.key}'"
+        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.tls\\.key}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq.cert.cluster_key }}"
 

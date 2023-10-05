@@ -1,0 +1,112 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Check if secret exist
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ rabbitmq.topology.secret_name }}"
+    namespace: "{{ rabbitmq.topology.namespace }}"
+  register: rabbitmq_secret
+
+- name: Create CA certificate secret
+  block:
+    - name: Get CA certificate from secret
+      shell: |
+        kubectl get secret -n cert-manager self-signed-ca -o json | jq -r '.data."tls.crt"'
+      register: ca_cert
+
+    - name: Create CA certificate secret
+      kubernetes.core.k8s:
+        api_version: v1
+        kind: Secret
+        name: "{{ rabbitmq.topology.secret_name }}"
+        namespace: "{{ rabbitmq.topology.namespace }}"
+        state: present
+        definition:
+          type: Opaque
+          data:
+            ca.crt: "{{ ca_cert.stdout }}"
+  when: rabbitmq_secret.resources | length <= 0
+
+- name: Install RabbitMQ Messaging Topology Operator
+  become_user: root
+  delegate_to: localhost
+  block:
+    - import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "rabbitmq messaging topology operator"
+        namespace: "{{ rabbitmq.topology.namespace }}"
+        repo_path: "rabbitmq/messaging-topology-operator"
+        pkg_version: "{{ rabbitmq.topology.version | default }}"
+        version_prefix: "v"
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/messaging-topology-operator-with-certmanager.yaml"]
+
+    - name: Remove unused Issuer
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '(apiVersion: cert-manager.io/v1\nkind: Issuer\nmetadata:\n  name: selfsigned-issuer\n  namespace: rabbitmq-system\nspec:\n  selfSigned: {}\n---)'
+        replace: ""
+
+    - name: Change to use ClusterIssuer
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '(    kind: Issuer\n    name: selfsigned-issuer)'
+        replace: |4-
+                  kind: ClusterIssuer
+                  name: default-cluster-issuer
+
+    - name: Create CA certificate volume from secret
+      delegate_to: localhost
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(volumes:)$'
+        replace: |4-
+                  \1
+                  - name: rabbitmq-ca
+                    secret:
+                      defaultMode: 420
+                      secretName: {{ rabbitmq.topology.secret_name }}
+
+    - name: Add VolumeMount to CA certificate
+      delegate_to: localhost
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(volumeMounts:)$'
+        replace: |2-
+                  \1
+                  - mountPath: /etc/ssl/certs/rabbitmq-ca.crt
+                    name: rabbitmq-ca
+                    subPath: ca.crt
+
+    - name: Configure to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane: ""
+                  \1
+      when: not _kube.allow_scheduling
+
+- name: Install RabbitMQ Messaging Topology Operator
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
+  when: _cleanup

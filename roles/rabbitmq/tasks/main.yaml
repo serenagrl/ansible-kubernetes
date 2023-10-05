@@ -2,6 +2,10 @@
 - include_role:
     name: rabbitmq/operator
 
-# Install cluster
+# Install cluster.
 - include_role:
-    name: rabbitmq/cluster    
+    name: rabbitmq/cluster
+
+# Install topology.
+- include_role:
+    name: rabbitmq/topology
