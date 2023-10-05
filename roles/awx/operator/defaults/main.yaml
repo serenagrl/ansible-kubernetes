@@ -3,7 +3,6 @@ PATCH_TOLERATIONS_TEMPLATE: "{{ lookup('template', 'patch-tolerations.j2') | fro
 MANIFEST_TEMPLATE: "{{ lookup('template', 'manifest-' + _kube.ingress_type + '.j2') | from_yaml }}"
 MANIFEST_FOLDER: "{{ _work_dir }}/awx"
 
-CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 HTTP_PROXY_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"
 
 INGRESS_SETUP: "{{ 'ingress-' + _kube.ingress_type + '.yaml' }}"
