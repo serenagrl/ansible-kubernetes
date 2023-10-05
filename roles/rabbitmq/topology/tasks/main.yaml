@@ -83,6 +83,11 @@
                     name: rabbitmq-ca
                     subPath: ca.crt
 
+    - name: Change namespace
+      shell: |
+              sed -i 's/namespace: rabbitmq-system$/namespace: {{ rabbitmq.topology.namespace }}/g' {{ MANIFEST_FILE }}
+      when: rabbitmq.topology.namespace != 'rabbitmq-system'
+
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
