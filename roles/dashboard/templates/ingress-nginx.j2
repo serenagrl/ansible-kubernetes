@@ -21,9 +21,3 @@ spec:
                 name: kubernetes-dashboard
                 port:
                   number: 443
-{% if has_issuer %}
-  tls:
-    - hosts:
-        - {{ _kube.hostname }}
-      secretName: kubernetes-dashboard-ingress-tls
-{% endif %}

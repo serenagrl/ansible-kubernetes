@@ -1,6 +1,4 @@
 - name: Create nginx tls certificate
-  vars:
-    has_issuer: issuer_status.stdout == "Ready"
   block:
     - name: Get default cluster issuer name
       block:
@@ -13,28 +11,6 @@
           ansible.builtin.set_fact:
             fact_cluster_issuer_name: "{{ cluster_issuer_result.resources[0].metadata.name | default('default-cluster-issuer') }}"
       when: fact_cluster_issuer_name is not defined or fact_cluster_issuer_name == ""
-
-    - name: Check for existing cluster issuer
-      ansible.builtin.shell: |
-        kubectl get clusterissuer "{{ fact_cluster_issuer_name }}" -o json | jq .status.conditions[0].type -r
-      register: issuer_status
-      ignore_errors: yes
-
-    - name: Create Ingress TLS Certificate
-      kubernetes.core.k8s:
-        api_version: cert-manager.io/v1
-        kind: Certificate
-        name: "{{ name }}-ingress-cert"
-        namespace: "{{ namespace }}"
-        definition: |
-          spec:
-            secretName: {{ name }}-ingress-tls
-            issuerRef:
-              name: "{{ fact_cluster_issuer_name }}"
-              kind: ClusterIssuer
-            dnsNames:
-              - {{ _kube.hostname }}
-      when: has_issuer
 
     - name: Check for ingress availability
       kubernetes.core.k8s_info:
