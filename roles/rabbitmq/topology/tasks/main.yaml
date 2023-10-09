@@ -15,7 +15,7 @@
 - name: Create CA certificate secret
   block:
     - name: Get CA certificate from secret
-      shell: |
+      ansible.builtin.shell: |
         kubectl get secret -n cert-manager self-signed-ca -o json | jq -r '.data."tls.crt"'
       register: ca_cert
 
@@ -36,7 +36,7 @@
   become_user: root
   delegate_to: localhost
   block:
-    - import_tasks: ./tasks/task-get-manifest.yaml
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "rabbitmq messaging topology operator"
         namespace: "{{ rabbitmq.topology.namespace }}"
@@ -84,7 +84,7 @@
                     subPath: ca.crt
 
     - name: Change namespace
-      shell: |
+      ansible.builtin.shell: |
               sed -i 's/namespace: rabbitmq-system$/namespace: {{ rabbitmq.topology.namespace }}/g' {{ MANIFEST_FILE }}
       when: rabbitmq.topology.namespace != 'rabbitmq-system'
 
@@ -111,7 +111,7 @@
 - name: Cleanup manifest file
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
