@@ -1,0 +1,37 @@
+- name: Create default repositories
+  vars:
+    repository_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/repositories"
+  block:
+    - name: Git clone Ansible-Kubernetes repository
+      ansible.builtin.git:
+        repo: "{{ GITHUB_REPO }}"
+        dest: "{{ local_repo_dir }}"
+      when: semaphore.project.clone_repository
+
+    - name: Create repository (local file system)
+      ansible.builtin.uri:
+        url: "{{ repository_url }}"
+        method: POST
+        headers: 
+          Content-Type: application/json
+          Accept: application/json
+          Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
+        body_format: json
+        body: |
+          {
+            "name": "Local File System",
+            "project_id": {{ SEMAPHORE_PROJECT_ID }},
+            "git_url": "{{ local_repo_dir }}",
+            "ssh_key_id": {{ SEMAPHORE_KEY_ID }}
+          }
+        status_code: 204 # Access Key Created
+
+    - name: Query local repository record
+      ansible.builtin.uri:
+        url: "{{ repository_url }}"
+        method: GET
+        headers: 
+          Content-Type: application/json
+          Accept: application/json
+          Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
+      register: local_repo_response

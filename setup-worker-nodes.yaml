@@ -7,7 +7,7 @@
 
 # Configure Worker nodes
 - name: Join worker nodes
-  hosts: kubernetes_nodes
+  hosts: kubernetes_worker_nodes
   gather_facts: no
 
   roles:
@@ -21,4 +21,4 @@
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Worker node configured."
-      when: _checkpoint and (groups['kubernetes_nodes'] | length > 0)
+      when: _checkpoint and (groups['kubernetes_worker_nodes'] | length > 0)

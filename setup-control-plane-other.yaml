@@ -7,20 +7,12 @@
 
 # Configure secondary control planes
 - name: Join secondary control planes
-  hosts: secondary_control_planes
+  hosts: kubernetes_control_planes[1:]
   serial: 1 # Prevents etcd timeout
   gather_facts: no
 
   roles:
     - kubernetes/control-plane-other
-
-# Configure secondary control planes
-- name: Join secondary control planes
-  hosts: secondary_control_planes
-  gather_facts: no
-
-  roles:
-    - kubernetes/control-plane
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
 - hosts: kubernetes_control_planes

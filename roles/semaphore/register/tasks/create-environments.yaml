@@ -1,0 +1,152 @@
+- name: Create default environments
+  vars:
+    environment_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/environment"
+  block:
+    - name: Read role variable files
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      register: var_files
+      loop:
+        - "{{ local_repo_dir }}/group_vars/all.yaml"
+        - "{{ local_repo_dir }}/roles/vm-ubuntu/setup-vm/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/infrastructure/haproxy/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/nfs/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/metallb/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/cert-manager/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/csi/nfs/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/csi/rook-ceph/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/rabbitmq/cluster/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/redis/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/minio/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/gitlab/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/gitlab-runner/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/sonarqube/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/harbor/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/argocd/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/istio/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/velero/cli/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/velero/server/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/velero/storage-location/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/database/mssql/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/semaphore/register/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/awx/register/vars/main.yaml"
+
+    - name: Create default environments
+      vars:
+        settings:
+          _kube:
+            add_ons: []
+
+        add_on_vars:
+          _kube:
+            add_ons: "{{ item.content }}"
+
+        all_vars: "{{ var_files | community.general.json_query('results[?contains(source, `group_vars/all`)].content') | b64decode | from_yaml }}"
+
+        vm_ubuntu_presets:
+          vm:
+            local: no
+
+        # infrastructure
+        vm_ubuntu_vars: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(vm_ubuntu_presets, recursive=true) | combine(settings, recursive=true) }}"
+        haproxy_vars: "{{ var_files | community.general.json_query('results[?contains(source, `haproxy/vars`)].content') | b64decode | from_yaml }}" 
+        nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/nfs/vars`)].content') | b64decode | from_yaml }}" 
+        infra_vars: "{{ vm_ubuntu_vars | combine(haproxy_vars, recursive=true) | combine(nfs_vars, recursive=true) }}"
+
+        k8s_cluster_vars:
+          - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: cert-manager, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/cert-manager/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: ingress }
+          - { name: dashboard }
+          - { name: monitoring }
+          - { name: metrics-server }
+          - { name: csi/nfs, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}" }
+
+        rabbitmq_vars:
+          - { name: rabbitmq, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/cluster/vars`)].content') | b64decode | from_yaml }}" }
+
+        redis_vars:
+          - { name: redis, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/redis/vars`)].content') | b64decode | from_yaml }}" }
+
+        gitlab_vars:
+          - { name: devops/minio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/minio/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: devops/gitlab, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: devops/gitlab-runner, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab-runner/vars`)].content') | b64decode | from_yaml }}" }
+
+        sonarqube_vars:
+          - { name: devops/sonarqube, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/sonarqube/vars`)].content') | b64decode | from_yaml }}" }
+
+        harbor_vars:
+          - { name: devops/harbor, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/harbor/vars`)].content') | b64decode | from_yaml }}" }
+
+        argocd_vars:
+          - { name: devops/argocd, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/argocd/vars`)].content') | b64decode | from_yaml }}" }
+
+        velero_cli_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/cli/vars`)].content') | b64decode | from_yaml }}"
+        velero_svr_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/server/vars`)].content') | b64decode | from_yaml }}"
+        velero_bsl_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/storage-location/vars`)].content') | b64decode | from_yaml }}"
+        velero_vars:
+          - { name: velero, vars: "{{ velero_cli_vars | combine(velero_svr_vars, recursive=true) | combine(velero_bsl_vars, recursive=true) }}" }         
+
+        semaphore_reg_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml | combine(settings, recursive=true) }}" 
+
+        logging_vars:
+          - { name: logging/elastic-stack }
+          - { name: logging/fluentd }
+
+        istio_vars:
+          - { name: istio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/istio/vars`)].content') | b64decode | from_yaml }}" }
+
+        rook_ceph_vars:
+          - { name: csi/rook-ceph, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/vars`)].content') | b64decode | from_yaml }}" }
+
+        mssql_vars:
+          - { name: database/mssql, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/mssql/vars`)].content') | b64decode | from_yaml }}" }
+
+        awx_reg_vars:
+          - { name: awx/operator }
+          - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }
+
+      ansible.builtin.uri:
+        url: "{{ environment_url }}"
+        method: POST
+        headers: 
+          Content-Type: application/json
+          Accept: application/json
+          Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
+        body_format: json
+        body: |
+          {
+            "name": "{{ item.name }}",
+            "project_id": {{ SEMAPHORE_PROJECT_ID }},
+            "json": {{ item.need_all | ternary(all_vars, []) | combine(item.is_add_on | ternary(add_on_vars, item.content), recursive=true) | to_nice_json(sort_keys=false, indent=2) | to_json }},
+            "env": "{}"      
+          }
+        status_code: 204 # Created
+      when: item.create
+      loop:
+        - { name: "Default Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no, need_all: yes }
+        - { name: "Default Setup Kubernetes", create: yes, content: "{{ k8s_cluster_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", content: "{{ semaphore_reg_vars }}", is_add_on: no, need_all: no }
+        - { name: "Default Component - Gitlab", create: "{{ semaphore.project.create.component_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Sonarqube", create: "{{ semaphore.project.create.component_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Harbor", create: "{{ semaphore.project.create.component_environments }}", content: "{{ harbor_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - ArgoCD", create: "{{ semaphore.project.create.component_environments }}", content: "{{ argocd_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - RabbitMQ", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rabbitmq_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Redis", create: "{{ semaphore.project.create.component_environments }}", content: "{{ redis_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Velero", create: "{{ semaphore.project.create.component_environments }}", content: "{{ velero_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Logging", create: "{{ semaphore.project.create.component_environments }}", content: "{{ logging_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Istio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ istio_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Rook-Ceph", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, need_all: yes }
+
+    - name: Query all environment records
+      ansible.builtin.uri:
+        url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/environment"
+        method: GET
+        headers: 
+          Content-Type: application/json
+          Accept: application/json
+          Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
+      register: environment_response

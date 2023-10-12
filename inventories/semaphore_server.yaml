@@ -1,0 +1,5 @@
+semaphore:
+  hosts:
+    semaphore_server:
+      ansible_hostname: ansible-semaphore
+      ansible_host: 192.168.0.221    

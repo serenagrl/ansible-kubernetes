@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Get join command
-  delegate_to: "{{ groups['primary_control_plane'][0] }}"
+  delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   ansible.builtin.shell: echo $(kubeadm token create --print-join-command)
   register: join_command
   run_once: yes
@@ -15,12 +15,12 @@
     {{ join_command.stdout }}
 
 - become_user: "{{ _kube.user }}"
-  delegate_to: "{{ groups['primary_control_plane'][0] }}"
+  delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   block:
     - name: Wait for node to be ready
       ansible.builtin.shell: |
-        kubectl wait --for=condition=Ready nodes {{ inventory_hostname }} --timeout=600s
+        kubectl wait --for=condition=Ready nodes {{ ansible_hostname }} --timeout=600s
 
     - name: Add labels to node
-      ansible.builtin.shell: kubectl label nodes {{ inventory_hostname }} {{ item }}
+      ansible.builtin.shell: kubectl label nodes {{ ansible_hostname }} {{ item }}
       loop: "{{ kubernetes.worker_node_labels }}"

@@ -7,14 +7,11 @@
 
 # Configure primary control plane
 - name: Create primary control plane
-  hosts: primary_control_plane[0]
+  hosts: kubernetes_control_planes[0]
   gather_facts: no
 
   roles:
     - role: kubernetes/control-plane-primary
-    - role: kubernetes/control-plane
-    - role: kubernetes/remote-admin
-      when: _kube.manage_from_ansible_controller
     - role: cni-calico
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.

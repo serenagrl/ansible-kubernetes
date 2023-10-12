@@ -13,7 +13,7 @@
         path: /etc/haproxy/haproxy.cfg
         insertafter: "default-server"
         line: |2-
-             server {{ inventory_hostname }} {{ ansible_host }}:6443
+             server {{ ansible_hostname }} {{ ansible_host }}:6443
         create: yes
 
     - name: Restart Haproxy to let changes take effect
