@@ -84,7 +84,7 @@
             name: "kubernetes_control_planes"
             description: "{{ awx.setup.name }} Kubernetes control plane group."
             inventory: "{{ NAMES.INVENTORY }}"
-            hosts: "{{ groups['kubernetes_control_planes'] }}"
+            hosts: "{{ groups['kubernetes_control_planes'] | map('extract', hostvars, 'ansible_hostname') }}"
             state: present
 
         - name: Creating group 'kubernetes_worker_nodes'
@@ -94,7 +94,7 @@
             name: "kubernetes_worker_nodes"
             description: "{{ awx.setup.name }} Kubernetes kubernetes worker nodes group."
             inventory: "{{ NAMES.INVENTORY }}"
-            hosts: "{{ groups['kubernetes_worker_nodes'] }}"
+            hosts: "{{ groups['kubernetes_worker_nodes'] | map('extract', hostvars, 'ansible_hostname') }}"
             state: present
 
         - name: Creating group 'kubernetes_cluster'
