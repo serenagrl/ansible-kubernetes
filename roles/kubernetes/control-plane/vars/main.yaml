@@ -1,3 +1,6 @@
 kubernetes:
   # Enter a list of labels you want to add to the control planes.
   control_plane_node_labels:  [ ]
+
+helm:
+  version: 3.12.3 # latest has bugs  

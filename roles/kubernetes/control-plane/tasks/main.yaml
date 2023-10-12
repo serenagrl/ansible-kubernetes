@@ -30,11 +30,14 @@
         repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
 
     - name: Installing helm
+      vars:
+        release: "{% if helm.version is defined and helm.version and helm.version != 'latest' %}={{ helm.version }}-1{% endif %}"
       ansible.builtin.apt:
         pkg:
-          - helm
+          - "helm{{ release }}"
         state: latest
-        update_cache: true
+        update_cache: yes
+        allow_downgrade: yes
 
 # Prevents warnings when running ansible helm commands.
 - become_user: "{{ _kube.user }}"

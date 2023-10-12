@@ -197,7 +197,7 @@
             state: present
           ignore_errors: yes
 
-      rescue:
+      always:
         - name: Delete authentication token
           awx.awx.token:
             controller_host: "{{ AWX_HOST }}"
