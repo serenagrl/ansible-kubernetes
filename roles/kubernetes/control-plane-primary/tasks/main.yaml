@@ -10,4 +10,11 @@
   ansible.builtin.shell: |
           kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }} \
           --upload-certs --cri-socket unix:///var/run/containerd/containerd.sock \
-          --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}  
+          --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}
+          
+- ansible.builtin.include_role:
+    name: kubernetes/control-plane
+
+- ansible.builtin.include_role:
+    name: kubernetes/remote-admin
+  when: remote_admin.enabled          

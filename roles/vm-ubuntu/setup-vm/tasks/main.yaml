@@ -53,7 +53,7 @@
 
     - name: Create Virtual Hard Disks directory
       ansible.builtin.file:
-        path: "{{ vm_dir }}/{{ inventory_hostname }}/Virtual Hard Disks"
+        path: "{{ vm_dir }}/{{ ansible_hostname }}/Virtual Hard Disks"
         state: directory    
 
     - name: Check for existing Virtual Hard Disks
@@ -61,8 +61,8 @@
       vars:
         is_local: "{{ vm.local }}"
         win_folder: "{{ vm.vm_folder }}"
-        host_name: "{{ inventory_hostname }}"
-        disk_name: "{{ inventory_hostname }}"
+        host_name: "{{ ansible_hostname }}"
+        disk_name: "{{ ansible_hostname }}"
 
     - name: Remove previous metadata directory (if any)
       ansible.builtin.file:
@@ -74,8 +74,8 @@
         path: "{{ METADATA_DIR }}/meta-data"
         create: yes
         block: |
-          instance-id: "{{ inventory_hostname }}-id"
-          local-hostname: "{{ inventory_hostname }}"
+          instance-id: "{{ ansible_hostname }}-id"
+          local-hostname: "{{ ansible_hostname }}"
 
     - name: Create user-data file
       vars:
@@ -89,7 +89,7 @@
     - name: Create Seed iso
       ansible.builtin.shell: |
               mkdir -p "{{ iso_dir }}"
-              genisoimage -output "{{ iso_dir }}/{{ inventory_hostname }}-seed.iso" -volid cidata -joliet -rock {{ METADATA_DIR }}
+              genisoimage -output "{{ iso_dir }}/{{ ansible_hostname }}-seed.iso" -volid cidata -joliet -rock {{ METADATA_DIR }}
 
     - name: Remove metadata directory 
       ansible.builtin.file:
@@ -99,7 +99,7 @@
 
     - name: Preparing vhdx files for the Virtual Machines
       vars:
-        vhd_disk: "{{ vm_dir }}/{{ inventory_hostname }}/Virtual Hard Disks/{{ inventory_hostname }}.vhdx"
+        vhd_disk: "{{ vm_dir }}/{{ ansible_hostname }}/Virtual Hard Disks/{{ ansible_hostname }}.vhdx"
       ansible.builtin.shell: |
         qemu-img convert -f qcow2 ubuntu-cloud.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
       args:
@@ -126,7 +126,7 @@
 - name: Create and Launch Virtual Machines
   delegate_to: "{{ winrm_host }}"
   vars:
-    vhd_disk: "{{ vm.vm_folder }}\\{{ inventory_hostname }}\\Virtual Hard Disks\\{{ inventory_hostname }}.vhdx"
+    vhd_disk: "{{ vm.vm_folder }}\\{{ ansible_hostname }}\\Virtual Hard Disks\\{{ ansible_hostname }}.vhdx"
   block:
     - name: Unset sparse flag of vhdx file (fix qemu-img conversion issue)
       ansible.windows.win_powershell:
@@ -138,25 +138,25 @@
       ansible.windows.win_powershell:
         script: |
           Resize-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ vm.specs.disk_size }}
-          New-VM -Name {{ inventory_hostname }} -Generation 2 -MemoryStartupBytes {{ vm.specs.ram_size }} -Path "{{ vm.vm_folder }}" -VHDPath "{{ vhd_disk }}" -SwitchName "{{ vm.switch }}" 
-          Add-VMDvdDrive {{ inventory_hostname }} -Path "{{ vm.iso_folder }}\\{{ inventory_hostname }}-seed.iso"
-          Set-VMProcessor {{ inventory_hostname }} -Count {{ vm.specs.v_cpu }}
-          Set-VMFirmware -VMName {{ inventory_hostname }} -EnableSecureBoot Off 
-          Set-VMMemory {{ inventory_hostname }} -MinimumBytes {{ vm.specs.min_ram_size }} -DynamicMemoryEnabled 1
-          Start-VM {{ inventory_hostname }}
+          New-VM -Name {{ ansible_hostname }} -Generation 2 -MemoryStartupBytes {{ vm.specs.ram_size }} -Path "{{ vm.vm_folder }}" -VHDPath "{{ vhd_disk }}" -SwitchName "{{ vm.switch }}" 
+          Add-VMDvdDrive {{ ansible_hostname }} -Path "{{ vm.iso_folder }}\\{{ ansible_hostname }}-seed.iso"
+          Set-VMProcessor {{ ansible_hostname }} -Count {{ vm.specs.v_cpu }}
+          Set-VMFirmware -VMName {{ ansible_hostname }} -EnableSecureBoot Off 
+          Set-VMMemory {{ ansible_hostname }} -MinimumBytes {{ vm.specs.min_ram_size }} -DynamicMemoryEnabled 1
+          Start-VM {{ ansible_hostname }}
         error_action: stop
 
     - name: Waiting for ubuntu configuration to complete
       ansible.windows.win_powershell:
         script: |
-          Wait-VM -Name {{ inventory_hostname }} -For Reboot
+          Wait-VM -Name {{ ansible_hostname }} -For Reboot
         error_action: stop
 
     - name: Unmount and remove seed.iso 
       ansible.windows.win_powershell:
         script: |
-          Get-VMDvdDrive -VMName "{{ inventory_hostname }}" | Remove-VMDvdDrive
-          rm {{ inventory_hostname }}-seed.iso
+          Get-VMDvdDrive -VMName "{{ ansible_hostname }}" | Remove-VMDvdDrive
+          rm {{ ansible_hostname }}-seed.iso
         error_action: stop
         chdir: "{{ vm.iso_folder }}"
       when: _cleanup

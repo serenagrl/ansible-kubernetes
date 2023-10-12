@@ -28,16 +28,15 @@
         insertafter: "127.0.0.1 localhost"
         line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
 
-    - name: Add kubernetes kubernetes_nodes DNS entries to /etc/hosts
+    - name: Add kubernetes nodes DNS entries to /etc/hosts
       vars:
           node: "{{ hostvars[item] }}"
       ansible.builtin.lineinfile:
         path: /etc/hosts
         insertafter: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
-        line: "{{ node.ansible_host }} {{ item }}"
-      when: item != ansible_hostname
-      with_inventory_hostnames:
-        - kubernetes_cluster
+        line: "{{ node.ansible_host }} {{ node.ansible_hostname }}"
+      when: node.ansible_hostname != ansible_hostname
+      loop: "{{ groups['kubernetes_cluster'] }}"
 
 - name: Disable swap
   ansible.builtin.shell: |

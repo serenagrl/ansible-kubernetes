@@ -74,9 +74,9 @@
 - become_user: "{{ _kube.user }}"
   block:
     - name: Add labels to control planes
-      ansible.builtin.shell: kubectl label nodes {{ inventory_hostname }} {{ item }}
+      ansible.builtin.shell: kubectl label nodes {{ ansible_hostname }} {{ item }}
       loop: "{{ kubernetes.control_plane_node_labels }}"
 
     - name: Remove taint to allow scheduling on control plane nodes 
-      ansible.builtin.shell: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane-
+      ansible.builtin.shell: kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/control-plane-
       when: _kube.allow_scheduling

@@ -20,7 +20,7 @@
     - name: Configure nfs provisioner
       ansible.builtin.shell: |
               sed -i 's/nfs-subdir-external-provisioner$/nfs-provisioner/g' deployment.yaml
-              sed -i "s/10.3.243.101$/{{ hostvars[groups['nfs_server'][0]]['ansible_host'] }}/g" deployment.yaml
+              sed -i "s/10.3.243.101$/{{ hostvars['nfs_server'].ansible_host }}/g" deployment.yaml
               sed -i "s/\/ifs\/kubernetes$/\{{ csi_nfs.shared }}/g" deployment.yaml
               sed -i 's/nfs-subdir-external-provisioner/nfs-provisioner/g' class.yaml
               sed -i 's/nfs-client/{{ csi_nfs.storage_name }}/g' class.yaml

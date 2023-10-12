@@ -4,11 +4,11 @@
     - name: Creating Checkpoint '{{ checkpoint_name }}' for Hyper-V Virtual Machines
       ansible.windows.win_powershell:
         script: |
-          Checkpoint-VM -Name {{ inventory_hostname }} -SnapshotName "{{ checkpoint_name }}"
+          Checkpoint-VM -Name {{ ansible_hostname }} -SnapshotName "{{ checkpoint_name }}"
 
     - name: Wait for Virtual Machines to be ready
       ansible.windows.win_powershell:
         script: |
-          Wait-VM -Name {{ inventory_hostname }} -For Heartbeat
+          Wait-VM -Name {{ ansible_hostname }} -For Heartbeat
 
   when: checkpoint_name is defined

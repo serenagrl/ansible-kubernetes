@@ -5,16 +5,8 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Provision Virtual Machines for Kubernetes Nodes
-  hosts: kubernetes_nodes
+  hosts: kubernetes_worker_nodes
   gather_facts: no
 
   roles:
     - role: vm-ubuntu
-    - role: kubernetes/cluster-node
-
-# Create checkpoints for safety reasons. You can delete the checkpoints later.
-  post_tasks:
-    - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
-      vars:
-        checkpoint_name: "Pre-requisites installed."
-      when: _checkpoint

@@ -16,7 +16,7 @@
       when: "'csi/nfs' in (_kube.add_ons | map(attribute='name') | list)"
 
 - name: Install Kubernetes add-on components
-  hosts: primary_control_plane[0]
+  hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
   gather_facts: no
 

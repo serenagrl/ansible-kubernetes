@@ -23,9 +23,9 @@
       args:
         chdir: "{{ SETUP_DIR }}"
 
-    - name: Scale down the pods for lesser than 3 kubernetes_nodes configuration
+    - name: Scale down the pods for lesser than 3 kubernetes_worker_nodes configuration
       vars:
-        node_count: "{% if (groups['kubernetes_nodes'] | length) > 0 %}{{ groups['kubernetes_nodes'] | length }}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
+        node_count: "{% if (groups['kubernetes_worker_nodes'] | length) > 0 %}{{ groups['kubernetes_worker_nodes'] | length }}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
       ansible.builtin.shell: |
         sed -i 's/replicas: 2/replicas: 1/g' prometheus-prometheus.yaml
         sed -i 's/replicas: 2/replicas: 1/g' prometheusAdapter-deployment.yaml

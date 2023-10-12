@@ -30,7 +30,7 @@ vrrp_instance haproxy-vip {
   unicast_src_ip {{ ansible_host }}      
   unicast_peer {
 {% for host in vars['play_hosts'] %}
-   {% if host != inventory_hostname %}
+   {% if hostvars[host].ansible_hostname != ansible_hostname %}
    {{ hostvars[host].ansible_host }}
    {% endif %}
 {% endfor %}

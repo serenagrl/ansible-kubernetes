@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Get control-plane join command
-  delegate_to: "{{ groups['primary_control_plane'][0] }}"
+  delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   ansible.builtin.shell: echo $(kubeadm token create --print-join-command) --control-plane --certificate-key $(kubeadm init phase upload-certs --upload-certs | grep -vw -e upload-certs)
   register: join_command
   run_once: yes
@@ -16,10 +16,13 @@
     {{ join_command.stdout }}
 
 - become_user: "{{ _kube.user }}"
-  delegate_to: "{{ groups['primary_control_plane'][0] }}"
-  name: Wait for calico to be ready
+  delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
+  name: Waiting for calico to be ready
   ansible.builtin.shell: |
     for d in $(kubectl -n tigera-operator get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n tigera-operator deployment/$d; done;
     for d in $(kubectl -n calico-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-system deployment/$d; done;
     for d in $(kubectl -n calico-system get daemonset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-system daemonset/$d; done;
     for d in $(kubectl -n calico-apiserver get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-apiserver deployment/$d; done;
+
+- ansible.builtin.include_role:
+    name: kubernetes/control-plane

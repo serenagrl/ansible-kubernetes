@@ -1,0 +1,13 @@
+kubernetes_control_planes:
+  hosts: 
+    control-plane-01:
+      ansible_hostname: k8s-cp1
+      ansible_host: 192.168.0.203
+
+    control-plane-02: 
+      ansible_hostname: k8s-cp2
+      ansible_host: 192.168.0.204
+      
+    control-plane-03: 
+      ansible_hostname: k8s-cp3
+      ansible_host: 192.168.0.205
