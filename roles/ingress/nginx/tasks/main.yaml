@@ -28,12 +28,10 @@
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/deploy/static/provider/baremetal/deploy.yaml"]
 
     - name: Configure default ssl certificate
-      ansible.builtin.replace:
-        path: "{{ MANIFEST_FILE }}"
-        regexp: '^\s*(- /nginx-ingress-controller)$'
-        replace: |2-
-                  \1
-                  - --default-ssl-certificate=ingress-nginx/root-ingress-tls
+      ansible.builtin.lineinfile:
+        dest: "/root/zTest/test-manifest.yaml"
+        insertafter: '^\s*(- /nginx-ingress-controller)$'
+        line: "        - --default-ssl-certificate=ingress-nginx/root-ingress-tls"
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
