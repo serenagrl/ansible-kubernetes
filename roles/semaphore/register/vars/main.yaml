@@ -5,7 +5,7 @@ semaphore:
 
     # Indicate whether to automatically clone the github repository.
     # Warning: Execution will fail if the repository is not available in the local file system.
-    clone_repository: no
+    clone_repository: yes
 
     # The root folder where the github repository will be cloned into.
     local_repo_dir: /ansible-playbooks/ansible-kubernetes
