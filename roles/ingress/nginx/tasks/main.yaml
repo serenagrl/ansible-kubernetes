@@ -29,7 +29,7 @@
 
     - name: Configure default ssl certificate
       ansible.builtin.lineinfile:
-        dest: "/root/zTest/test-manifest.yaml"
+        dest: "{{ MANIFEST_FILE }}"
         insertafter: '^\s*(- /nginx-ingress-controller)$'
         line: "        - --default-ssl-certificate=ingress-nginx/root-ingress-tls"
 
