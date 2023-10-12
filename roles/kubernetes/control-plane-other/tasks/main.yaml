@@ -19,5 +19,7 @@
   delegate_to: "{{ groups['primary_control_plane'][0] }}"
   name: Wait for calico to be ready
   ansible.builtin.shell: |
-    kubectl wait --for=condition=Available=True tigerastatuses.operator.tigera.io calico
-    kubectl wait --for=condition=Available=True tigerastatuses.operator.tigera.io apiserver
+    for d in $(kubectl -n tigera-operator get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n tigera-operator deployment/$d; done;
+    for d in $(kubectl -n calico-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-system deployment/$d; done;
+    for d in $(kubectl -n calico-system get daemonset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-system daemonset/$d; done;
+    for d in $(kubectl -n calico-apiserver get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n calico-apiserver deployment/$d; done;
