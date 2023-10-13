@@ -3,4 +3,3 @@ rabbitmq:
     version: latest
     namespace: rabbitmq-system
     enable_tls: yes
-    secret_name: rabbitmq-tls-secret

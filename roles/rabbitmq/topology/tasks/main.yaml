@@ -8,29 +8,9 @@
   kubernetes.core.k8s_info:
     api_version: v1
     kind: Secret
-    name: "{{ rabbitmq.topology.secret_name }}"
+    name: rabbitmq-tls-secret
     namespace: "{{ rabbitmq.topology.namespace }}"
   register: rabbitmq_secret
-
-- name: Create CA certificate secret
-  block:
-    - name: Get CA certificate from secret
-      ansible.builtin.shell: |
-        kubectl get secret -n cert-manager self-signed-ca -o json | jq -r '.data."tls.crt"'
-      register: ca_cert
-
-    - name: Create CA certificate secret
-      kubernetes.core.k8s:
-        api_version: v1
-        kind: Secret
-        name: "{{ rabbitmq.topology.secret_name }}"
-        namespace: "{{ rabbitmq.topology.namespace }}"
-        state: present
-        definition:
-          type: Opaque
-          data:
-            ca.crt: "{{ ca_cert.stdout }}"
-  when: rabbitmq_secret.resources | length <= 0
 
 - name: Install RabbitMQ Messaging Topology Operator
   become_user: root
@@ -60,28 +40,31 @@
                   kind: ClusterIssuer
                   name: default-cluster-issuer
 
-    - name: Create CA certificate volume from secret
-      delegate_to: localhost
-      ansible.builtin.replace:
-        path: "{{ MANIFEST_FILE }}"
-        regexp: '^\s*(volumes:)$'
-        replace: |4-
-                  \1
-                  - name: rabbitmq-ca
-                    secret:
-                      defaultMode: 420
-                      secretName: {{ rabbitmq.topology.secret_name }}
+    - name: Configure to mount CA certificate
+      block:
+        - name: Create CA certificate volume from secret
+          delegate_to: localhost
+          ansible.builtin.replace:
+            path: "{{ MANIFEST_FILE }}"
+            regexp: '^\s*(volumes:)$'
+            replace: |4-
+                      \1
+                      - name: rabbitmq-ca
+                        secret:
+                          defaultMode: 420
+                          secretName: rabbitmq-tls-secret
 
-    - name: Add VolumeMount to CA certificate
-      delegate_to: localhost
-      ansible.builtin.replace:
-        path: "{{ MANIFEST_FILE }}"
-        regexp: '^\s*(volumeMounts:)$'
-        replace: |2-
-                  \1
-                  - mountPath: /etc/ssl/certs/rabbitmq-ca.crt
-                    name: rabbitmq-ca
-                    subPath: ca.crt
+        - name: Add VolumeMount to CA certificate
+          delegate_to: localhost
+          ansible.builtin.replace:
+            path: "{{ MANIFEST_FILE }}"
+            regexp: '^\s*(volumeMounts:)$'
+            replace: |2-
+                      \1
+                      - mountPath: /etc/ssl/certs/rabbitmq-ca.crt
+                        name: rabbitmq-ca
+                        subPath: ca.crt
+      when: rabbitmq.topology.enable_tls and rabbitmq_secret.resources | length > 0
 
     - name: Change namespace
       ansible.builtin.shell: |
