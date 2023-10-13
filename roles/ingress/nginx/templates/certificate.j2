@@ -1,12 +1,12 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: aws-ingress-cert
-  namespace: awx
+  name: ingress-cert
+  namespace: ingress-nginx
 spec:
   dnsNames:
     - {{ _kube.hostname }}
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}
-  secretName: awx-ingress-tls
+  secretName: root-ingress-tls

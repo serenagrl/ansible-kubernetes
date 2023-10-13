@@ -1,1 +1,1 @@
-TEMPLATE: "{{ lookup('template', 'elasticsearch.j2') | from_yaml }}"
+ELASTICSEARCH_CRD_TEMPLATE: "{{ lookup('template', 'elasticsearch.j2') | from_yaml }}"

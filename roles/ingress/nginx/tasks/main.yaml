@@ -4,6 +4,15 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+- name: Create a ingress-nginx namespace
+  kubernetes.core.k8s:
+    name: ingress-nginx
+    kind: Namespace
+
+- include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: ingress-nginx
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
 - become_user: root
   delegate_to: localhost
@@ -17,6 +26,12 @@
         version_prefix: "helm-chart-"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/deploy/static/provider/baremetal/deploy.yaml"]
+
+    - name: Configure default ssl certificate
+      ansible.builtin.lineinfile:
+        dest: "{{ MANIFEST_FILE }}"
+        insertafter: '^\s*(- /nginx-ingress-controller)$'
+        line: "        - --default-ssl-certificate=ingress-nginx/root-ingress-tls"
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:

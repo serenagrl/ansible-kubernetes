@@ -20,9 +20,3 @@ spec:
                 name: rabbitmq
                 port:
                   number: {{ rabbitmq.enable_tls | ternary(15671, 15672) }}
-{% if has_issuer %}
-  tls:
-    - hosts:
-        - {{ _kube.hostname }}
-      secretName: {{ name }}-ingress-tls
-{% endif %}

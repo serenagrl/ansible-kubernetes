@@ -21,9 +21,3 @@ spec:
                 name: kibana-kb-http
                 port:
                   number: 5601
-{% if has_issuer %}
-  tls:
-    - hosts:
-        - {{ _kube.hostname }}
-      secretName: nginx-tls
-{% endif %}
