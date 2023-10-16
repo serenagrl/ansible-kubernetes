@@ -2,6 +2,7 @@ semaphore:
   project:
     # Name of the Project to create in Semaphore.
     name: "Ansible-Kubernetes"
+    hostname_prefix: k8s-lab
 
     # Indicate whether to automatically clone the github repository.
     # Warning: Execution will fail if the repository is not available in the local file system.

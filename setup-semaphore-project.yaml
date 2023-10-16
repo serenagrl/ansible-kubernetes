@@ -10,3 +10,6 @@
 
   roles:
     - role: semaphore/register
+      semaphore:
+        project:
+          hostname_prefix: automata

@@ -33,6 +33,8 @@
 
     - name: Create default environments
       vars:
+        name_prefix: "{{ semaphore.project.hostname_prefix | default('k8s') }}"
+
         settings:
           _kube:
             add_ons: []
@@ -41,7 +43,8 @@
           _kube:
             add_ons: "{{ item.content }}"
 
-        all_vars: "{{ var_files | community.general.json_query('results[?contains(source, `group_vars/all`)].content') | b64decode | from_yaml }}"
+        all_vars: "{{ var_files | community.general.json_query('results[?contains(source, `group_vars/all`)].content') | b64decode | 
+                      replace('k8s-cluster',  name_prefix + '-cluster') | from_yaml }}"
 
         vm_ubuntu_presets:
           vm:
