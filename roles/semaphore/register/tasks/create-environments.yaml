@@ -91,7 +91,7 @@
         velero_vars:
           - { name: velero, vars: "{{ velero_cli_vars | combine(velero_svr_vars, recursive=true) | combine(velero_bsl_vars, recursive=true) }}" }         
 
-        semaphore_reg_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml | combine(settings, recursive=true) }}" 
+        semaphore_reg_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml }}" 
 
         logging_vars:
           - { name: logging/elastic-stack }
