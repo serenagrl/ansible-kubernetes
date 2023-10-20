@@ -1,3 +1,2 @@
 dependencies:
-  - role: common/get-active-nodes
   - role: common/get-cluster-address
