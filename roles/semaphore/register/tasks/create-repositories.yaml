@@ -2,11 +2,15 @@
   vars:
     repository_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/repositories"
   block:
-    - name: Git clone Ansible-Kubernetes repository
-      ansible.builtin.git:
-        repo: "{{ GITHUB_REPO }}"
-        dest: "{{ local_repo_dir }}"
-      when: semaphore.project.clone_repository
+    - name: Create new repository directory
+      ansible.builtin.file:
+        path: "{{ local_repo_dir }}"
+        state: directory
+
+    - name: Copying local file system repository
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/"
+        dest: "{{ local_repo_dir }}/"
 
     - name: Create repository (local file system)
       ansible.builtin.uri:

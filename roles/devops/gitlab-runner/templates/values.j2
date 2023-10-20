@@ -52,7 +52,7 @@ runners:
       [runners.kubernetes]
         image = "{{ gitlab_runner.image }}"
         [[runners.kubernetes.host_aliases]]
-          ip = "{{ cluster_address }}"
+          ip = "{{ fact_cluster_address }}"
           hostnames = ["core.harbor.k8s.local"]
 
         [runners.kubernetes.volumes]

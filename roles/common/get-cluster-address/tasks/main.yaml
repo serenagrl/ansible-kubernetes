@@ -9,7 +9,7 @@
   block:
     - name: Get ingress service information
       vars:
-        item: "{{ services[ingress_type] }}"
+        item: "{{ services[_kube.ingress_type] }}"
       kubernetes.core.k8s_info:
         kind: Service
         namespace: "{{ item.namespace }}"
@@ -22,6 +22,5 @@
       ignore_errors: yes
 
     - ansible.builtin.set_fact:
-        cluster_address: "{% if lb_status.stdout == 'Active' %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ ingress_service.resources[0].spec.externalIPs.0 }}{% endif %}"
+        fact_cluster_address: "{% if lb_status.stdout == 'Active' %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ ingress_service.resources[0].spec.externalIPs.0 }}{% endif %}"
  
-  

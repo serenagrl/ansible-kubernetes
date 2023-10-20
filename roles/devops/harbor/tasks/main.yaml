@@ -5,19 +5,14 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# Sets the cluster_address fact
-- ansible.builtin.import_tasks: ./tasks/task-get-cluster-address.yaml
-  vars:
-    ingress_type: "{{ _kube.ingress_type }}"
-
 - name: Add harbor portal DNS entries to /etc/hosts
   become_user: root
   delegate_to: "{{ item }}"
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ cluster_address }} core.{{ harbor.domain }} notary.{{ harbor.domain }}"
-  loop: "{{ groups[harbor.register_dns_to] }}"
+    line: "{{ fact_cluster_address }} core.{{ harbor.domain }} notary.{{ harbor.domain }}"
+  loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
 
@@ -81,7 +76,7 @@
 
 - name: Configure kubernetes nodes to trust registry certificate
   ansible.builtin.include_tasks: trust-cert.yaml
-  loop: "{{ groups[harbor.register_dns_to] }}"
+  loop: "{{ fact_active_hosts }}"
 
 - name: Cleanup files
   delegate_to: localhost

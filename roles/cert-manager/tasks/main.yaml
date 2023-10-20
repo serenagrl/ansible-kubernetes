@@ -87,7 +87,7 @@
 
     - name: Configure kubernetes nodes to trust ca certificate
       ansible.builtin.include_tasks: trust-cert.yaml
-      loop: "{{ groups['kubernetes_cluster'] + ['localhost'] }}"
+      loop: "{{ fact_active_hosts + ['localhost'] }}"
 
     - delegate_to: localhost
       become_user: root

@@ -44,7 +44,7 @@
             add_ons: "{{ item.content }}"
 
         all_vars: "{{ var_files | community.general.json_query('results[?contains(source, `group_vars/all`)].content') | b64decode | 
-                      replace('k8s-cluster',  name_prefix + '-cluster') | from_yaml }}"
+                      regex_replace('(?<=name: )(.*)(?=-cluster)', name_prefix, multiline=true) | from_yaml }}"
 
         vm_ubuntu_presets:
           vm:
