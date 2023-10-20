@@ -12,12 +12,12 @@
 
 - name: Add argocd portal DNS entries to /etc/hosts
   become_user: root
+  delegate_to: "{{ item }}"
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ cluster_address }} {{ argocd.domain }}"
-  delegate_to: "{{ item }}"
-  loop: "{{ groups[argocd.register_dns_to] }}"
+  loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
 

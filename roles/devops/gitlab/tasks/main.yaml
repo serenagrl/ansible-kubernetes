@@ -17,7 +17,7 @@
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ cluster_address }} gitlab.{{ gitlab.domain }}"
-  loop: "{{ groups[gitlab.register_dns_to] }}"
+  loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
 

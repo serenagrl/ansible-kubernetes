@@ -17,7 +17,7 @@
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ cluster_address }} core.{{ harbor.domain }} notary.{{ harbor.domain }}"
-  loop: "{{ groups[harbor.register_dns_to] }}"
+  loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
 
@@ -81,7 +81,7 @@
 
 - name: Configure kubernetes nodes to trust registry certificate
   ansible.builtin.include_tasks: trust-cert.yaml
-  loop: "{{ groups[harbor.register_dns_to] }}"
+  loop: "{{ fact_active_hosts }}"
 
 - name: Cleanup files
   delegate_to: localhost

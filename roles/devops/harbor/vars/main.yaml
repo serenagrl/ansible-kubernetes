@@ -3,4 +3,3 @@ harbor:
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
   version: latest #1.3.0
   domain: harbor.k8s.local
-  register_dns_to: kubernetes_cluster

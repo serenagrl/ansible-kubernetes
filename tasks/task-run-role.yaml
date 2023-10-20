@@ -16,5 +16,6 @@
         state: absent
   when: role.vars is defined
 
-- ansible.builtin.include_role:
+- name: Run {{ role.name }} role 
+  ansible.builtin.include_role:
     name: "{{ role.name }}"
