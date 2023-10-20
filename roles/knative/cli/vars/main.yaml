@@ -1,0 +1,3 @@
+knative:
+  # The knative cli version
+  cli_version: latest # 1.11.0

@@ -1,0 +1,80 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Istio is the prerequisites for knative-serving
+- name: Check if istio is installed
+  ansible.builtin.shell: kubectl get ns istio-system -o json | jq .status.phase -r
+  register: istio_status
+  ignore_errors: yes
+
+- name: Istio check (Skipped when passed)
+  ansible.builtin.fail:
+    msg: "Please install istio before attempting to setup knative-serving."
+  when: istio_status.stdout != 'Active'
+
+# Sets the cluster_address fact
+- ansible.builtin.import_tasks: ./tasks/task-get-cluster-address.yaml
+  vars:
+    ingress_type: "{{ _kube.ingress_type }}"
+
+- name: Check if harbor is installed
+  ansible.builtin.shell: kubectl get ns harbor-system -o json | jq .status.phase -r
+  register: harbor_status
+  ignore_errors: yes
+
+- name: Create a knative-serving namespace
+  kubernetes.core.k8s:
+    name: knative-serving
+    kind: Namespace
+
+- name: Setting up harbor registry certificate Secret
+  vars:
+    harbor_cert: "{{ result.content }}"
+  block:
+    - name: Get harbor registry certificate
+      ansible.builtin.uri:
+        url: "https://{{ knative.harbor_domain }}/api/v2.0/systeminfo/getcert"
+        validate_certs: no
+        return_content: true
+      register: result
+
+    - name: Create harbor registry certificate Secret
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: |
+          {{ HARBOR_CERTIFICATE_TEMPLATE }}
+
+  when: harbor_status.stdout == 'Active'
+
+- name: Create knative serving
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: |
+      {{ SERVING_TEMPLATE }}
+
+- name: Wait for knative serving to be ready
+  ansible.builtin.shell: |
+    kubectl wait --for=condition=Ready KnativeServing knative-serving -n knative-serving --timeout=300s
+
+- name: Add hostaliases to controller
+  kubernetes.core.k8s:
+    state: patched
+    kind: Deployment
+    name: controller
+    namespace: knative-serving
+    definition: |
+      spec:
+        template:
+          spec:
+            hostAliases:
+              - hostnames:
+                  - {{ knative.harbor_domain }}
+                ip: {{ cluster_address }}
+
+  when: harbor_status.stdout == 'Active'

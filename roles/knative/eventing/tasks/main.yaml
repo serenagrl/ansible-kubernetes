@@ -1,0 +1,28 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Create a knative-eventing namespace
+  kubernetes.core.k8s:
+    name: knative-eventing
+    kind: Namespace
+
+- name: Create knative eventing
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: |
+      {{ EVENTING_TEMPLATE }}
+
+- name: Wait for knative eventing to be ready
+  ansible.builtin.shell: |
+    kubectl wait --for=condition=Ready KnativeEventing knative-eventing -n knative-eventing --timeout=300s
+
+
+- ansible.builtin.include_role: 
+    name: knative/eventing/controller/kafka
+
+- ansible.builtin.include_role: 
+    name: knative/eventing/controller/rabbitmq

@@ -1,0 +1,60 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install RabbitMQ Controller
+  become_user: root
+  delegate_to: localhost
+  block:
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "rabbitmq controller"
+        namespace: "knative-eventing"
+        repo_path: "knative-extensions/eventing-rabbitmq"
+        pkg_version: "{{ knative.rabbitmq.version | default }}"
+        version_prefix: "knative-v"
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/rabbitmq-broker.yaml"]
+
+    - name: Increase readiness probe to fix rabbitmq-broker-webhook-certs not creating. 
+      ansible.builtin.lineinfile:
+        dest: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(periodSeconds: 1)$'
+        line: "            periodSeconds: 30"
+
+    - name: Increase liveness probe to fix rabbitmq-broker-webhook-certs not creating. 
+      ansible.builtin.lineinfile:
+        dest: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(initialDelaySeconds: 20)$'
+        line: "            initialDelaySeconds: 20"
+
+    - name: Configure to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane: ""
+                  \1
+      when: not _kube.allow_scheduling
+
+- name: Install RabbitMQ Controller
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
+  when: _cleanup
