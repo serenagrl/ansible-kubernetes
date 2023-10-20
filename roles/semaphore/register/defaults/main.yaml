@@ -6,8 +6,6 @@ SEMAPHORE_REPO_ID: "{{ (local_repo_response | community.general.json_query('json
 SEMAPHORE_DEFAULT_INVENTORY_ID: "{{ (inventory_response | community.general.json_query('json[?name==`Default`].id'))[0] }}"
 SEMAPHORE_PROJECT_INVENTORY_ID: "{{ (inventory_response | community.general.json_query('json[?name==`Default Semaphore Project`].id'))[0] }}"
 
-GITHUB_REPO: https://www.github.com/serenagrl/ansible-kubernetes
-
 PLAYBOOKS:
   SETUP_CONTROL_PLANE_OTHER: setup-control-plane-other.yaml
   SETUP_CONTROL_PLANE_PRIMARY: setup-control-plane-primary.yaml
