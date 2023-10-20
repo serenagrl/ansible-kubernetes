@@ -1,0 +1,67 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Configuring kafka bridge manifest
+  become_user: root
+  delegate_to: localhost
+  block:
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "Kafka bridge"
+        namespace: "kafka"
+        repo_path: "strimzi/strimzi-kafka-operator"
+        pkg_version: "{{ kafka.bridge.version | default }}"
+        version_prefix: ""
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/bridge/kafka-bridge.yaml"]
+
+    - name: Change name
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '(  name: my-bridge)'
+        replace: "  name: kafka"
+
+    - name: Change bootstrap server
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '(  bootstrapServers: my-cluster-kafka-bootstrap:9092)'
+        replace: "  bootstrapServers: kafka-kafka-bootstrap:9092"
+
+    - name: Configure to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(spec:)$'
+        replace: |8-
+                \1
+                  template:
+                    pod:
+                      tolerations:
+                        - effect: NoSchedule
+                          key: node-role.kubernetes.io/control-plane
+                          operator: Exists
+                      affinity:
+                        nodeAffinity:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            nodeSelectorTerms:
+                            - matchExpressions:
+                              - key: node-role.kubernetes.io/control-plane
+                                operator: Exists
+      when: not _kube.allow_scheduling
+
+- name: Install kafka bridge
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    namespace: kafka
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
+  when: _cleanup

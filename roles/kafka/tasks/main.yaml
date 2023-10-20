@@ -1,0 +1,11 @@
+# Launch operator.
+- ansible.builtin.include_role:
+    name: kafka/operator
+
+# Install cluster.
+- ansible.builtin.include_role:
+    name: kafka/cluster
+
+# Install bridge.
+- ansible.builtin.include_role:
+    name: kafka/bridge
