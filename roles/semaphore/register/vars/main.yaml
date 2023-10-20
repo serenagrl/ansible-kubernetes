@@ -4,11 +4,7 @@ semaphore:
     name: "Ansible-Kubernetes"
     hostname_prefix: k8s-lab
 
-    # Indicate whether to automatically clone the github repository.
-    # Warning: Execution will fail if the repository is not available in the local file system.
-    clone_repository: yes
-
-    # The root folder where the github repository will be cloned into.
+    # The root folder for the playbooks.
     local_repo_dir: /ansible-playbooks/ansible-kubernetes
 
     # Specify whether miscellaneous environments and playbooks are automatically created.

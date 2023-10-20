@@ -6,8 +6,19 @@
 #
 - name: Automatically register project in Semaphore
   vars: 
-    local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ '%Y-%m-%d' | strftime }}"
+    # local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ '%Y-%m-%d' | strftime }}"
+    local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ semaphore.project.hostname_prefix }}-cluster"
   block:
+    - name: Get repository directory information
+      ansible.builtin.stat:
+        path: "{{ local_repo_dir }}"
+      register: repo_dir_stat
+
+    - name: Check if directory exist (Skipped when passed)
+      ansible.builtin.fail:
+        msg: "{{ local_repo_dir }} already exist. Please perform the necessary backup/deletion before proceeding."
+      when: repo_dir_stat.stat.exists
+
     - name: Authenticate with Semaphore API
       ansible.builtin.include_tasks: authenticate.yaml
 

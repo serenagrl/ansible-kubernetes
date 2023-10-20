@@ -108,7 +108,7 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
     | Name | Description |
     | ---- | ---- |
     | `setup-semaphore.yaml` | Installs Ansible Semaphore on a designated server. Optionally, you can provision a VM for it. |
-    | `setup-semaphore-project.yaml` | Creates a new Semaphore project based on this repository. |
+    | `setup-semaphore-project.yaml` | Creates a new Semaphore project. |
 
   **Note**: These playbooks were made to create an environment for absolute beginners as the Semaphore will provide a User Interface on-top of the playbooks in this repository. However, you are required to configure WinRM and create 2 share folders (Installation Files and Virtual Machines) on each Windows Hyper-V host.
 
