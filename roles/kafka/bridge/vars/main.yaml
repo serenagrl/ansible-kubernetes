@@ -1,3 +1,6 @@
 kafka:
   bridge:
-    version: latest
+    name: kafka
+    namespace: kafka 
+
+    cluster_name: kafka

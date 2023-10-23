@@ -1,9 +1,16 @@
 # Author: Serena Yeoh
+# Co-Author: Jaryl Lan
 #
 # Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
+- name: Get current strimzi kafka cluster operator version in kubernetes cluster
+  ansible.builtin.shell: |
+    kubectl get deployments.apps -n strimzi-system -o yaml | grep "value: quay.io/strimzi/operator" -m 1 | cut -d ':' -f 3
+  register: strimzi_operator_version
+
 - name: Configuring kafka bridge manifest
   become_user: root
   delegate_to: localhost
@@ -11,24 +18,24 @@
     - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "Kafka bridge"
-        namespace: "kafka"
+        namespace: "{{ kafka.bridge.namespace }}"
         repo_path: "strimzi/strimzi-kafka-operator"
-        pkg_version: "{{ kafka.bridge.version | default }}"
+        pkg_version: "{{ strimzi_operator_version.stdout | default }}"
         version_prefix: ""
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/bridge/kafka-bridge.yaml"]
 
-    - name: Change name
+    - name: Set kafka bridge name
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '(  name: my-bridge)'
-        replace: "  name: kafka"
+        replace: "  name: {{ kafka.bridge.name }}"
 
     - name: Change bootstrap server
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '(  bootstrapServers: my-cluster-kafka-bootstrap:9092)'
-        replace: "  bootstrapServers: kafka-kafka-bootstrap:9092"
+        replace: "  bootstrapServers: {{ kafka.bridge.cluster_name }}-kafka-bootstrap:9092"
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
