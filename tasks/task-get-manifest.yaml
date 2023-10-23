@@ -14,4 +14,5 @@
       ansible.builtin.get_url:
         url: "{{ item }}"
         dest: "{{ dest }}"
+        force: yes
       loop: "{{ urls }}" 
