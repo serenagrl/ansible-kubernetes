@@ -1,2 +1,2 @@
-kafka:
-  version: latest
+strimzi:
+  version: latest # 0.38.0
