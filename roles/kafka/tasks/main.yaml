@@ -1,6 +1,6 @@
 # Launch operator.
 - ansible.builtin.include_role:
-    name: kafka/operator
+    name: kafka/strimzi
 
 # Install cluster.
 - ansible.builtin.include_role:
