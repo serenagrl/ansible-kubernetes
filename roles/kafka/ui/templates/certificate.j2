@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kafka-ingress-cert
+  namespace: {{ kafka.ui.namespace }}
+spec:
+  dnsNames:
+    - {{ kafka.ui.domain }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: {{ fact_cluster_issuer_name }}
+  secretName: kafka-ingress-tls

@@ -1,0 +1,23 @@
+yamlApplicationConfig:
+  kafka:
+    clusters:
+      - name: kafka
+        bootstrapServers: kafka-kafka-brokers:9092
+
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane:
+
+ingress:
+  enabled: true
+  host: {{ kafka.ui.domain }}
+  tls:
+{% if has_issuer %}
+    enabled: true
+    secretName: kafka-ingress-tls
+{% else %}
+    enabled: false
+{% endif %}

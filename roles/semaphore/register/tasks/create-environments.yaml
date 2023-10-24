@@ -30,6 +30,10 @@
         - "{{ local_repo_dir }}/roles/database/mssql/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/semaphore/register/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/awx/register/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/strimzi/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/cluster/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/bridge/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/ui/vars/main.yaml"
 
     - name: Create default environments
       vars:
@@ -110,6 +114,12 @@
           - { name: awx/operator }
           - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }
 
+        kafka_vars:
+          - { name: kafka/strimzi, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/strimzi/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: kafka/cluster, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/cluster/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: kafka/bridge, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/bridge/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: kafka/ui, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/ui/vars`)].content') | b64decode | from_yaml }}" }
+
       ansible.builtin.uri:
         url: "{{ environment_url }}"
         method: POST
@@ -143,6 +153,7 @@
         - { name: "Default Component - Rook-Ceph", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Kafka", create: "{{ semaphore.project.create.component_environments }}", content: "{{ kafka_vars }}", is_add_on: yes, need_all: yes }
 
     - name: Query all environment records
       ansible.builtin.uri:

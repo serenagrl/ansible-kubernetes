@@ -75,3 +75,5 @@
         playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Microsoft SQL Server." }
     - { name: "Setup Component - AWX", env_name: "Default Component - AWX", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
         playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install AWX and register the environment for use." }
+    - { name: "Setup Component - Kafka", env_name: "Default Component - Kafka", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
+        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Kafka." }

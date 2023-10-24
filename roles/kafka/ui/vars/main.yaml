@@ -1,0 +1,5 @@
+kafka:
+  ui:
+    version: latest
+    namespace: kafka
+    domain: kafka.k8s.local

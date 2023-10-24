@@ -9,3 +9,7 @@
 # Install bridge.
 - ansible.builtin.include_role:
     name: kafka/bridge
+
+# Install kafka-ui.
+- ansible.builtin.include_role:
+    name: kafka/ui
