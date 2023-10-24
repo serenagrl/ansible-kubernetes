@@ -1,5 +1,3 @@
 rabbitmq:
   topology:
     version: latest
-    namespace: rabbitmq-system
-    enable_tls: yes

@@ -5,13 +5,13 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Check if secret exist
-  kubernetes.core.k8s_info:
+- name: Create certificate secret 
+  kubernetes.core.k8s:
     api_version: v1
     kind: Secret
+    namespace: "rabbitmq-system"
     name: rabbitmq-tls-secret
-    namespace: "{{ rabbitmq.topology.namespace }}"
-  register: rabbitmq_secret
+    state: present
 
 - name: Install RabbitMQ Messaging Topology Operator
   become_user: root
@@ -20,7 +20,7 @@
     - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "rabbitmq messaging topology operator"
-        namespace: "{{ rabbitmq.topology.namespace }}"
+        namespace: "rabbitmq-system"
         repo_path: "rabbitmq/messaging-topology-operator"
         pkg_version: "{{ rabbitmq.topology.version | default }}"
         version_prefix: "v"
@@ -41,36 +41,17 @@
                   kind: ClusterIssuer
                   name: default-cluster-issuer
 
-    - name: Configure to mount CA certificate
-      block:
-        - name: Create CA certificate volume from secret
-          delegate_to: localhost
-          ansible.builtin.replace:
-            path: "{{ MANIFEST_FILE }}"
-            regexp: '^\s*(volumes:)$'
-            replace: |4-
-                      \1
-                      - name: rabbitmq-ca
-                        secret:
-                          defaultMode: 420
-                          secretName: rabbitmq-tls-secret
-
-        - name: Add VolumeMount to CA certificate
-          delegate_to: localhost
-          ansible.builtin.replace:
-            path: "{{ MANIFEST_FILE }}"
-            regexp: '^\s*(volumeMounts:)$'
-            replace: |2-
-                      \1
-                      - mountPath: /etc/ssl/certs/rabbitmq-ca.crt
-                        name: rabbitmq-ca
-                        subPath: ca.crt
-      when: rabbitmq.topology.enable_tls and rabbitmq_secret.resources | length > 0
-
-    - name: Change namespace
-      ansible.builtin.shell: |
-              sed -i 's/namespace: rabbitmq-system$/namespace: {{ rabbitmq.topology.namespace }}/g' {{ MANIFEST_FILE }}
-      when: rabbitmq.topology.namespace != 'rabbitmq-system'
+    - name: Create CA certificate volume from secret
+      delegate_to: localhost
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(volumes:)$'
+        replace: |4-
+                  \1
+                  - name: rabbitmq-ca
+                    secret:
+                      defaultMode: 420
+                      secretName: rabbitmq-tls-secret
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:

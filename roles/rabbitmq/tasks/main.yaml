@@ -2,10 +2,10 @@
 - ansible.builtin.include_role:
     name: rabbitmq/operator
 
-# Install cluster.
-- ansible.builtin.include_role:
-    name: rabbitmq/cluster
-
 # Install topology.
 - ansible.builtin.include_role:
     name: rabbitmq/topology
+
+# Install cluster.
+- ansible.builtin.include_role:
+    name: rabbitmq/cluster
