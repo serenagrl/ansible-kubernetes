@@ -70,6 +70,6 @@
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ address }} {{ _kube.hostname }}"
-  loop: "{{ groups['kubernetes_cluster'] }}"
+  loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_unreachable: yes
   ignore_errors: yes    

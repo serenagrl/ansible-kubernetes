@@ -1,0 +1,14 @@
+kubernetes_worker_nodes:
+  hosts:
+    # Uncomment to create worker nodes.
+    worker-node-01:
+      ansible_hostname: k8s-wk1 
+      ansible_host: 192.168.0.206
+
+    # worker-node-02: 
+    #   ansible_hostname: k8s-wk2
+    #   ansible_host: 192.168.0.207
+
+    # worker-node-03: 
+    #   ansible_hostname: k8s-wk3
+    #   ansible_host: 192.168.0.208

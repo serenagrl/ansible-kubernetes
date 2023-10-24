@@ -4,6 +4,10 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+- name: Install pre-requisites
+  ansible.builtin.include_tasks: pre-requisites.yaml
+  loop: "{{ fact_active_hosts }}"
+
 - name: Download and configure nfs provisioner
   delegate_to: localhost
   become_user: root
@@ -20,7 +24,7 @@
     - name: Configure nfs provisioner
       ansible.builtin.shell: |
               sed -i 's/nfs-subdir-external-provisioner$/nfs-provisioner/g' deployment.yaml
-              sed -i "s/10.3.243.101$/{{ hostvars[groups['nfs_server'][0]]['ansible_host'] }}/g" deployment.yaml
+              sed -i "s/10.3.243.101$/{{ hostvars['nfs_server'].ansible_host }}/g" deployment.yaml
               sed -i "s/\/ifs\/kubernetes$/\{{ csi_nfs.shared }}/g" deployment.yaml
               sed -i 's/nfs-subdir-external-provisioner/nfs-provisioner/g' class.yaml
               sed -i 's/nfs-client/{{ csi_nfs.storage_name }}/g' class.yaml

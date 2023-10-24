@@ -1,0 +1,5 @@
+# The kubernetes cluster group.
+kubernetes_cluster:
+  children:
+    kubernetes_control_planes:
+    kubernetes_worker_nodes:

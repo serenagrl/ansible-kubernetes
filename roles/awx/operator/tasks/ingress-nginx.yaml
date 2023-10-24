@@ -1,8 +1,3 @@
-- include_tasks: ./tasks/task-create-certificate.yaml
-  vars:
-    name: awx
-    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
-
 - name: Get ingress class
   kubernetes.core.k8s_info:
     kind: IngressClass

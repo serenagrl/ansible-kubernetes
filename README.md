@@ -1,5 +1,5 @@
 # Ansible Kubernetes Lab on Hyper-V
-A collection of amateurish-crafted Ansible playbooks and roles to provision a bare metal Kubernetes cluster on Hyper-V for testing/learning purposes. The playbooks and add-ons were tailored to my lab environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize or enhance them to your needs if you find them useful.
+A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster on Hyper-V for testing/learning purposes. The playbooks and add-ons were tailored to my lab environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
 
 ### Pre-requisites / Setup
 1. A Windows machine with lots of processing power, RAM and disk space with [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed. These playbooks were tested on a Windows host with Ubuntu 22.04 running in WSL.
@@ -10,7 +10,7 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
    
    **Important!**: Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
 
-5. Create a Windows user with Administrator (or proper) access rights for ansible in the Windows Hyper-V machine. Example:
+4. Create a Windows user with Administrator (or proper) access rights for ansible in the Windows Hyper-V machine. The following is a simple powershell script that you can execute to create the user:
 
    ```
    $username = "ansible"
@@ -20,7 +20,7 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
     
    Add-LocalGroupMember -Group Administrators -Member $username
    ```
-6. Clone this repository into a directory of your choice in the WSL and [configure the WinRM access](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html) in the `\inventories\hosts.yaml` file. You may need to configure the necessary access rights for the directory.
+5. Clone this repository into a directory of your choice in the WSL and [configure WinRM access](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html) in the `\inventories\winrm.yaml` file. You may need to configure the necessary access rights for the directory.
 
    ```
    git clone https://github.com/serenagrl/ansible-kubernetes.git 
@@ -49,8 +49,8 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
 
     | Hosts           | vCPU | Min. RAM  | Recommended RAM |
     | --------------- |:----:|  :----:   |     :----:      |
-    | HA Proxy 1      | 2    | 1GB       | 2GB             |
-    | HA Proxy 2      | 2    | 1GB       | 2GB             |
+    | Load Balancer 1 | 2    | 1GB       | 2GB             |
+    | Load Balancer 2 | 2    | 1GB       | 2GB             |
     | Control plane 1 | 6    | 12GB      | 16GB            |
     | Control plane 2 | 6    | 12GB      | 16GB            |
     | Control plane 3 | 6    | 12GB      | 16GB            |
@@ -63,7 +63,7 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
 * The Kubernetes cluster is currently setup to use Calico and Containerd.
 * Both control-planes only or control-planes with worker nodes configuration are supported.
 * Playbooks are defaulted to setup 2 HAProxy load balancers and 3 control-planes. 
-* Configure the IP addresses, host names and domain to your environment in the `\inventories\hosts.yaml`
+* Configure the IP addresses, host names and domain to your environment in the host files located in `\inventories`
 * The nfs server is configured to not provision currently. You need to manually enable it.
 * Some roles are deploying sample/example configurations only (although some may deploy production environments)
 * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
@@ -88,7 +88,9 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
     |  8. | `setup-components.yaml` | Install add-on components listed in `_kube.add_ons` in the `group_vars/all.yaml`. |
 
   **Reminder**
-  1. Set `_kube.register_to_load_balancer: no` and `_kube.cluster.address` to your cp1's IP address if you skipped the creation of load balancers. 
+  1. If you skipped the creation of load balancers, please remember to: 
+     - Set `load_balancer_enabled: no` in the `inventories\group_vars\kubernetes_control_planes.yaml` file. 
+     - Set `_kube.cluster.address` in the `group_vars\all.yaml` to your cp1's IP address. 
   2. Specify the addons to install in the `_kube.add_ons` collection in `group_vars\all.yaml`.
   3. You may rerun the `setup-components.yaml` everytime you change the `_kube.add_ons` but keep an eye on the checkpoints.
   4. The installation order is important as some add-ons have dependencies on the others. 
@@ -106,7 +108,7 @@ A collection of amateurish-crafted Ansible playbooks and roles to provision a ba
     | Name | Description |
     | ---- | ---- |
     | `setup-semaphore.yaml` | Installs Ansible Semaphore on a designated server. Optionally, you can provision a VM for it. |
-    | `setup-semaphore-project.yaml` | Creates a new Semaphore project based on this repository. |
+    | `setup-semaphore-project.yaml` | Creates a new Semaphore project. |
 
   **Note**: These playbooks were made to create an environment for absolute beginners as the Semaphore will provide a User Interface on-top of the playbooks in this repository. However, you are required to configure WinRM and create 2 share folders (Installation Files and Virtual Machines) on each Windows Hyper-V host.
 

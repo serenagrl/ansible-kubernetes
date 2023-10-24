@@ -6,358 +6,39 @@
 #
 - name: Automatically register project in Semaphore
   vars: 
-    uri_headers: &uri_headers
-      Content-Type: application/json
-      Accept: application/json
-
-    http_get_request: &http_get_request
-      method: GET
-      headers: 
-        <<: *uri_headers
-        Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
-
-    http_post_request: &http_post_request
-      method: POST
-      headers: 
-        <<: *uri_headers
-        Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
-      body_format: json
-
-    local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ '%Y-%m-%d' | strftime }}"
+    # local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ '%Y-%m-%d' | strftime }}"
+    local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ semaphore.project.hostname_prefix }}-cluster"
   block:
-    - name: Authenticate with Semaphore API
-      block:
-        - name: Login to Semaphore API
-          ansible.builtin.uri:
-            url: "{{ SEMAPHORE_URL }}/auth/login"
-            method: POST
-            headers: 
-              <<: *uri_headers
-            body_format: json
-            body:
-              auth: "{{ semaphore.api_login.username }}"  
-              password: "{{ semaphore.api_login.password }}"
-            status_code: 204 # No content
-          register: login_response
+    - name: Get repository directory information
+      ansible.builtin.stat:
+        path: "{{ local_repo_dir }}"
+      register: repo_dir_stat
 
-        - name: Create access token 
-          ansible.builtin.uri:
-            url: "{{ SEMAPHORE_URL }}/user/tokens"
-            method: POST
-            headers: 
-              <<: *uri_headers
-              Cookie: "{{ login_response.cookies_string }}"
-            status_code: 201 # Created
-          register: token_response
+    - name: Check if directory exist (Skipped when passed)
+      ansible.builtin.fail:
+        msg: "{{ local_repo_dir }} already exist. Please perform the necessary backup/deletion before proceeding."
+      when: repo_dir_stat.stat.exists
+
+    - name: Authenticate with Semaphore API
+      ansible.builtin.include_tasks: authenticate.yaml
 
     - name: Create Default project 
-      ansible.builtin.uri:
-        url: "{{ SEMAPHORE_URL }}/projects"
-        <<: *http_post_request
-        body:
-          name: "{{ semaphore.project.name }} ({{ '%Y-%m-%d' | strftime }})"
-          alert: true
-          alert_chat: ""
-          max_parallel_tasks: 0
-        status_code: 201 # Created
-      register: project_response
+      ansible.builtin.include_tasks: create-projects.yaml
 
-    - name: Create none key in key store
-      vars:
-        key_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/keys"
-      block:
-        - name: Create key
-          ansible.builtin.uri:
-            url: "{{ key_url }}"
-            <<: *http_post_request
-            body: |
-              {
-                "name": "None",
-                "type": "none",
-                "project_id": {{ SEMAPHORE_PROJECT_ID }}
-              }
-            status_code: 204 # Access Key Created
+    - name: Create semaphore keys
+      ansible.builtin.include_tasks: create-keys.yaml
 
-        - name: Query empty key record
-          ansible.builtin.uri:
-            url: "{{ key_url }}/?key%20type=none"
-            <<: *http_get_request
-          register: key_response
+    - name: Create semaphore repositories
+      ansible.builtin.include_tasks: create-repositories.yaml
 
-    - name: Create default repositories
-      vars:
-        repository_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/repositories"
-      block:
-        - name: Git clone Ansible-Kubernetes repository
-          ansible.builtin.git:
-            repo: "{{ GITHUB_REPO }}"
-            dest: "{{ local_repo_dir }}"
-          when: semaphore.project.clone_repository
+    - name: Create semaphore inventories
+      ansible.builtin.include_tasks: create-inventories.yaml
 
-        - name: Create repository (local file system)
-          ansible.builtin.uri:
-            url: "{{ repository_url }}"
-            <<: *http_post_request
-            body: |
-              {
-                "name": "Local File System",
-                "project_id": {{ SEMAPHORE_PROJECT_ID }},
-                "git_url": "{{ local_repo_dir }}",
-                "ssh_key_id": {{ SEMAPHORE_KEY_ID }}
-              }
-            status_code: 204 # Access Key Created
+    - name: Create semaphore environments
+      ansible.builtin.include_tasks: create-environments.yaml
 
-        - name: Query local repository record
-          ansible.builtin.uri:
-            url: "{{ repository_url }}"
-            <<: *http_get_request
-          register: local_repo_response
-
-    - name: Create default inventory
-      vars:
-        inventory_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/inventory"
-      block:
-        - name: Read inventory host file
-          ansible.builtin.slurp:
-            src: "{{ local_repo_dir }}/inventories/hosts.yaml"
-          register: inventory_file
-
-        - name: Create inventory
-          ansible.builtin.uri:
-            url: "{{ inventory_url }}"
-            <<: *http_post_request
-            body: |
-              {
-                "name": "Default",
-                "project_id": {{ SEMAPHORE_PROJECT_ID }},
-                "inventory": {{ inventory_file.content | b64decode | to_json }},
-                "ssh_key_id": {{ SEMAPHORE_KEY_ID }},
-                "become_key_id": null,
-                "type": "static-yaml"
-              }
-            status_code: 201 # Created
-
-        - name: Query default inventory record
-          ansible.builtin.uri:
-            url: "{{ inventory_url }}"
-            <<: *http_get_request
-          register: inventory_response
-
-    - name: Create default environments
-      vars:
-        environment_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/environment"
-      block:
-        - name: Read variable files
-          ansible.builtin.slurp:
-            src: "{{ item }}"
-          register: var_files
-          loop:
-            - "{{ local_repo_dir }}/group_vars/all.yaml"
-            - "{{ local_repo_dir }}/roles/vm-ubuntu/setup-vm/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/infrastructure/haproxy/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/nfs/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/metallb/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/cert-manager/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/csi/nfs/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/csi/rook-ceph/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/rabbitmq/cluster/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/redis/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/devops/minio/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/devops/gitlab/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/devops/gitlab-runner/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/devops/sonarqube/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/devops/harbor/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/devops/argocd/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/istio/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/velero/cli/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/velero/server/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/velero/storage-location/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/database/mssql/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/semaphore/register/vars/main.yaml"
-            - "{{ local_repo_dir }}/roles/awx/register/vars/main.yaml"
-
-        - name: Create default environments
-          vars:
-            settings:
-              _kube:
-                add_ons: []
-
-            add_on_vars:
-              _kube:
-                add_ons: "{{ item.content }}"
-
-            all_vars: "{{ var_files | community.general.json_query('results[?contains(source, `group_vars/all`)].content') | b64decode | from_yaml }}"
-
-            # infrastructure
-            vm_ubuntu_vars: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(settings, recursive=true) }}"
-            haproxy_vars: "{{ var_files | community.general.json_query('results[?contains(source, `haproxy/vars`)].content') | b64decode | from_yaml }}" 
-            nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/nfs/vars`)].content') | b64decode | from_yaml }}" 
-            infra_vars: "{{ vm_ubuntu_vars | combine(haproxy_vars, recursive=true) | combine(nfs_vars, recursive=true) }}"
-
-            # kubernetes cluster
-            k8s_cluster_vars:
-              - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }
-              - { name: cert-manager, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/cert-manager/vars`)].content') | b64decode | from_yaml }}" }
-              - { name: ingress }
-              - { name: dashboard }
-              - { name: monitoring }
-              - { name: metrics-server }
-              - { name: csi/nfs, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}" }
-
-            # rabbitmq         
-            rabbitmq_vars:
-              - { name: rabbitmq, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/cluster/vars`)].content') | b64decode | from_yaml }}" }
-
-            # redis
-            redis_vars:
-              - { name: redis, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/redis/vars`)].content') | b64decode | from_yaml }}" }
-
-            # gitlab
-            gitlab_vars:
-              - { name: devops/minio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/minio/vars`)].content') | b64decode | from_yaml }}" }
-              - { name: devops/gitlab, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab/vars`)].content') | b64decode | from_yaml }}" }
-              - { name: devops/gitlab-runner, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab-runner/vars`)].content') | b64decode | from_yaml }}" }
-
-            # sonarqube
-            sonarqube_vars:
-              - { name: devops/sonarqube, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/sonarqube/vars`)].content') | b64decode | from_yaml }}" }
-
-            # harbor
-            harbor_vars:
-              - { name: devops/harbor, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/harbor/vars`)].content') | b64decode | from_yaml }}" }
-
-            # devops
-            argocd_vars:
-              - { name: devops/argocd, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/argocd/vars`)].content') | b64decode | from_yaml }}" }
-
-            # velero
-            velero_cli_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/cli/vars`)].content') | b64decode | from_yaml }}"
-            velero_svr_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/server/vars`)].content') | b64decode | from_yaml }}"
-            velero_bsl_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/storage-location/vars`)].content') | b64decode | from_yaml }}"
-            velero_vars:
-              - { name: velero, vars: "{{ velero_cli_vars | combine(velero_svr_vars, recursive=true) | combine(velero_bsl_vars, recursive=true) }}" }         
-
-            # semaphore register
-            semaphore_reg_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml | combine(settings, recursive=true) }}" 
-
-            # logging
-            logging_vars:
-              - { name: logging/elastic-stack }
-              - { name: logging/fluentd }
-
-            # istio
-            istio_vars:
-              - { name: istio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/istio/vars`)].content') | b64decode | from_yaml }}" }
-
-            # rook-ceph
-            rook_ceph_vars:
-              - { name: csi/rook-ceph, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/vars`)].content') | b64decode | from_yaml }}" }
-
-            # mssql
-            mssql_vars:
-              - { name: database/mssql, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/mssql/vars`)].content') | b64decode | from_yaml }}" }
-
-            # awx and register
-            awx_reg_vars:
-              - { name: awx/operator }
-              - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }
-
-          ansible.builtin.uri:
-            url: "{{ environment_url }}"
-            <<: *http_post_request
-            body: |
-              {
-                "name": "{{ item.name }}",
-                "project_id": {{ SEMAPHORE_PROJECT_ID }},
-                "json": {{ all_vars | combine(item.is_add_on | ternary(add_on_vars, item.content), recursive=true) | to_nice_json(sort_keys=false, indent=2) | to_json }},
-                "env": "{}"      
-              }
-            status_code: 204 # Created
-          when: item.create
-          loop:
-            - { name: "Default Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no }
-            - { name: "Default Setup Kubernetes", create: yes, content: "{{ k8s_cluster_vars }}", is_add_on: yes }
-            - { name: "Default Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", content: "{{ semaphore_reg_vars }}", is_add_on: no }
-            - { name: "Default Component - Gitlab", create: "{{ semaphore.project.create.component_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes }
-            - { name: "Default Component - Sonarqube", create: "{{ semaphore.project.create.component_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes }
-            - { name: "Default Component - Harbor", create: "{{ semaphore.project.create.component_environments }}", content: "{{ harbor_vars }}", is_add_on: yes }
-            - { name: "Default Component - ArgoCD", create: "{{ semaphore.project.create.component_environments }}", content: "{{ argocd_vars }}", is_add_on: yes }
-            - { name: "Default Component - RabbitMQ", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rabbitmq_vars }}", is_add_on: yes }
-            - { name: "Default Component - Redis", create: "{{ semaphore.project.create.component_environments }}", content: "{{ redis_vars }}", is_add_on: yes }
-            - { name: "Default Component - Velero", create: "{{ semaphore.project.create.component_environments }}", content: "{{ velero_vars }}", is_add_on: yes }
-            - { name: "Default Component - Logging", create: "{{ semaphore.project.create.component_environments }}", content: "{{ logging_vars }}", is_add_on: yes }
-            - { name: "Default Component - Istio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ istio_vars }}", is_add_on: yes }
-            - { name: "Default Component - Rook-Ceph", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes }
-            - { name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes }
-            - { name: "Default Component - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes }
-
-        - name: Query all environment records
-          ansible.builtin.uri:
-            url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/environment"
-            <<: *http_get_request
-          register: environment_response
-
-    - name: Create Default Setup tasks
-      vars:
-        setup_common_task: "{{ semaphore.project.create.component_environments and semaphore.project.create.component_playbooks }}"
-      ansible.builtin.uri:
-        url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/templates"
-        <<: *http_post_request
-        body: |
-          {
-            "project_id": {{ SEMAPHORE_PROJECT_ID }},
-            "inventory_id": {{ SEMAPHORE_INVENTORY_ID }},
-            "repository_id": {{ SEMAPHORE_REPO_ID }},
-            "environment_id": {{ (environment_response | community.general.json_query('json[?name==`' + item.env_name + '`].id')).0 }},
-            "view_id": null,
-            "name": "{{ item.name }}",
-            "playbook": "{{ item.playbook }}",
-            "description": "{{ item.desc }}",
-            "arguments": null,
-            "allow_override_args_in_task": false,
-            "limit": "",
-            "suppress_success_alerts": true,
-            "survey_vars": []
-          }
-        status_code: 201 # Created
-      when: item.create
-      loop:
-        - { name: "1. Setup Load-Balancers", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_LOAD_BALANCERS }}", desc: "Provision Load Balancer VMs, install/configure HAProxy and Keepalived." }
-        - { name: "2. Provision Control-Planes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_SERVERS }}", desc: "Provision control-plane virtual machines." }
-        - { name: "3. Setup Control-Plane (Primary)", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_PRIMARY }}", desc: "Create primary control-plane in kubernetes cluster." }
-        - { name: "4. Setup Control-Planes (Secondary)", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_OTHER }}", desc: "Join secondary control-planes into kubernetes cluster." }
-        - { name: "5. Provision Worker Nodes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Provision worker node virtual machines." }
-        - { name: "6. Setup Worker Nodes", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Join worker nodes into the kubernetes cluster." }
-        - { name: "7. Setup NFS Server", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
-        - { name: "8. Setup Basic Components", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install basic kubernetes components." }
-        - { name: "Provision Kubernetes VMs", env_name: "Default Setup Infrastructure", create: yes, playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES_SERVERS }}", desc: "Provision all the virtual machines for the kubernetes cluster." }
-        - { name: "Setup Kubernetes Cluster", env_name: "Default Setup Kubernetes", create: yes, playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes." }
-        - { name: "Setup Semaphore Project", env_name: "Default Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
-          # Miscellaneous
-        - { name: "Setup Component - Gitlab", env_name: "Default Component - Gitlab", create: "{{ setup_common_task}}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Gitlab and Gitlab Runner. (Also installs Minio)." }
-        - { name: "Setup Component - Sonarqube", env_name: "Default Component - Sonarqube", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Sonarqube." }
-        - { name: "Setup Component - Harbor", env_name: "Default Component - Harbor", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Harbor container registry." }
-        - { name: "Setup Component - ArgoCD", env_name: "Default Component - ArgoCD", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install ArgoCD." }
-        - { name: "Setup Component - RabbitMQ", env_name: "Default Component - RabbitMQ", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install RabbitMQ Operator and creates a RabbitMQ Cluster." }
-        - { name: "Setup Component - Redis", env_name: "Default Component - Redis", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Create a Redis cluster or Sentinel." }
-        - { name: "Setup Component - Velero", env_name: "Default Component - Velero", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Velero." }
-        - { name: "Setup Component - Logging", env_name: "Default Component - Logging", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Logging components. (Elasticsearch, Kibana, Fluentd)" }
-        - { name: "Setup Component - Istio", env_name: "Default Component - Istio", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Istio" }
-        - { name: "Setup Component - Rook-Ceph", env_name: "Default Component - Rook-Ceph", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs the Rook-Ceph CSI." }
-        - { name: "Setup Component - MSSQL Server", env_name: "Default Component - MSSQL Server", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install Microsoft SQL Server." }
-        - { name: "Setup Component - AWX", env_name: "Default Component - AWX", create: "{{ setup_common_task }}", 
-            playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Install AWX and register the environment for use." }
+    - name: Create semaphore tasks
+      ansible.builtin.include_tasks: create-tasks.yaml
 
   always:
     - name: Delete access token 
@@ -365,7 +46,8 @@
         url: "{{ SEMAPHORE_URL }}/user/tokens/{{ SEMAPHORE_ACCESS_TOKEN }}"
         method: DELETE
         headers: 
-          <<: *uri_headers
+          Content-Type: application/json
+          Accept: application/json
           Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
         status_code: 204 # No content
       when: token_response is defined and token_response != None

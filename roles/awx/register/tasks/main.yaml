@@ -55,7 +55,7 @@
           awx.awx.host:
             controller_host: "{{ AWX_HOST }}"
             controller_oauthtoken: "{{ controller_token }}"
-            name: "{{ item }}"
+            name: "{{ hostvars[item].ansible_hostname }}"
             description: "{{ awx.setup.name }} Kubernetes Control Plane."
             inventory: "{{ NAMES.INVENTORY }}"
             variables:
@@ -68,14 +68,14 @@
           awx.awx.host:
             controller_host: "{{ AWX_HOST }}"
             controller_oauthtoken: "{{ controller_token }}"
-            name: "{{ item }}"
+            name: "{{ hostvars[item].ansible_hostname }}"
             description: "{{ awx.setup.name }} Kubernetes node."
             inventory: "{{ NAMES.INVENTORY }}"
             variables:
               ansible_host: "{{ hostvars[item].ansible_host }}"
               ansible_user: "{{ hostvars[item].ansible_user }}"
             state: present
-          loop: "{{ groups['kubernetes_nodes'] }}"
+          loop: "{{ groups['kubernetes_worker_nodes'] }}"
 
         - name: Creating group 'kubernetes_control_planes'
           awx.awx.group:
@@ -84,17 +84,17 @@
             name: "kubernetes_control_planes"
             description: "{{ awx.setup.name }} Kubernetes control plane group."
             inventory: "{{ NAMES.INVENTORY }}"
-            hosts: "{{ groups['kubernetes_control_planes'] }}"
+            hosts: "{{ groups['kubernetes_control_planes'] | map('extract', hostvars, 'ansible_hostname') }}"
             state: present
 
-        - name: Creating group 'kubernetes_nodes'
+        - name: Creating group 'kubernetes_worker_nodes'
           awx.awx.group:
             controller_host: "{{ AWX_HOST }}"
             controller_oauthtoken: "{{ controller_token }}"
-            name: "kubernetes_nodes"
-            description: "{{ awx.setup.name }} Kubernetes kubernetes_nodes group."
+            name: "kubernetes_worker_nodes"
+            description: "{{ awx.setup.name }} Kubernetes kubernetes worker nodes group."
             inventory: "{{ NAMES.INVENTORY }}"
-            hosts: "{{ groups['kubernetes_nodes'] }}"
+            hosts: "{{ groups['kubernetes_worker_nodes'] | map('extract', hostvars, 'ansible_hostname') }}"
             state: present
 
         - name: Creating group 'kubernetes_cluster'
@@ -106,7 +106,7 @@
             inventory: "{{ NAMES.INVENTORY }}"
             children:
               - "kubernetes_control_planes"
-              - "kubernetes_nodes"
+              - "kubernetes_worker_nodes"
             state: present
 
         - name: Creating source control credential

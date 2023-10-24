@@ -21,9 +21,3 @@ spec:
                 name: rook-ceph-mgr-dashboard
                 port:
                   number: 8443
-{% if has_issuer %}
-  tls:
-    - hosts:
-        - {{ _kube.hostname }}
-      secretName: nginx-tls
-{% endif %}

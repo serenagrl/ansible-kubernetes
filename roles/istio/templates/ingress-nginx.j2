@@ -16,9 +16,3 @@ spec:
                 name: kiali
                 port:
                   number: 20001
-{% if has_issuer %}
-  tls:
-    - hosts:
-        - {{ _kube.hostname }}
-      secretName: kiali-ingress-tls
-{% endif %}

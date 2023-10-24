@@ -1,0 +1,109 @@
+- name: Create default inventories
+  vars:
+    name_prefix: "{{ semaphore.project.hostname_prefix | default('k8s') }}"
+
+    inv_cp: "{{ (inventory_files | community.general.json_query('results[?contains(source, `kubernetes_control_planes`)].content') | b64decode | 
+                 regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
+    inv_cp_vars:
+      kubernetes_control_planes:
+        vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `kubernetes_control_planes`)].content') | b64decode | from_yaml) }}"
+
+    inv_wk: "{{ (inventory_files | community.general.json_query('results[?contains(source, `kubernetes_worker_nodes`)].content') | b64decode | 
+                 regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
+    inv_wk_vars:
+      kubernetes_worker_nodes:
+        vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `kubernetes_worker_nodes`)].content') | b64decode | from_yaml) }}"
+
+    inv_k8s: "{{ (inventory_files | community.general.json_query('results[?contains(source, `kubernetes_cluster`)].content') | b64decode | from_yaml) }}"
+
+    inv_lb: "{{ (inventory_files | community.general.json_query('results[?contains(source, `load_balancers`)].content') | b64decode | 
+                 regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
+    inv_lb_vars:
+      load_balancers:
+        vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `load_balancers`)].content') | b64decode | from_yaml) }}"
+
+    inv_nfs: "{{ (inventory_files | community.general.json_query('results[?contains(source, `nfs_server`)].content') | b64decode | 
+                  regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
+    inv_nfs_vars:
+      nfs: 
+        hosts:
+          nfs_server: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `nfs_server`)].content') | b64decode | from_yaml) }}"      
+
+    inv_sem: "{{ (inventory_files | community.general.json_query('results[?contains(source, `semaphore`)].content') | b64decode | from_yaml) }}"
+    inv_sem_vars:
+      semaphore: 
+        hosts:
+          semaphore_server: "{{ inv_sem_presets | combine(inventory_var_files | community.general.json_query('results[?contains(source, `semaphore_server`)].content') | b64decode | from_yaml, recursive=true) }}" 
+
+    inv_sem_presets:
+        ansible_connection: local
+
+    inv_winrm: "{{ (inventory_files | community.general.json_query('results[?contains(source, `winrm`)].content') | b64decode | from_yaml) }}"
+
+    inventory_cp: "{{ inv_cp | combine(inv_cp_vars, recursive=true) }}"
+    inventory_wk: "{{ inv_wk | combine(inv_wk_vars, recursive=true) }}"
+    inventory_lb: "{{ inv_lb | combine(inv_lb_vars, recursive=true) }}"
+    inventory_nfs: "{{ inv_nfs | combine(inv_nfs_vars, recursive=true) }}"
+    inventory_sem: "{{ inv_sem | combine(inv_sem_vars, recursive=true) }}"
+
+    inventory_default: "{{ inventory_lb | combine(inventory_cp, recursive=true) | combine(inventory_wk, recursive=true) | combine(inv_k8s, recursive=true)
+                                        | combine(inventory_nfs, recursive=true) | combine(inv_winrm, recursive=true) }}"
+
+    inventory_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/inventory"
+  block:
+    - name: Read inventory files
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      register: inventory_files
+      loop:
+        - "{{ local_repo_dir }}/inventories/kubernetes_control_planes.yaml"
+        - "{{ local_repo_dir }}/inventories/kubernetes_worker_nodes.yaml"
+        - "{{ local_repo_dir }}/inventories/kubernetes_cluster.yaml"
+        - "{{ local_repo_dir }}/inventories/load_balancers.yaml"
+        - "{{ local_repo_dir }}/inventories/nfs_server.yaml"
+        - "{{ local_repo_dir }}/inventories/semaphore_server.yaml"
+        - "{{ local_repo_dir }}/inventories/winrm.yaml"
+
+    - name: Read inventory variable files
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      register: inventory_var_files
+      loop:
+        - "{{ local_repo_dir }}/inventories/group_vars/kubernetes_control_planes.yaml"
+        - "{{ local_repo_dir }}/inventories/group_vars/kubernetes_worker_nodes.yaml"
+        - "{{ local_repo_dir }}/inventories/group_vars/load_balancers.yaml"
+        - "{{ local_repo_dir }}/inventories/host_vars/nfs_server.yaml"
+        - "{{ local_repo_dir }}/inventories/host_vars/semaphore_server.yaml"
+
+    - name: Create inventories
+      ansible.builtin.uri:
+        url: "{{ inventory_url }}"
+        method: POST
+        headers: 
+          Content-Type: application/json
+          Accept: application/json
+          Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
+        body_format: json
+        body: |
+          {
+            "name": "{{ item.name }}",
+            "project_id": {{ SEMAPHORE_PROJECT_ID }},
+            "inventory": {{ item.content | to_nice_yaml(sort_keys=false, indent=2) | to_json }},
+            "ssh_key_id": {{ SEMAPHORE_KEY_ID }},
+            "become_key_id": null,
+            "type": "static-yaml"
+          }
+        status_code: 201 # Created
+      loop:
+        - { name: "Default", content: "{{ inventory_default }}" }
+        - { name: "Default Semaphore Project", content: "{{ inventory_sem }}" }
+
+    - name: Query default inventory record
+      ansible.builtin.uri:
+        url: "{{ inventory_url }}"
+        method: GET
+        headers: 
+          Content-Type: application/json
+          Accept: application/json
+          Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
+      register: inventory_response

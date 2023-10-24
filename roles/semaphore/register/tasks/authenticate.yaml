@@ -1,0 +1,24 @@
+- name: Login to Semaphore API
+  ansible.builtin.uri:
+    url: "{{ SEMAPHORE_URL }}/auth/login"
+    method: POST
+    headers: 
+      Content-Type: application/json
+      Accept: application/json
+    body_format: json
+    body:
+      auth: "{{ semaphore.api_login.username }}"  
+      password: "{{ semaphore.api_login.password }}"
+    status_code: 204 # No content
+  register: login_response
+
+- name: Create access token 
+  ansible.builtin.uri:
+    url: "{{ SEMAPHORE_URL }}/user/tokens"
+    method: POST
+    headers: 
+      Content-Type: application/json
+      Accept: application/json
+      Cookie: "{{ login_response.cookies_string }}"
+    status_code: 201 # Created
+  register: token_response

@@ -1,0 +1,18 @@
+# This should be your local machine or an Ansible host. Winrm must be setup correctly for this to work.
+# You can have more than 1 winrm host to distribute the kubernetes VMs; remember to set the winrm_host.
+winrm:
+  hosts:
+    local_machine:
+      ansible_host: 192.168.0.122
+      # Refer here https://docs.ansible.com/ansible/latest/user_guide/windows_winrm.html
+      ansible_winrm_cert_pem: ./certs/cert.pem
+      ansible_winrm_cert_key_pem: ./certs/cert_key.pem
+      # You can use username and password if you do not want to use cert.
+      # ansible_user: ansible            # Create a user in your Windows
+      # ansible_password: p@ssw0rd       # Provide the password for the user
+      ansible_become_method: runas
+      ansible_become_user: ansible       # Must set this to the user you created
+      ansible_connection: winrm
+      ansible_port: 5986
+      ansible_winrm_transport: certificate
+      ansible_winrm_server_cert_validation: ignore

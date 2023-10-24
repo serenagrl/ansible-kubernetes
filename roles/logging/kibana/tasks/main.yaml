@@ -18,11 +18,9 @@
       when: not has_version_specified
 
     - name: Install kibana ({{ release }})
-      vars: 
-        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.k8s:
         definition: |
-          {{ TEMPLATE }}
+          {{ KIBANA_CRD_TEMPLATE }}
 
 - name: Waiting for kibana to be ready
   ansible.builtin.shell: kubectl wait --for=jsonpath='{.status.health}'=green kibana kibana -n logging --timeout=180s

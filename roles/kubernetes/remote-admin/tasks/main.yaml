@@ -50,7 +50,7 @@
             mode: 0700
 
         - name: Copy admin.conf to home directory kube config
-          delegate_to: "{{ groups['primary_control_plane'][0] }}"
+          delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
           ansible.builtin.fetch:
             src: /etc/kubernetes/admin.conf
             dest: /root/.kube/config
@@ -77,7 +77,7 @@
             config: "{{ config_file['content'] | b64decode | replace('kubernetes', _kube.cluster.name) }}"
           block:
             - name: Get kube config file from control plane
-              delegate_to: "{{ groups['primary_control_plane'][0] }}"
+              delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
               ansible.builtin.slurp:
                 src: /etc/kubernetes/admin.conf
               register: config_file

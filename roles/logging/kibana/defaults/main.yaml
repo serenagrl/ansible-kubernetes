@@ -1,4 +1,4 @@
-TEMPLATE: "{{ lookup('template', 'kibana.j2') | from_yaml }}"
+KIBANA_CRD_TEMPLATE: "{{ lookup('template', 'kibana.j2') | from_yaml }}"
 
 INGRESS_TEMPLATE: "{{ lookup('template', 'ingress-' + _kube.ingress_type + '.j2') | from_yaml }}"
 INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + _kube.ingress_type + '.yaml' }}"

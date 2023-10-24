@@ -5,18 +5,8 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# Install nfs client to all kubernetes nodes.
-# Note: This is a pre-requisite if you want to install the csi/nfs role.
-- name: Configure NFS Clients
-  hosts: kubernetes_cluster
-  gather_facts: no
-
-  roles:
-    - role: nfs/client
-      when: "'csi/nfs' in (_kube.add_ons | map(attribute='name') | list)"
-
 - name: Install Kubernetes add-on components
-  hosts: primary_control_plane[0]
+  hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
   gather_facts: no
 
