@@ -4,6 +4,14 @@ yamlApplicationConfig:
       - name: kafka
         bootstrapServers: kafka-kafka-brokers:9092
 
+  spring:
+    security:
+      user:
+        name: {{ kafka.ui.username }}
+        password: {{ kafka.ui.password }}
+  auth:
+    type: "LOGIN_FORM"
+
 tolerations:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane

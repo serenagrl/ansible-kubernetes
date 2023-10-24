@@ -39,7 +39,7 @@
         version: "{% if kafka.ui.version is defined and kafka.ui.version and kafka.ui.version != 'latest' %}{{ kafka.ui.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
-        name: kafka
+        name: kafka-ui
         atomic: yes
         chart_ref: kafka-ui/kafka-ui
         chart_version: "{{ version }}"

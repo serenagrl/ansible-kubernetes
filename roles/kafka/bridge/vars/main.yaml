@@ -1,6 +1,9 @@
 kafka:
   bridge:
     name: kafka
+
+    # The namespace for the bridge. Should reside same with the kafka cluster 
     namespace: kafka 
 
+    # The kafka cluster name that the bridge is serving.
     cluster_name: kafka
