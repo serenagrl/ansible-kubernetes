@@ -118,6 +118,7 @@
           - { name: kafka/strimzi, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/strimzi/vars`)].content') | b64decode | from_yaml }}" }
           - { name: kafka/cluster, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/cluster/vars`)].content') | b64decode | from_yaml }}" }
           - { name: kafka/bridge, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/bridge/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: kafka/connect, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/connect/vars`)].content') | b64decode | from_yaml }}" }
           - { name: kafka/ui, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/ui/vars`)].content') | b64decode | from_yaml }}" }
 
       ansible.builtin.uri:

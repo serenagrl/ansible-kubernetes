@@ -1,2 +1,5 @@
 strimzi:
   version: latest # 0.38.0
+  install_cli: yes
+  cli:
+    version: latest #0.1.0a70

@@ -74,3 +74,21 @@
 - name: Waiting for strimzi kafka operator to be ready
   ansible.builtin.shell: |
     for d in $(kubectl -n strimzi-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n strimzi-system deployment/$d; done;
+
+- name: Install strimzi kafka cli and pre-requisites on Ansible host
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Installing dependency packages (may take a while)
+      ansible.builtin.apt:
+        pkg:
+          - python3-pip
+        state: latest
+        update_cache: true
+
+    - name: Installing strimzi kafka cli on Ansible host
+      ansible.builtin.pip:
+        name: strimzi-kafka-cli
+        version: "{{ strimzi.cli.version }}"
+
+  when: strimzi.install_cli

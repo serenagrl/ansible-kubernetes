@@ -11,31 +11,37 @@
     kubectl get deployments.apps -n strimzi-system -o yaml | grep "value: quay.io/strimzi/operator" -m 1 | cut -d ':' -f 3
   register: strimzi_operator_version
 
-- name: Configuring kafka bridge manifest
+- name: Configuring kafka connect manifest
   become_user: root
   delegate_to: localhost
   block:
     - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
-        name: "Kafka bridge"
-        namespace: "{{ kafka.bridge.namespace }}"
+        name: "Kafka connect"
+        namespace: "{{ kafka.connect.namespace }}"
         repo_path: "strimzi/strimzi-kafka-operator"
         pkg_version: "{{ strimzi_operator_version.stdout | default }}"
         version_prefix: ""
         dest: "{{ MANIFEST_FILE }}"
-        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/bridge/kafka-bridge.yaml"]
+        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/connect/kafka-connect.yaml"]
 
-    - name: Set kafka bridge name
+    - name: Set kafka connect name
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
-        regexp: '(  name: my-bridge)'
-        replace: "  name: {{ kafka.bridge.name }}"
+        regexp: '(  name: my-connect-cluster)'
+        replace: "  name: {{ kafka.connect.name }}"
 
     - name: Change bootstrap server
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
-        regexp: '(  bootstrapServers: my-cluster-kafka-bootstrap:9092)'
-        replace: "  bootstrapServers: {{ kafka.bridge.cluster_name }}-kafka-bootstrap:9092"
+        regexp: '(  bootstrapServers: my-cluster-kafka-bootstrap:9093)'
+        replace: "  bootstrapServers: {{ kafka.connect.cluster_name }}-kafka-bootstrap:9093"
+
+    - name: Change secret server
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '(      - secretName: my-cluster-cluster-ca-cert)'
+        replace: "      - secretName: {{ kafka.connect.cluster_name }}-cluster-ca-cert"
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
@@ -58,11 +64,11 @@
                                 operator: Exists
       when: not _kube.allow_scheduling
 
-- name: Install kafka bridge
+- name: Install kafka connect
   kubernetes.core.k8s:
     apply: yes
     force: yes
-    namespace: "{{ kafka.bridge.namespace }}"
+    namespace: "{{ kafka.connect.namespace }}"
     definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
 
 - name: Cleanup manifest file
