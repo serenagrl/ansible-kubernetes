@@ -1,9 +1,0 @@
-kafka:
-  connect:
-    name: kafka
-
-    # The namespace for the connect. Should reside same with the kafka cluster 
-    namespace: kafka 
-
-    # The kafka cluster name that the connect is serving.
-    cluster_name: kafka

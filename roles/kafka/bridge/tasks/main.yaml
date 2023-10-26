@@ -18,7 +18,7 @@
     - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
       vars:
         name: "Kafka bridge"
-        namespace: "{{ kafka.bridge.namespace }}"
+        namespace: "{{ kafka.namespace }}"
         repo_path: "strimzi/strimzi-kafka-operator"
         pkg_version: "{{ strimzi_operator_version.stdout | default }}"
         version_prefix: ""
@@ -29,13 +29,13 @@
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '(  name: my-bridge)'
-        replace: "  name: {{ kafka.bridge.name }}"
+        replace: "  name: {{ kafka.name }}"
 
     - name: Change bootstrap server
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '(  bootstrapServers: my-cluster-kafka-bootstrap:9092)'
-        replace: "  bootstrapServers: {{ kafka.bridge.cluster_name }}-kafka-bootstrap:9092"
+        replace: "  bootstrapServers: {{ kafka.name }}-kafka-bootstrap:9092"
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
@@ -62,7 +62,7 @@
   kubernetes.core.k8s:
     apply: yes
     force: yes
-    namespace: "{{ kafka.bridge.namespace }}"
+    namespace: "{{ kafka.namespace }}"
     definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
 
 - name: Cleanup manifest file

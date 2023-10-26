@@ -43,7 +43,7 @@
         atomic: yes
         chart_ref: kafka-ui/kafka-ui
         chart_version: "{{ version }}"
-        namespace: "{{ kafka.ui.namespace }}"
+        namespace: "{{ kafka.namespace }}"
         create_namespace: yes
         values: "{{ VALUES_FILE }}"
         timeout: 10m0s

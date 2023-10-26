@@ -1,7 +1,8 @@
 kafka:
   ui:
+    # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+    # releases with breaking changes. Try reducing the version number if errors occur during installation.
     version: latest
-    namespace: kafka
     domain: kafka.k8s.local
 
     # The default user credentials to set. 

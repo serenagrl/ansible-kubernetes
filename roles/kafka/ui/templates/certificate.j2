@@ -2,7 +2,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: kafka-ingress-cert
-  namespace: {{ kafka.ui.namespace }}
+  namespace: {{ kafka.namespace }}
 spec:
   dnsNames:
     - {{ kafka.ui.domain }}

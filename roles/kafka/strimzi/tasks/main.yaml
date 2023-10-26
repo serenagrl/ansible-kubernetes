@@ -91,4 +91,4 @@
         name: strimzi-kafka-cli
         version: "{{ strimzi.cli.version }}"
 
-  when: strimzi.install_cli
+  when: strimzi.cli.install

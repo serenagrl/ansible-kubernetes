@@ -2,7 +2,7 @@ apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: kafka-httpproxy
-  namespace: {{ kafka.ui.namespace }}
+  namespace: {{ kafka.namespace }}
 spec:
   virtualhost:
     fqdn: {{ kafka.ui.domain }}

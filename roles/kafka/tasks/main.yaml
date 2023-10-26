@@ -1,6 +1,7 @@
 # Launch operator.
 - ansible.builtin.include_role:
     name: kafka/strimzi
+  when: kafka.install.operator
 
 # Install cluster.
 - ansible.builtin.include_role:
@@ -9,10 +10,12 @@
 # Install bridge.
 - ansible.builtin.include_role:
     name: kafka/bridge
+  when: kafka.install.bridge
 
 # Install connect.
 - ansible.builtin.include_role:
     name: kafka/connect
+  when: kafka.install.connect
 
 # Install kafka-ui.
 - ansible.builtin.include_role:
