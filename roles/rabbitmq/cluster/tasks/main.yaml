@@ -71,12 +71,12 @@
 
   when: rabbitmq.enable_tls and rabbitmq.export_certs
 
-- name: Configure topology tls
+- name: Configure topology TLS
   block:
     - name: Retrieve RabbitMQ CA certificate from RabbitMQ Cluster
       shell: |
         kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.ca\.crt}'
-      register: ca_cert
+      register: ca_cert_result
 
     - name: Add CA certificate into rabbitmq CA secret
       kubernetes.core.k8s:
@@ -86,7 +86,7 @@
         name: rabbitmq-ca-secret
         definition: |
           data:
-            {{ rabbitmq.namespace }}-rabbitmq-ca.crt: {{ ca_cert.stdout }}
+            {{ rabbitmq.namespace }}-rabbitmq-ca.crt: {{ ca_cert_result.stdout }}
 
     - name: Mount CA certificate volume to cert path
       kubernetes.core.k8s:
