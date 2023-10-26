@@ -4,27 +4,52 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- ansible.builtin.include_vars: ../../vars/main.yaml
-
-- name: Installing nfs client package
-  ansible.builtin.apt:
-    pkg:
-      - nfs-common
-    state: latest
-    update_cache: true
-  ignore_unreachable: yes
-  
-- name: Export shared directory to kubernetes cluster nodes
-  delegate_to: nfs_server
+- delegate_to: "{{ nfs_client }}"
   become_user: root
-  ansible.builtin.shell: |
-    (
-        flock -x 9
+  block:
+    - name: Installing nfs client package
+      ansible.builtin.apt:
+        pkg:
+          - nfs-common
+        state: latest
+        update_cache: true
+      
+    - name: Export shared directory to kubernetes cluster nodes
+      delegate_to: nfs_server
+      become_user: root
+      ansible.builtin.shell: |
+        (
+            flock -x 9
 
-        cat /etc/exports | grep "{{ nfs.shared }} {{ ansible_host }}"
-        if [ $? -eq 1 ]
-        then
-          echo "{{ nfs.shared }} {{ ansible_host }}(rw,no_subtree_check,no_root_squash)" >> /etc/exports
-        fi
-        sudo exportfs -ar
-    ) 9>/tmp/nfs.lock
+            cat /etc/exports | grep "{{ nfs_shared }} {{ hostvars[nfs_client].ansible_host }}"
+            if [ $? -eq 1 ]
+            then
+              echo "{{ nfs_shared }} {{ hostvars[nfs_client].ansible_host }}(rw,no_subtree_check,no_root_squash)" >> /etc/exports
+            fi
+            sudo exportfs -ar
+        ) 9>/tmp/nfs.lock
+
+# - ansible.builtin.include_vars: ../../vars/main.yaml
+
+# - name: Installing nfs client package
+#   ansible.builtin.apt:
+#     pkg:
+#       - nfs-common
+#     state: latest
+#     update_cache: true
+#   ignore_unreachable: yes
+  
+# - name: Export shared directory to kubernetes cluster nodes
+#   delegate_to: nfs_server
+#   become_user: root
+#   ansible.builtin.shell: |
+#     (
+#         flock -x 9
+
+#         cat /etc/exports | grep "{{ nfs.shared }} {{ ansible_host }}"
+#         if [ $? -eq 1 ]
+#         then
+#           echo "{{ nfs.shared }} {{ ansible_host }}(rw,no_subtree_check,no_root_squash)" >> /etc/exports
+#         fi
+#         sudo exportfs -ar
+#     ) 9>/tmp/nfs.lock

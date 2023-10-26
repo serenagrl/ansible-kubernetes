@@ -10,7 +10,7 @@
         - "{{ local_repo_dir }}/group_vars/all.yaml"
         - "{{ local_repo_dir }}/roles/vm-ubuntu/setup-vm/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/infrastructure/haproxy/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/nfs/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/nfs/server/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/metallb/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/cert-manager/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/csi/nfs/vars/main.yaml"
@@ -53,7 +53,7 @@
         # infrastructure
         vm_ubuntu_vars: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(vm_ubuntu_presets, recursive=true) | combine(settings, recursive=true) }}"
         haproxy_vars: "{{ var_files | community.general.json_query('results[?contains(source, `haproxy/vars`)].content') | b64decode | from_yaml }}" 
-        nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/nfs/vars`)].content') | b64decode | from_yaml }}" 
+        nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `nfs/server/vars`)].content') | b64decode | from_yaml }}" 
         infra_vars: "{{ vm_ubuntu_vars | combine(haproxy_vars, recursive=true) | combine(nfs_vars, recursive=true) }}"
 
         k8s_cluster_vars:
