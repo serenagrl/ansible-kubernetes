@@ -145,6 +145,7 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
   * Rabbitmq Operator
   * Rabbitmq Cluster
 * Redis (Cluster or Sentinel)
+* Kafka (Strimzi)
 * Database
   * Microsoft SQL Server 
 * Velero

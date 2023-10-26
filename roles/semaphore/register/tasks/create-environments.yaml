@@ -10,7 +10,7 @@
         - "{{ local_repo_dir }}/group_vars/all.yaml"
         - "{{ local_repo_dir }}/roles/vm-ubuntu/setup-vm/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/infrastructure/haproxy/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/nfs/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/nfs/server/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/metallb/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/cert-manager/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/csi/nfs/vars/main.yaml"
@@ -30,6 +30,9 @@
         - "{{ local_repo_dir }}/roles/database/mssql/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/semaphore/register/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/awx/register/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/common/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/strimzi/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/ui/vars/main.yaml"
 
     - name: Create default environments
       vars:
@@ -43,7 +46,7 @@
           _kube:
             add_ons: "{{ item.content }}"
 
-        all_vars: "{{ var_files | community.general.json_query('results[?contains(source, `group_vars/all`)].content') | b64decode | 
+        all_vars: "{{ var_files | community.general.json_query('results[?contains(source, `group_vars/all`)].content') | b64decode |
                       regex_replace('(?<=name: )(.*)(?=-cluster)', name_prefix, multiline=true) | from_yaml }}"
 
         vm_ubuntu_presets:
@@ -52,8 +55,8 @@
 
         # infrastructure
         vm_ubuntu_vars: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(vm_ubuntu_presets, recursive=true) | combine(settings, recursive=true) }}"
-        haproxy_vars: "{{ var_files | community.general.json_query('results[?contains(source, `haproxy/vars`)].content') | b64decode | from_yaml }}" 
-        nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/nfs/vars`)].content') | b64decode | from_yaml }}" 
+        haproxy_vars: "{{ var_files | community.general.json_query('results[?contains(source, `haproxy/vars`)].content') | b64decode | from_yaml }}"
+        nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `nfs/server/vars`)].content') | b64decode | from_yaml }}"
         infra_vars: "{{ vm_ubuntu_vars | combine(haproxy_vars, recursive=true) | combine(nfs_vars, recursive=true) }}"
 
         k8s_cluster_vars:
@@ -89,9 +92,9 @@
         velero_svr_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/server/vars`)].content') | b64decode | from_yaml }}"
         velero_bsl_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/storage-location/vars`)].content') | b64decode | from_yaml }}"
         velero_vars:
-          - { name: velero, vars: "{{ velero_cli_vars | combine(velero_svr_vars, recursive=true) | combine(velero_bsl_vars, recursive=true) }}" }         
+          - { name: velero, vars: "{{ velero_cli_vars | combine(velero_svr_vars, recursive=true) | combine(velero_bsl_vars, recursive=true) }}" }
 
-        semaphore_reg_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml }}" 
+        semaphore_reg_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml }}"
 
         logging_vars:
           - { name: logging/elastic-stack }
@@ -110,10 +113,17 @@
           - { name: awx/operator }
           - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }
 
+        kafka_common_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/common/vars`)].content') | b64decode | from_yaml }}"
+        kafka_strimzi_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/strimzi/vars`)].content') | b64decode | from_yaml }}"
+        kafka_ui_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/ui/vars`)].content') | b64decode | from_yaml }}"
+        kafka_vars:
+          - { name: kafka, vars: "{{ kafka_strimzi_vars | combine(kafka_common_vars, recursive=true)
+                                                        | combine(kafka_ui_vars, recursive=true) }}" }
+
       ansible.builtin.uri:
         url: "{{ environment_url }}"
         method: POST
-        headers: 
+        headers:
           Content-Type: application/json
           Accept: application/json
           Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
@@ -123,7 +133,7 @@
             "name": "{{ item.name }}",
             "project_id": {{ SEMAPHORE_PROJECT_ID }},
             "json": {{ item.need_all | ternary(all_vars, []) | combine(item.is_add_on | ternary(add_on_vars, item.content), recursive=true) | to_nice_json(sort_keys=false, indent=2) | to_json }},
-            "env": "{}"      
+            "env": "{}"
           }
         status_code: 204 # Created
       when: item.create
@@ -143,12 +153,13 @@
         - { name: "Default Component - Rook-Ceph", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Kafka", create: "{{ semaphore.project.create.component_environments }}", content: "{{ kafka_vars }}", is_add_on: yes, need_all: yes }
 
     - name: Query all environment records
       ansible.builtin.uri:
         url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/environment"
         method: GET
-        headers: 
+        headers:
           Content-Type: application/json
           Accept: application/json
           Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"

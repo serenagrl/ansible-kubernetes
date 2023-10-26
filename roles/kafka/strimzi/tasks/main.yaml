@@ -1,0 +1,94 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Configure strimzi kafka operator manifest
+  become_user: root
+  delegate_to: localhost
+  block:
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "strimzi kafka operator"
+        namespace: "strimzi-system"
+        repo_path: "strimzi/strimzi-kafka-operator"
+        pkg_version: "{{ strimzi.version | default }}"
+        version_prefix: ""
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/strimzi-cluster-operator-{{ release }}.yaml"]
+
+    - name: Set oerator namespace in manifest
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: "namespace: myproject"
+        replace: "namespace: strimzi-system"
+
+    - name: Configure strimzi kafka operator to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane:
+                  \1
+      when: not _kube.allow_scheduling
+
+- name: Configure ClusterRoleBindings
+  ansible.builtin.shell: |
+    kubectl delete clusterrolebinding strimzi-cluster-operator-namespaced strimzi-cluster-operator-watched strimzi-cluster-operator-entity-operator-delegation
+    kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount strimzi-system:strimzi-cluster-operator
+    kubectl create clusterrolebinding strimzi-cluster-operator-watched --clusterrole=strimzi-cluster-operator-watched --serviceaccount strimzi-system:strimzi-cluster-operator
+    kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount strimzi-system:strimzi-cluster-operator
+
+- name: Create strimzi kafka operator namespace
+  kubernetes.core.k8s:
+    name: "strimzi-system"
+    kind: Namespace
+
+- name: Install strimzi kafka operator
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    namespace: "strimzi-system"
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
+  when: _cleanup
+
+- name: Update deployment environment variable to watch over namespaces
+  ansible.builtin.shell: |
+    kubectl set env deployment/strimzi-cluster-operator STRIMZI_NAMESPACE="*" -n strimzi-system
+
+- name: Waiting for strimzi kafka operator to be ready
+  ansible.builtin.shell: |
+    for d in $(kubectl -n strimzi-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n strimzi-system deployment/$d; done;
+
+- name: Install strimzi kafka cli and pre-requisites on Ansible host
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Installing dependency packages (may take a while)
+      ansible.builtin.apt:
+        pkg:
+          - python3-pip
+        state: latest
+        update_cache: true
+
+    - name: Installing strimzi kafka cli on Ansible host
+      ansible.builtin.pip:
+        name: strimzi-kafka-cli
+        version: "{{ strimzi.cli.version }}"
+
+  when: strimzi.cli.install
