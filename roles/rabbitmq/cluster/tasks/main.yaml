@@ -73,22 +73,22 @@
 
 - name: Configure topology tls
   block:
-    - name: Retrieve RabbitMQ Certificate Authority (CA) cert
+    - name: Retrieve RabbitMQ CA certificate from RabbitMQ Cluster
       shell: |
-        kubectl get -n rabbitmq secret rabbitmq-tls-secret -o jsonpath='{.data.ca\.crt}'
+        kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.ca\.crt}'
       register: ca_cert
 
-    - name: Patch credential to an existing secret
+    - name: Add CA certificate into rabbitmq CA secret
       kubernetes.core.k8s:
         state: patched
         namespace: "rabbitmq-system"
         kind: secret
-        name: rabbitmq-tls-secret
+        name: rabbitmq-ca-secret
         definition: |
           data:
             {{ rabbitmq.namespace }}-rabbitmq-ca.crt: {{ ca_cert.stdout }}
 
-    - name: Patch VolumeMount to CA certificate
+    - name: Mount CA certificate volume to cert path
       kubernetes.core.k8s:
         state: patched
         namespace: "rabbitmq-system"

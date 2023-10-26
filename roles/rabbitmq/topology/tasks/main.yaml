@@ -5,12 +5,12 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Create certificate secret 
+- name: Create empty CA certificate secret 
   kubernetes.core.k8s:
     api_version: v1
     kind: Secret
     namespace: "rabbitmq-system"
-    name: rabbitmq-tls-secret
+    name: rabbitmq-ca-secret
     state: present
 
 - name: Install RabbitMQ Messaging Topology Operator
@@ -51,7 +51,7 @@
                   - name: rabbitmq-ca
                     secret:
                       defaultMode: 420
-                      secretName: rabbitmq-tls-secret
+                      secretName: rabbitmq-ca-secret
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
