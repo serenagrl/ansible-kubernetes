@@ -10,7 +10,7 @@
         - "{{ local_repo_dir }}/group_vars/all.yaml"
         - "{{ local_repo_dir }}/roles/vm-ubuntu/setup-vm/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/infrastructure/haproxy/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/nfs/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/nfs/server/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/metallb/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/cert-manager/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/csi/nfs/vars/main.yaml"
