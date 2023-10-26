@@ -1,0 +1,5 @@
+kafka:
+  install:
+    operator: yes
+    bridge: yes
+    connect: yes

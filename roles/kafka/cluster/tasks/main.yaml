@@ -1,0 +1,79 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Get current strimzi kafka cluster operator version in kubernetes cluster
+  ansible.builtin.shell: |
+    kubectl get deployments.apps -n strimzi-system -o yaml | grep "value: quay.io/strimzi/operator" -m 1 | cut -d ':' -f 3
+  register: strimzi_operator_version
+
+- name: Configuring kafka cluster manifest
+  become_user: root
+  delegate_to: localhost
+  block:
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "Kafka cluster"
+        namespace: "{{ kafka.namespace }}"
+        repo_path: "strimzi/strimzi-kafka-operator"
+        pkg_version: "{{ strimzi_operator_version.stdout | default }}"
+        version_prefix: ""
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/kafka/kafka-persistent.yaml"]
+
+    - name: Set cluster name
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: "name: my-cluster"
+        replace: "name: {{ kafka.name }}"
+
+    - name: Configure to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(kafka:|zookeeper:|entityOperator:)$'
+        replace: |8-
+                  \1
+                    template:
+                      pod:
+                        tolerations:
+                          - effect: NoSchedule
+                            key: node-role.kubernetes.io/control-plane
+                            operator: Exists
+                        affinity:
+                          nodeAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                              nodeSelectorTerms:
+                              - matchExpressions:
+                                - key: node-role.kubernetes.io/control-plane
+                                  operator: Exists
+
+      when: not _kube.allow_scheduling
+
+- name: Create namespace
+  kubernetes.core.k8s:
+    name: "{{ kafka.namespace }}"
+    kind: Namespace
+
+- name: Installing kafka cluster
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    namespace: "{{ kafka.namespace }}"
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
+  when: _cleanup
+
+- name: Waiting for kafka cluster to be ready
+  ansible.builtin.shell: |
+    kubectl wait --for=condition=Ready kafkas kafka -n kafka --timeout=300s
+    for d in $(kubectl -n {{ kafka.namespace }} get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n {{ kafka.namespace }} deployment/$d; done;

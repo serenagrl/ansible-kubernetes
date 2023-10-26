@@ -1,0 +1,33 @@
+yamlApplicationConfig:
+  kafka:
+    clusters:
+      - name: kafka
+        bootstrapServers: kafka-kafka-brokers:9092
+
+  spring:
+    security:
+      user:
+        name: {{ kafka.ui.username }}
+        password: {{ kafka.ui.password }}
+  auth:
+    type: "LOGIN_FORM"
+
+{% if not _kube.allow_scheduling %}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane:
+{% endif %}
+
+ingress:
+  enabled: true
+  host: {{ kafka.ui.domain }}
+  tls:
+{% if has_issuer %}
+    enabled: true
+    secretName: kafka-ingress-tls
+{% else %}
+    enabled: false
+{% endif %}
