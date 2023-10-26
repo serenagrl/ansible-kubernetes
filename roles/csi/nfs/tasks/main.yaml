@@ -4,8 +4,12 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Install pre-requisites
-  ansible.builtin.include_tasks: pre-requisites.yaml
+- name: Install and configure nfs clients
+  vars:
+    nfs_client: "{{ item }}"
+    nfs_shared: "{{ csi_nfs.shared }}"
+  ansible.builtin.include_role: 
+    name: nfs/client
   loop: "{{ fact_active_hosts }}"
 
 - name: Download and configure nfs provisioner
