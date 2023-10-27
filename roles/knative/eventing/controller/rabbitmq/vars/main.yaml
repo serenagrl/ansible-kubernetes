@@ -1,3 +1,4 @@
 knative:
-  rabbitmq:
-    version: latest
+  eventing:
+    rabbitmq:
+      version: latest

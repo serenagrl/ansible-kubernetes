@@ -4,7 +4,7 @@
   ansible.builtin.uri:
     url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/templates"
     method: POST
-    headers: 
+    headers:
       Content-Type: application/json
       Accept: application/json
       Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
@@ -77,3 +77,5 @@
         playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs AWX and register the environment for use." }
     - { name: "Setup Component - Kafka", env_name: "Default Component - Kafka", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
         playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs Strimzi and creates a Kafka cluster." }
+    - { name: "Setup Component - Knative", env_name: "Default Component - Knative", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
+        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs knative." }

@@ -20,9 +20,10 @@
   ansible.builtin.shell: |
     kubectl wait --for=condition=Ready KnativeEventing knative-eventing -n knative-eventing --timeout=300s
 
+- ansible.builtin.include_role: 
+    name: knative/eventing/controller/rabbitmq
+  when: knative.eventing.install.rabbitmq
 
 - ansible.builtin.include_role: 
     name: knative/eventing/controller/kafka
-
-- ansible.builtin.include_role: 
-    name: knative/eventing/controller/rabbitmq
+  when: knative.eventing.install.kafka

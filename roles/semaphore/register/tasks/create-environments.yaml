@@ -33,6 +33,12 @@
         - "{{ local_repo_dir }}/roles/kafka/common/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/kafka/strimzi/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/kafka/ui/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/knative/operator/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/knative/serving/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/knative/eventing/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/knative/eventing/controller/rabbitmq/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/knative/eventing/controller/kafka/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/knative/cli/vars/main.yaml"
 
     - name: Create default environments
       vars:
@@ -120,6 +126,19 @@
           - { name: kafka, vars: "{{ kafka_strimzi_vars | combine(kafka_common_vars, recursive=true)
                                                         | combine(kafka_ui_vars, recursive=true) }}" }
 
+        knative_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/operator/vars`)].content') | b64decode | from_yaml }}"
+        knative_serving_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/serving/vars`)].content') | b64decode | from_yaml }}"
+        knative_eventing_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/eventing/vars`)].content') | b64decode | from_yaml }}"
+        knative_eventing_rabbitmq_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/eventing/controller/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
+        knative_eventing_kafka_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/eventing/controller/kafka/vars`)].content') | b64decode | from_yaml }}"
+        knative_cli_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/cli/vars`)].content') | b64decode | from_yaml }}"
+        knative_vars:
+          - { name: knative, vars: "{{ knative_operator_vars | combine(knative_serving_vars, recursive=true)
+                                                             | combine(knative_eventing_vars, recursive=true)
+                                                             | combine(knative_eventing_rabbitmq_vars, recursive=true)
+                                                             | combine(knative_eventing_kafka_vars, recursive=true)
+                                                             | combine(knative_cli_vars, recursive=true) }}" }
+
       ansible.builtin.uri:
         url: "{{ environment_url }}"
         method: POST
@@ -154,6 +173,7 @@
         - { name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - Kafka", create: "{{ semaphore.project.create.component_environments }}", content: "{{ kafka_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Knative", create: "{{ semaphore.project.create.component_environments }}", content: "{{ knative_vars }}", is_add_on: yes, need_all: yes }
 
     - name: Query all environment records
       ansible.builtin.uri:

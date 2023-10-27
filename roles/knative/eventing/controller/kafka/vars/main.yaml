@@ -1,3 +1,4 @@
 knative:
-  kafka:
-    version: latest
+  eventing:
+    kafka:
+      version: latest

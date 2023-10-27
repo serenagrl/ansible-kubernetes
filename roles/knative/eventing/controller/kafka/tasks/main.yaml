@@ -5,6 +5,7 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
 - name: Install Kafka Controller
   become_user: root
   delegate_to: localhost
@@ -14,41 +15,29 @@
         name: "kafka controller"
         namespace: "knative-eventing"
         repo_path: "knative-extensions/eventing-kafka-broker"
-        pkg_version: "{{ knative.kafka.version | default }}"
+        pkg_version: "{{ knative.eventing.kafka.version | default }}"
         dest: "{{ _work_dir }}"
         version_prefix: "knative-v"
         manifest_url: "https://github.com/{{ repo_path }}/releases/download/{{ release }}"
-        urls: 
+        urls:
           - "{{ manifest_url }}/eventing-kafka-controller.yaml"
           - "{{ manifest_url }}/eventing-kafka-broker.yaml"
 
-    - name: Configure to run on control-plane only
-      block:
-        - name: Configure to run on control-planes only 
-          ansible.builtin.replace:
-            path: "{{ CONTROLLER_MANIFEST_FILE }}"
-            regexp: '^\s*(containers:)$'
-            replace: |4-
-                      tolerations:
-                        - effect: NoSchedule
-                          key: node-role.kubernetes.io/control-plane
-                          operator: Exists
-                      nodeSelector:
-                        node-role.kubernetes.io/control-plane: ""
-                      \1
-
-        - name: Configure to run on control-planes only 
-          ansible.builtin.replace:
-            path: "{{ BROKER_MANIFEST_FILE }}"
-            regexp: '^\s*(containers:)$'
-            replace: |4-
-                      tolerations:
-                        - effect: NoSchedule
-                          key: node-role.kubernetes.io/control-plane
-                          operator: Exists
-                      nodeSelector:
-                        node-role.kubernetes.io/control-plane: ""
-                      \1
+    - name: Configure to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane: ""
+                  \1
+      loop:
+        - "{{ CONTROLLER_MANIFEST_FILE }}"
+        - "{{ BROKER_MANIFEST_FILE }}"
       when: not _kube.allow_scheduling
 
 - name: Install kafka controller
