@@ -3,8 +3,6 @@ kind: RabbitmqCluster
 metadata:
   name: "{{ rabbitmq.name }}"
   namespace: "{{ rabbitmq.namespace }}"
-  annotations:
-    rabbitmq.com/topology-allowed-namespaces: "*"  
 spec:
   replicas: 3
   service:
@@ -15,8 +13,8 @@ spec:
 
 {%if rabbitmq.enable_tls %}
   tls:
-    secretName: rmq-tls-secret
-    caSecretName: rmq-tls-secret
+    secretName: rabbitmq-tls-secret
+    caSecretName: rabbitmq-tls-secret
     disableNonTLSListeners: true
 {% endif %}
 

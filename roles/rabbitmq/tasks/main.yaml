@@ -1,7 +1,13 @@
 # Launch operator.
-- include_role:
+- ansible.builtin.include_role:
     name: rabbitmq/operator
+  when: rabbitmq.install.operator
 
-# Install cluster
-- include_role:
-    name: rabbitmq/cluster    
+# Install topology.
+- ansible.builtin.include_role:
+    name: rabbitmq/topology
+  when: rabbitmq.install.topology
+
+# Install cluster.
+- ansible.builtin.include_role:
+    name: rabbitmq/cluster

@@ -15,6 +15,9 @@
         - "{{ local_repo_dir }}/roles/cert-manager/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/csi/nfs/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/csi/rook-ceph/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/rabbitmq/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/rabbitmq/operator/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/rabbitmq/topology/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/rabbitmq/cluster/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/redis/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/devops/minio/vars/main.yaml"
@@ -69,8 +72,14 @@
           - { name: metrics-server }
           - { name: csi/nfs, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}" }
 
+        rabbitmq_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
+        rabbitmq_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/operator/vars`)].content') | b64decode | from_yaml }}"
+        rabbitmq_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/cluster/vars`)].content') | b64decode | from_yaml }}"
+        rabbitmq_topology_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/topology/vars`)].content') | b64decode | from_yaml }}"
         rabbitmq_vars:
-          - { name: rabbitmq, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/cluster/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: rabbitmq, vars: "{{ rabbitmq_root_vars | combine(rabbitmq_operator_vars, recursive=true)
+                                                           | combine(rabbitmq_cluster_vars, recursive=true)
+                                                           | combine(rabbitmq_topology_vars, recursive=true) }}" }
 
         redis_vars:
           - { name: redis, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/redis/vars`)].content') | b64decode | from_yaml }}" }

@@ -1,0 +1,4 @@
+rabbitmq:
+  install:
+    operator: yes
+    topology: yes
