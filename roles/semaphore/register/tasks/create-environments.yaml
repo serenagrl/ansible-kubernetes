@@ -33,6 +33,7 @@
         - "{{ local_repo_dir }}/roles/database/mssql/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/semaphore/register/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/awx/register/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/kafka/common/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/kafka/strimzi/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/kafka/ui/vars/main.yaml"
@@ -122,11 +123,13 @@
           - { name: awx/operator }
           - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }
 
+        kafka_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/vars`)].content') | b64decode | from_yaml }}"
         kafka_common_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/common/vars`)].content') | b64decode | from_yaml }}"
         kafka_strimzi_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/strimzi/vars`)].content') | b64decode | from_yaml }}"
         kafka_ui_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/ui/vars`)].content') | b64decode | from_yaml }}"
         kafka_vars:
-          - { name: kafka, vars: "{{ kafka_strimzi_vars | combine(kafka_common_vars, recursive=true)
+          - { name: kafka, vars: "{{ kafka_strimzi_vars | combine(kafka_root_vars, recursive=true)
+                                                        | combine(kafka_common_vars, recursive=true)
                                                         | combine(kafka_ui_vars, recursive=true) }}" }
 
       ansible.builtin.uri:
