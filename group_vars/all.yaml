@@ -42,8 +42,7 @@ _kube:
     # - name: awx/operator
     # - name: awx/register
     # - name: istio
-    # - name: rabbitmq/operator
-    # - name: rabbitmq/cluster
+    # - name: rabbitmq
     # - name: redis
     # - name: database/mssql
     # - name: velero

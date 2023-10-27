@@ -1,7 +1,7 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: rmq-cluster-cert
+  name: rabbitmq-cluster-cert
   namespace: "{{ rabbitmq.namespace }}"
 spec:
   duration: {{ rabbitmq.cert.validity }}
@@ -13,4 +13,4 @@ spec:
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}
-  secretName: rmq-tls-secret
+  secretName: rabbitmq-tls-secret

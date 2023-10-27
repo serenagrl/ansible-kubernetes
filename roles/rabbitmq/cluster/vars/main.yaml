@@ -9,6 +9,9 @@ rabbitmq:
   # Determine whether tls is enabled
   enable_tls: yes
 
+  # Determine whether to add tls to topology
+  use_topology_operator: yes
+
   # The storage size of the persistent volume claim
   storage_size: 10Gi
 

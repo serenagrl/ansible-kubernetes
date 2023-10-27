@@ -1,0 +1,82 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Create empty CA certificate secret 
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Secret
+    namespace: "rabbitmq-system"
+    name: rabbitmq-ca-secret
+    state: present
+
+- name: Install RabbitMQ Messaging Topology Operator
+  become_user: root
+  delegate_to: localhost
+  block:
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "rabbitmq messaging topology operator"
+        namespace: "rabbitmq-system"
+        repo_path: "rabbitmq/messaging-topology-operator"
+        pkg_version: "{{ rabbitmq.topology.version | default }}"
+        version_prefix: "v"
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/messaging-topology-operator-with-certmanager.yaml"]
+
+    - name: Remove unused Issuer
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '(apiVersion: cert-manager.io/v1\nkind: Issuer\nmetadata:\n  name: selfsigned-issuer\n  namespace: rabbitmq-system\nspec:\n  selfSigned: {}\n---)'
+        replace: ""
+
+    - name: Change to use ClusterIssuer
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '(    kind: Issuer\n    name: selfsigned-issuer)'
+        replace: |4-
+                  kind: ClusterIssuer
+                  name: default-cluster-issuer
+
+    - name: Create CA certificate volume from secret
+      delegate_to: localhost
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(volumes:)$'
+        replace: |4-
+                  \1
+                  - name: rabbitmq-ca
+                    secret:
+                      defaultMode: 420
+                      secretName: rabbitmq-ca-secret
+
+    - name: Configure to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane: ""
+                  \1
+      when: not _kube.allow_scheduling
+
+- name: Install RabbitMQ Messaging Topology Operator
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
+  when: _cleanup

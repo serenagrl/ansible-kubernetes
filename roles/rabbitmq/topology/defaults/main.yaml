@@ -1,0 +1,1 @@
+MANIFEST_FILE: "{{ _work_dir }}/messaging-topology-operator-with-certmanager.yaml"

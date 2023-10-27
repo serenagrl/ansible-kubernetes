@@ -38,21 +38,21 @@
     - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ Certificate Authority (CA) cert"
-        command: "kubectl get -n {{ rabbitmq.namespace }} secret rmq-tls-secret -o jsonpath='{.data.ca\\.crt}'"
+        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.ca\\.crt}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq.cert.ca }}"
 
     - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate"
-        command: "kubectl get -n {{ rabbitmq.namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.crt}'"
+        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.tls\\.crt}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq.cert.cluster }}"
 
     - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
         name: "RabbitMQ cluster certificate key"
-        command: "kubectl get -n {{ rabbitmq.namespace }} secret rmq-tls-secret -o jsonpath='{.data.tls\\.key}'"
+        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.tls\\.key}'"
         cert_dir: "{{ CERT_DIR }}"
         filename: "{{ rabbitmq.cert.cluster_key }}"
 
@@ -70,6 +70,42 @@
             chdir: "{{ CERT_DIR }}"
 
   when: rabbitmq.enable_tls and rabbitmq.export_certs
+
+- name: Configure topology TLS
+  block:
+    - name: Retrieve RabbitMQ CA certificate from RabbitMQ Cluster
+      shell: |
+        kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.ca\.crt}'
+      register: ca_cert_result
+
+    - name: Add CA certificate into rabbitmq CA secret
+      kubernetes.core.k8s:
+        state: patched
+        namespace: "rabbitmq-system"
+        kind: secret
+        name: rabbitmq-ca-secret
+        definition: |
+          data:
+            {{ rabbitmq.namespace }}-rabbitmq-ca.crt: {{ ca_cert_result.stdout }}
+
+    - name: Mount CA certificate volume to cert path
+      kubernetes.core.k8s:
+        state: patched
+        namespace: "rabbitmq-system"
+        kind: Deployment
+        name: messaging-topology-operator
+        definition: |
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: manager
+                    volumeMounts:
+                      - mountPath: /etc/ssl/certs/{{ rabbitmq.namespace }}-rabbitmq-ca.crt
+                        name: rabbitmq-ca
+                        subPath: {{ rabbitmq.namespace }}-rabbitmq-ca.crt
+
+  when: rabbitmq.enable_tls and rabbitmq.use_topology_operator
 
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
