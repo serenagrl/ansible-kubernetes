@@ -4,10 +4,10 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
 ### Pre-requisites / Setup
 1. A Windows machine with lots of processing power, RAM and disk space with [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed. These playbooks were tested on a Windows host with Ubuntu 22.04 running in WSL.
 
-2. [Install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu) on the Ubuntu OS in your WSL. 
+2. [Install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu) on the Ubuntu OS in your WSL.
 
 3. [Configure Windows Remote Management (WinRM)](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html) on your Windows host that has Hyper-V feature enabled. You can run on Windows 11 or Windows Server 2022 with Hyper-V enabled. You may pool multiple Windows Hyper-V servers together to host the virtual machines but each of them will need to be configured with WinRM properly.
-   
+
    **Important!**: Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
 
 4. Create a Windows user with Administrator (or proper) access rights for ansible in the Windows Hyper-V machine. The following is a simple powershell script that you can execute to create the user:
@@ -15,21 +15,21 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
    ```
    $username = "ansible"
    $password = ConvertTo-SecureString "p@ssw0rd" -AsPlainText -Force
-    
+
    New-LocalUser -Name $username -Password $password -FullName $username -Description "Ansible Controller Host Account" -AccountNeverExpires -PasswordNeverExpires -UserMayNotChangePassword
-    
+
    Add-LocalGroupMember -Group Administrators -Member $username
    ```
 5. Clone this repository into a directory of your choice in the WSL and [configure WinRM access](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html) in the `\inventories\winrm.yaml` file. You may need to configure the necessary access rights for the directory.
 
    ```
-   git clone https://github.com/serenagrl/ansible-kubernetes.git 
+   git clone https://github.com/serenagrl/ansible-kubernetes.git
    ```
 
 ### Requirements for Kubernetes VMs
 1. The specifications for each Kubernetes VM is depending on how much add-ons you wish to install on the Kubernetes Cluster. The following specifications will give you a rough guide on what to set but you are free to adjust them accordingly to your needs:
 
-    Recommended specifications for learning the basics of kubernetes with minimal add-ons installed: 
+    Recommended specifications for learning the basics of kubernetes with minimal add-ons installed:
 
     | Hosts           | vCPU | Min. RAM  | Recommended RAM |
     | --------------- |:----:|  :----:   |     :----:      |
@@ -37,7 +37,7 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
     | Control plane 2 | 4    | 6GB       | 8GB             |
     | Control plane 3 | 4    | 6GB       | 8GB             |
 
-    Recommended specifications for a test-lab with majority of the add-ons installed: 
+    Recommended specifications for a test-lab with majority of the add-ons installed:
 
     | Hosts           | vCPU | Min. RAM  | Recommended RAM |
     | --------------- |:----:|  :----:   |     :----:      |
@@ -62,7 +62,7 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
 ### About These Playbooks
 * The Kubernetes cluster is currently setup to use Calico and Containerd.
 * Both control-planes only or control-planes with worker nodes configuration are supported.
-* Playbooks are defaulted to setup 2 HAProxy load balancers and 3 control-planes. 
+* Playbooks are defaulted to setup 2 HAProxy load balancers and 3 control-planes.
 * Configure the IP addresses, host names and domain to your environment in the host files located in `\inventories`
 * The nfs server is configured to not provision currently. You need to manually enable it.
 * Some roles are deploying sample/example configurations only (although some may deploy production environments)
@@ -88,12 +88,12 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
     |  8. | `setup-components.yaml` | Install add-on components listed in `_kube.add_ons` in the `group_vars/all.yaml`. |
 
   **Reminder**
-  1. If you skipped the creation of load balancers, please remember to: 
-     - Set `load_balancer_enabled: no` in the `inventories\group_vars\kubernetes_control_planes.yaml` file. 
-     - Set `_kube.cluster.address` in the `group_vars\all.yaml` to your cp1's IP address. 
+  1. If you skipped the creation of load balancers, please remember to:
+     - Set `load_balancer_enabled: no` in the `inventories\group_vars\kubernetes_control_planes.yaml` file.
+     - Set `_kube.cluster.address` in the `group_vars\all.yaml` to your cp1's IP address.
   2. Specify the addons to install in the `_kube.add_ons` collection in `group_vars\all.yaml`.
   3. You may rerun the `setup-components.yaml` everytime you change the `_kube.add_ons` but keep an eye on the checkpoints.
-  4. The installation order is important as some add-ons have dependencies on the others. 
+  4. The installation order is important as some add-ons have dependencies on the others.
 
 * The following is a list of playbooks that merges some of the steps above for convenience:
 
@@ -144,10 +144,16 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
 * RabbitMQ
   * Rabbitmq Operator
   * Rabbitmq Cluster
-* Redis (Cluster or Sentinel)
-* Kafka (Strimzi)
+  * Messaging Topology Operator
+* Redis
+  * Redis Cluster
+  * Redis Sentinel
+* Kafka
+  * Strimzi Kafka Operator
+  * Kafka Bridge
+  * Kafka Connect
 * Database
-  * Microsoft SQL Server 
+  * Microsoft SQL Server
 * Velero
 
 ### Roles Guide
@@ -162,7 +168,7 @@ The roles folders are structured in the following manner:
 | templates      | The jinja2 templates that you can modify to add extra configurations. |
 | meta           | Role dependencies that you should not touch. |
 
-To install the specific add-on, specify them in the `_kube.add_ons` collection in `group_vars\all.yaml` before running `setup-components.yaml`. 
+To install the specific add-on, specify them in the `_kube.add_ons` collection in `group_vars\all.yaml` before running `setup-components.yaml`.
 
 ### Disclaimer
-Everything provided here is 'as-is' and with no warranty or support. 
+Everything provided here is 'as-is' and with no warranty or support.
