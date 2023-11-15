@@ -17,27 +17,28 @@ write_files:
   - path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
     content: |
       network: {config: disabled}
-  - path: /etc/netplan/99-custom.yaml      
+  - path: /etc/netplan/99-custom.yaml
     content: |
       network:
         version: 2
         ethernets:
           eth0:
             dhcp4: false
-            addresses: 
+            addresses:
               - {{ ansible_host }}/{{ vm.network.cidr }}
             nameservers:
-              addresses: [{{ vm.network.dns }}]
+              addresses: {{ vm.network.dns }}
+              search: [{{ _kube.cluster.domain }}]
             routes:
               - to: default
-                via: {{ vm.network.gateway }}           
+                via: {{ vm.network.gateway }}
 
 runcmd:
-  - sudo netplan apply   
-  - sudo apt update -y && sudo apt full-upgrade -y                  
+  - sudo netplan apply
+  - sudo apt update -y && sudo apt full-upgrade -y
   - sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
   - systemctl restart ssh
   - usermod --password '{{ vm.root_pwd }}' root
-  - echo '{{ id_rsa_pub }}' > /root/.ssh/authorized_keys  
+  - echo '{{ id_rsa_pub }}' > /root/.ssh/authorized_keys
   - sudo apt install ntp ntpdate -y
   - sudo reboot -f

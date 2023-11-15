@@ -11,10 +11,23 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ fact_cluster_address }} core.{{ harbor.domain }} notary.{{ harbor.domain }}"
+    line: "{{ _kube.cluster.address }} core.harbor.{{ _kube.cluster.domain }} notary.harbor.{{ _kube.cluster.domain }}"
   loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
+  when: not _kube.cluster.use_dns_server
+
+- name: Register CNAME record to DNS server
+  include_role:
+    name: "infrastructure/dns/register"
+  vars:
+    in_server_name: "{{ _kube.cluster.name }}"
+    in_cname: "{{ item }}"
+    in_type: "CNAME"
+  loop:
+    - "core.harbor"
+    - "notary.harbor"
+  when: _kube.cluster.use_dns_server
 
 - name: Create harbor-system namespace
   kubernetes.core.k8s:
@@ -39,7 +52,7 @@
 
     - name: Deploying harbor
       vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if harbor.version is defined and harbor.version and harbor.version != 'latest' %}{{ harbor.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
@@ -59,7 +72,7 @@
 
     - name: Waiting for Harbor api to be up
       ansible.builtin.uri:
-        url: "https://core.{{ harbor.domain }}/api/v2.0/systeminfo/getcert"
+        url: "https://core.harbor.{{ _kube.cluster.domain }}/api/v2.0/systeminfo/getcert"
         validate_certs: no
         return_content: true
       register: result

@@ -1,13 +1,25 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+- name: Disable broadcasting messages to console
+  become_user: root
+  block:
+    - name: Disable logging to console in journald
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/journald.conf
+        line: "ForwardToWall=no"
+
+    - name: Restart journald
+      ansible.builtin.shell: systemctl restart systemd-journald
+
 - name: Add Haproxy repository
   ansible.builtin.apt_repository:
     repo: "ppa:vbernat/haproxy-{{ haproxy.version }}"
     state: present
+    update_cache: yes
 
 - name: Installing Haproxy
   ansible.builtin.apt:
@@ -19,6 +31,7 @@
   become_user: root
   ansible.builtin.blockinfile:
     path: /etc/haproxy/haproxy.cfg
+    marker: ""
     block: |
       {{ HAPROXY_CONFIG_TEMPLATE }}
 

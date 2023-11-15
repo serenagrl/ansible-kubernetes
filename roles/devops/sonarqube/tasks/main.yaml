@@ -11,15 +11,25 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ fact_cluster_address }} sonarqube.{{ sonarqube.domain }}"
+    line: "{{ _kube.cluster.address }} sonarqube.{{ _kube.cluster.domain }}"
   loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
+  when: not _kube.cluster.use_dns_server
+
+- name: Register CNAME record to DNS server
+  include_role:
+    name: "infrastructure/dns/register"
+  vars:
+    in_server_name: "{{ _kube.cluster.name }}"
+    in_cname: "sonarqube"
+    in_type: "CNAME"
+  when: _kube.cluster.use_dns_server
 
 - name: Create sonarqube namespace
   kubernetes.core.k8s:
     kind: Namespace
-    name: sonarqube 
+    name: sonarqube
 
 - name: Install Sonarqube
   block:
@@ -33,13 +43,13 @@
         name: sonarqube
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
-    # Notes: Uses own domain name.    
+    # Notes: Uses own domain name.
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying sonarqube
       vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if sonarqube.version is defined and sonarqube.version and sonarqube.version != 'latest' %}{{ sonarqube.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
@@ -69,4 +79,4 @@
       vars:
         name: "Sonarqube certificate key"
         command: "kubectl get -n sonarqube secret sonar-ingress-tls -o jsonpath='{.data.tls\\.key}'"
-        filename: "{{ KEY_FILE }}"          
+        filename: "{{ KEY_FILE }}"

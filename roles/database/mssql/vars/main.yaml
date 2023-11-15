@@ -5,7 +5,7 @@ mssql:
   edition: Developer
   sa_password: p@ssw0rd
   target_namespace: mssql-server
-  domain: mssql.k8s.local
+  domain_prefix: mssql
 
   # Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
   # Otherwise, set it to ClusterIP to limit to internal traffic only.

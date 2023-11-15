@@ -1,0 +1,9 @@
+server {{ hostvars.dns_server.ansible_hostname }}
+update delete {{ server_name }}.{{ _kube.cluster.domain }}. A
+update add {{ server_name }}.{{ _kube.cluster.domain }}. 86400 A {{ server_ip }}
+
+update delete {{ server_ip.split('.')[3::-1]|join('.') }}.in-addr.arpa. PTR
+update add {{ server_ip.split('.')[3::-1]|join('.') }}.in-addr.arpa. 86400 PTR {{ server_name }}.{{ _kube.cluster.domain }}.
+
+send
+quit

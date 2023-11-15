@@ -1,0 +1,1 @@
+NSUPDATE_FILE: "/tmp/{{ ansible_hostname }}.dns"

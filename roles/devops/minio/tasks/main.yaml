@@ -11,15 +11,25 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ fact_cluster_address }} console.{{ minio.domain }}"
+    line: "{{ _kube.cluster.address }} minio.{{ _kube.cluster.domain }}"
   loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
+  when: not _kube.cluster.use_dns_server
+
+- name: Register CNAME record to DNS server
+  include_role:
+    name: "infrastructure/dns/register"
+  vars:
+    in_server_name: "{{ _kube.cluster.name }}"
+    in_cname: "minio"
+    in_type: "CNAME"
+  when: _kube.cluster.use_dns_server
 
 - name: Create minio operator namespace
   kubernetes.core.k8s:
     kind: Namespace
-    name: minio-operator 
+    name: minio-operator
 
 - name: Install MinIO
   block:
@@ -33,13 +43,13 @@
         name: minio-operator
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
-    # Notes: Uses own domain names.    
+    # Notes: Uses own domain names.
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying minio
       vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if minio.version is defined and minio.version and minio.version != 'latest' %}{{ minio.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:

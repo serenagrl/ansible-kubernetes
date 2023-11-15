@@ -27,7 +27,7 @@
           curl -s "https://api.github.com/repos/ansible/awx-operator/releases/latest" | grep tag_name | cut -d '"' -f 4
       register: release_tag
       when: not has_version_specified
-    
+
     - delegate_to: localhost
       become_user: root
       block:
@@ -51,7 +51,7 @@
         - "{{ lookup('kubernetes.core.kustomize', dir=MANIFEST_FOLDER) }}"
         - "{{ MANIFEST_TEMPLATE }}"
 
-- name: Cleanup manifest 
+- name: Cleanup manifest
   delegate_to: localhost
   become_user: root
   ansible.builtin.file:
@@ -68,7 +68,7 @@
         pkg:
           - python3-pip
         state: latest
-        update_cache: true
+        update_cache: yes
 
     - name: Installing AWX cli on Ansible host
       ansible.builtin.pip:

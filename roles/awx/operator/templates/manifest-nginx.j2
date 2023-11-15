@@ -6,7 +6,7 @@ metadata:
 spec:
   ingress_type: ingress
   ingress_class_name: {{ ingress_name }}
-  hostname: {{ _kube.hostname }}
+  hostname: {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}
   ingress_path: /awx
 
 {% if not _kube.allow_scheduling %}

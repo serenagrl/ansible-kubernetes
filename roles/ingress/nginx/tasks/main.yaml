@@ -59,25 +59,11 @@
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
-  
-# This is needed. Do not remove.
-- name: Check if metallb is installed
-  ansible.builtin.shell: kubectl get ns metallb-system -o json | jq .status.phase -r
-  register: lb_status
-  ignore_errors: yes
-        
-- name: Configure ingress service type and external IP
-  kubernetes.core.k8s:
-    state: patched
-    namespace: ingress-nginx
-    kind: Service
-    name: ingress-nginx-controller
-    definition: "{{ SERVICE_DEFINITION }}"
 
 - name: Scale ingress controller pods = {{ ingress_nginx.scale }}
   vars:
     replicas: "{{ groups['kubernetes_control_planes'] | length }}"
-  ansible.builtin.shell: | 
+  ansible.builtin.shell: |
       kubectl scale deployment -n ingress-nginx ingress-nginx-controller --replicas={{ replicas }}
   when: ingress_nginx.scale
 
@@ -105,15 +91,38 @@
     name: ingress-nginx-controller
   register: ingress_service
 
-- name: Add host name into DNS entries
+- name: Add entry to hosts file
   delegate_to: "{{ item }}"
   become_user: root
   vars:
-    address: "{% if lb_status.stdout == 'Active' %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ ingress_service.resources[0].spec.externalIPs.0 }}{% endif %}"
+    address: "{{ ingress_service.resources.0.spec.externalIPs.0 }}"
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ address }} {{ _kube.hostname }}"
+    line: "{{ address }} {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
   loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_unreachable: yes
   ignore_errors: yes
+  when: not _kube.cluster.use_dns_server
+
+- name: Configure ingress for edge load-balancing
+  block:
+    - name: Patch ingress controller service nodePorts
+      kubernetes.core.k8s:
+        state: patched
+        namespace: ingress-nginx
+        kind: Service
+        name: ingress-nginx-controller
+        definition: |
+          spec:
+            type: NodePort
+            ports:
+              - nodePort: {{ ingress_nginx.nodePort.http }}
+                port: 80
+              - nodePort: {{ ingress_nginx.nodePort.https }}
+                port: 443
+
+    - name: Configure HAProxy load-balancers to expose ingress
+      ansible.builtin.include_tasks: update-haproxy.yaml
+      loop: "{{ groups['load_balancers'] }}"
+  when: register_to_load_balancer

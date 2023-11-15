@@ -15,8 +15,8 @@ expose:
 
   ingress:
     hosts:
-      core: core.{{ harbor.domain }}
-      notary: notary.{{ harbor.domain }}
+      core: core.harbor.{{ _kube.cluster.domain }}
+      notary: notary.harbor.{{ _kube.cluster.domain }}
     controller: default
     className: "{{ ingress_name }}"
     annotations:
@@ -25,7 +25,7 @@ expose:
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/proxy-body-size: "0"
 
-externalURL: https://core.{{ harbor.domain }}
+externalURL: https://core.harbor.{{ _kube.cluster.domain }}
 
 persistence:
   enabled: true

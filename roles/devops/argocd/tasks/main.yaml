@@ -11,10 +11,20 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ fact_cluster_address }} {{ argocd.domain }}"
+    line: "{{ _kube.cluster.address }} argocd.{{ _kube.cluster.domain }}"
   loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
+  when: not _kube.cluster.use_dns_server
+
+- name: Register CNAME record to DNS server
+  include_role:
+    name: "infrastructure/dns/register"
+  vars:
+    in_server_name: "{{ _kube.cluster.name }}"
+    in_cname: "argocd"
+    in_type: "CNAME"
+  when: _kube.cluster.use_dns_server
 
 - name: Create argocd namespace
   kubernetes.core.k8s:
@@ -44,7 +54,7 @@
                       key: node-role.kubernetes.io/control-plane
                       operator: Exists
                   nodeSelector:
-                    node-role.kubernetes.io/control-plane: ""    
+                    node-role.kubernetes.io/control-plane: ""
                   \1
       when: not _kube.allow_scheduling
 
@@ -75,14 +85,14 @@
 
 - name: Install ingress ({{ _kube.ingress_type }})
   vars:
-    ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
     has_issuer: issuer_status.stdout == "Ready"
-  block:  
+  block:
     - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
       vars:
         name: argocd
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
-        
+
     - name: Check for ingress availability
       kubernetes.core.k8s_info:
         kind: IngressClass
@@ -100,7 +110,7 @@
   vars:
     has_version_specified: "{{ (argocd.version is defined and argocd.version and argocd.version != 'latest') | bool }}"
     release: "{{ has_version_specified | ternary('v' + argocd.version, release_tag.stdout) }}"
-    repo_path: argoproj/argo-cd 
+    repo_path: argoproj/argo-cd
   block:
     - name: Get latest argocd release
       ansible.builtin.shell: |

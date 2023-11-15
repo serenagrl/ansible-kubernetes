@@ -3,3 +3,7 @@ ingress_nginx:
   # releases with breaking changess. Try reducing the version number if errors occur during installation.
   version: latest # 4.7.2
   scale: no
+
+  nodePort:
+    http: 32080
+    https: 32443

@@ -16,8 +16,8 @@ vm:
   network:
     # The ipv4 of the gateway.
     gateway: 192.168.0.1
-    dns: "8.8.8.8, 1.1.1.1"
     cidr: 24
+    dns: [ 8.8.8.8, 1.1.1.1 ]
 
   # The Windows user credentials to use to access the shared folder on the winrm host.
   mount:

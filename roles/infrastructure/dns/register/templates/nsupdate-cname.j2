@@ -1,0 +1,6 @@
+server {{ hostvars.dns_server.ansible_hostname }}
+update delete {{ cname }}.{{ _kube.cluster.domain }}. CNAME
+update add {{ cname }}.{{ _kube.cluster.domain }}. 86400 CNAME {{ server_name }}.{{ _kube.cluster.domain }}.
+
+send
+quit

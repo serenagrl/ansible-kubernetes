@@ -1,12 +1,12 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Install kubectl
   delegate_to: localhost
-  block: 
+  block:
     - name: Get kubernetes gpg
       ansible.builtin.get_url:
         url:  https://dl.k8s.io/apt/doc/apt-key.gpg
@@ -18,13 +18,15 @@
       ansible.builtin.apt_repository:
         filename: kubernetes
         repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/kubernetes.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
+        update_cache: yes
 
     - name: Installing kubectl
       ansible.builtin.apt:
         pkg:
           - "kubectl"
         state: latest
-        update_cache: true
+        update_cache: yes
+
   when: remote_admin.install_kubectl
 
 - delegate_to: localhost
@@ -60,8 +62,8 @@
           ansible.builtin.replace:
             path: /root/.kube/config
             regexp: 'kubernetes'
-            replace: "{{ _kube.cluster.name }}"           
-      
+            replace: "{{ _kube.cluster.name }}"
+
       when: not file_stats.stat.exists
 
     - name: Add cluster config to kube config file on ansible controller host

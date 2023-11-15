@@ -17,7 +17,7 @@
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/render/contour.yaml"]
 
-    - name: Configure to run on control-planes only 
+    - name: Configure to run on control-planes only
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
         regexp: '^\s*(containers:)$'
@@ -44,7 +44,7 @@
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
-  
+
 - ansible.builtin.import_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: projectcontour
@@ -62,14 +62,25 @@
   register: ingress_service
 
 - name: Add host name into DNS entries
-  delegate_to: "{{ item }}"
   become_user: root
   vars:
     address: "{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}"
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    insertafter: "127.0.0.1 localhost"
-    line: "{{ address }} {{ _kube.hostname }}"
-  loop: "{{ fact_active_hosts + ['localhost'] }}"
-  ignore_unreachable: yes
-  ignore_errors: yes    
+  block:
+    - name: Register A record to DNS server
+      include_role:
+        name: "infrastructure/dns/register"
+      vars:
+        in_server_name: "{{ _kube.cluster.name }}"
+        in_server_ip: "{{ address }}"
+      when: _kube.cluster.use_dns_server
+
+    - name: Add entry to hosts file
+      delegate_to: "{{ item }}"
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        insertafter: "127.0.0.1 localhost"
+        line: "{{ address }} {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
+      loop: "{{ fact_active_hosts + ['localhost'] }}"
+      ignore_unreachable: yes
+      ignore_errors: yes
+      when: not _kube.cluster.use_dns_server

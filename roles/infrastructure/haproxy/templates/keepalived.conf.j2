@@ -17,7 +17,7 @@ vrrp_script chk_haproxy {
   weight 2
 }
 
-vrrp_instance haproxy-vip {
+vrrp_instance {{ _kube.cluster.name }}-haproxy-vip {
   state BACKUP
   priority 100
   interface eth0                       # Network card
@@ -27,7 +27,7 @@ vrrp_instance haproxy-vip {
     auth_type PASS
     auth_pass 1111
   }
-  unicast_src_ip {{ ansible_host }}      
+  unicast_src_ip {{ ansible_host }}
   unicast_peer {
 {% for host in vars['play_hosts'] %}
    {% if hostvars[host].ansible_hostname != ansible_hostname %}
@@ -37,7 +37,7 @@ vrrp_instance haproxy-vip {
   }
 
   virtual_ipaddress {
-    {{ keepalived.vip_address }}/{{ keepalived.vip_cidr }}            
+    {{ keepalived.vip_address }}/{{ keepalived.vip_cidr }}
   }
 
   track_script {

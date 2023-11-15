@@ -11,15 +11,25 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ fact_cluster_address }} gitlab.{{ gitlab.domain }}"
+    line: "{{ _kube.cluster.address }} gitlab.{{ _kube.cluster.domain }}"
   loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
+  when: not _kube.cluster.use_dns_server
+
+- name: Register CNAME record to DNS server
+  include_role:
+    name: "infrastructure/dns/register"
+  vars:
+    in_server_name: "{{ _kube.cluster.name }}"
+    in_cname: "gitlab"
+    in_type: "CNAME"
+  when: _kube.cluster.use_dns_server
 
 - name: Create gitlab namespace
   kubernetes.core.k8s:
     kind: Namespace
-    name: gitlab 
+    name: gitlab
 
 - ansible.builtin.include_role:
     name: devops/gitlab/minio-tenant
@@ -37,13 +47,13 @@
         name: gitlab
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
-    # Notes: Uses own domain names.    
+    # Notes: Uses own domain names.
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying Gitlab
       vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if gitlab.version is defined and gitlab.version and gitlab.version != 'latest' %}{{ gitlab.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
@@ -69,8 +79,8 @@
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "Gitlab Minio tenant credential keys"
-    command: 
-      "echo accesskey=$(kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.accesskey}' | base64 -d); 
+    command:
+      "echo accesskey=$(kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.accesskey}' | base64 -d);
        echo -n secretkey=; kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.secretkey}'"
 
 

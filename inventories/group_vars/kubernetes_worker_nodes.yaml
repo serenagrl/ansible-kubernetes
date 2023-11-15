@@ -1,4 +1,4 @@
-ansible_user: root 
+ansible_user: root
 ansible_become: yes
 
 # You can also set this in individual host if you are splitting the nodes to different physical
@@ -11,3 +11,6 @@ host_specs:
   min_ram_size: 4GB
   disk_size: 127GB
   v_cpu: 2
+
+# Indicates whether to register to a DNS server for name resolution.
+register_to_dns_server: yes

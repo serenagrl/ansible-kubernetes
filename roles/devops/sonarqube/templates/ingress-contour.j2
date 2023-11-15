@@ -5,7 +5,7 @@ metadata:
   namespace: sonarqube
 spec:
   virtualhost:
-    fqdn: sonarqube.{{ sonarqube.domain }}
+    fqdn: sonarqube.{{ _kube.cluster.domain }}
     tls:
       secretName: sonarqube-ingress-tls
   routes:

@@ -5,7 +5,7 @@ metadata:
   namespace: projectcontour
 spec:
   virtualhost:
-    fqdn: {{ _kube.hostname }}
+    fqdn: {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}
     tls:
       secretName: root-httpproxy-tls
   includes: []

@@ -1,0 +1,58 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Installing bind and dns utility packages
+  ansible.builtin.apt:
+    pkg:
+      - bind9
+      - bind9utils
+      - bind9-doc
+      - dnsutils
+      - resolvconf
+    state: latest
+    update_cache: yes
+
+- name: Configure name.conf.local
+  ansible.builtin.blockinfile:
+    path: "/etc/bind/named.conf.local"
+    create: yes
+    backup: yes
+    marker: "// {mark} {{ dns.zone }} zone"
+    block: |
+      {{ NAMED_CONF_LOCAL_TEMPLATE }}
+
+- name: Configure forward lookup
+  ansible.builtin.blockinfile:
+    path: "/var/lib/bind/forward.{{ dns.zone }}"
+    create: yes
+    marker: "; {mark} Forward lookup for {{ dns.zone }}"
+    block: |
+      {{ FORWARD_LOOKUP_TEMPLATE }}
+
+- name: Configure reverse lookup
+  ansible.builtin.blockinfile:
+    path: "/var/lib/bind/reverse.{{ dns.zone }}"
+    create: yes
+    marker: "; {mark} Reverse lookup for {{ dns.zone }}"
+    block: |
+      {{ REVERSE_LOOKUP_TEMPLATE }}
+
+- name: Restart bind service to let changes take effect
+  ansible.builtin.systemd:
+    enabled: yes
+    state: restarted
+    name: named
+
+- name: Add nameserver entry in resolvconf
+  ansible.builtin.lineinfile:
+    path: /etc/resolvconf/resolv.conf.d/head
+    line: "nameserver {{ ansible_host }}"
+
+- name: Update resolveconf
+  ansible.builtin.shell: |
+    sudo resolvconf -u
+    sudo systemctl restart systemd-resolved

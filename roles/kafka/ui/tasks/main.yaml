@@ -12,10 +12,20 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ fact_cluster_address }} {{ kafka.ui.domain }}"
+    line: "{{ _kube.cluster.address }} kafka.{{ _kube.cluster.domain }}"
   loop: "{{ fact_active_hosts + ['localhost'] }}"
   ignore_errors: yes
   ignore_unreachable: yes
+  when: not _kube.cluster.use_dns_server
+
+- name: Register CNAME record to DNS server
+  include_role:
+    name: "infrastructure/dns/register"
+  vars:
+    in_server_name: "{{ _kube.cluster.name }}"
+    in_cname: "kafka"
+    in_type: "CNAME"
+  when: _kube.cluster.use_dns_server
 
 - name: Install kafka-ui
   block:
@@ -35,7 +45,7 @@
 
     - name: Deploying kafka-ui
       vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if kafka.ui.version is defined and kafka.ui.version and kafka.ui.version != 'latest' %}{{ kafka.ui.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:

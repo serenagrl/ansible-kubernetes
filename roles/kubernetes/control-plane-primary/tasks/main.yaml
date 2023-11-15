@@ -1,6 +1,6 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
@@ -11,10 +11,10 @@
           kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }} \
           --upload-certs --cri-socket unix:///var/run/containerd/containerd.sock \
           --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}
-          
+
 - ansible.builtin.include_role:
     name: kubernetes/control-plane
 
 - ansible.builtin.include_role:
     name: kubernetes/remote-admin
-  when: remote_admin.enabled          
+  when: remote_admin.enabled

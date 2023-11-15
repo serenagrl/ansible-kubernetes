@@ -19,7 +19,7 @@ tolerations:
     key: node-role.kubernetes.io/control-plane
     operator: Exists
 nodeSelector:
-  node-role.kubernetes.io/control-plane: ""  
+  node-role.kubernetes.io/control-plane: ""
 {% endif %}
 
 rbac:
@@ -51,9 +51,12 @@ runners:
           BucketLocation = "us-east-1"
       [runners.kubernetes]
         image = "{{ gitlab_runner.image }}"
+
+{% if not _kube.cluster.use_dns_server %}
         [[runners.kubernetes.host_aliases]]
-          ip = "{{ fact_cluster_address }}"
+          ip = "{{ _kube.cluster.address }}"
           hostnames = ["core.harbor.k8s.local"]
+{% endif %}
 
         [runners.kubernetes.volumes]
           [[runners.kubernetes.volumes.secret]]
@@ -61,7 +64,7 @@ runners:
             mount_path = "/usr/local/share/ca-certificates/"
             read_only = false
             [runners.kubernetes.volumes.secret.items]
-              "ca.crt" = "ca.crt" 
+              "ca.crt" = "ca.crt"
 
 {% if not _kube.allow_scheduling %}
         [runners.kubernetes.node_tolerations]

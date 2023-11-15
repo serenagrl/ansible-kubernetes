@@ -1,9 +1,0 @@
-{% if lb_status.stdout == "Active" %}
-    spec:
-      type: LoadBalancer
-{% else %}
-    spec:
-      type: ClusterIP
-      externalIPs: 
-        - {{ _kube.cluster.address }}
-{% endif %}

@@ -46,11 +46,11 @@
                   \1
                     node-role.kubernetes.io/control-plane: ""
       loop:
-        - prometheusAdapter-deployment.yaml 
+        - prometheusAdapter-deployment.yaml
         - kubeStateMetrics-deployment.yaml
-        - prometheusOperator-deployment.yaml 
-        - grafana-deployment.yaml 
-        - blackboxExporter-deployment.yaml 
+        - prometheusOperator-deployment.yaml
+        - grafana-deployment.yaml
+        - blackboxExporter-deployment.yaml
       when: not _kube.allow_scheduling
 
     - name: Configure to run on control-planes only
@@ -65,8 +65,8 @@
                   \1
                     node-role.kubernetes.io/control-plane: ""
       loop:
-        - prometheus-prometheus.yaml 
-        - alertmanager-alertmanager.yaml 
+        - prometheus-prometheus.yaml
+        - alertmanager-alertmanager.yaml
       when: not _kube.allow_scheduling
 
 - name: Install kube prometheus custom resources
@@ -88,7 +88,7 @@
   vars:
     name: monitoring
     namespace: monitoring
-    definition: "{{ INGRESS_TEMPLATE }}"  
+    definition: "{{ INGRESS_TEMPLATE }}"
 
 - name: Configure ingress
   block:
@@ -131,7 +131,7 @@
             marker: "    # ANSIBLE MANAGED BLOCK"
             block: |2
                   [server]
-                  domain = {{ _kube.hostname }}
+                  domain = {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}
                   root_url = %(protocol)s://%(domain)s:%(http_port)s/grafana/
                   serve_from_sub_path = true
 

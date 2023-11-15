@@ -6,11 +6,11 @@ metadata:
   labels:
     app.kubernetes.io/name: {{ name }}-{{ namespace }}-ingress
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: {{ rabbitmq.enable_tls | ternary('HTTPS', 'HTTP') }}    
+    nginx.ingress.kubernetes.io/backend-protocol: {{ rabbitmq.enable_tls | ternary('HTTPS', 'HTTP') }}
 spec:
   ingressClassName: {{ ingress_name }}
   rules:
-    - host: {{ _kube.hostname }}
+    - host: {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}
       http:
         paths:
           - path: /{{ namespace }}/rabbitmq

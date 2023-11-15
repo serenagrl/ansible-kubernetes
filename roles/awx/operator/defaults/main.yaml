@@ -6,4 +6,4 @@ MANIFEST_FOLDER: "{{ _work_dir }}/awx"
 HTTP_PROXY_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"
 
 INGRESS_SETUP: "{{ 'ingress-' + _kube.ingress_type + '.yaml' }}"
-AWX_HOST: "https://{{ _kube.hostname }}/awx/"
+AWX_HOST: "https://{{ _kube.cluster.name }}.{{ _kube.cluster.domain }}/awx/"

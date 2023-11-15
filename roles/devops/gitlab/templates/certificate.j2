@@ -5,10 +5,10 @@ metadata:
   namespace: gitlab
 spec:
   dnsNames:
-    - gitlab.{{ gitlab.domain }}
-    - kas.{{ gitlab.domain }}
-    - minio.{{ gitlab.domain }}
-    - registry.{{ gitlab.domain }}
+    - gitlab.{{ _kube.cluster.domain }}
+    - kas.{{ _kube.cluster.domain }}
+    - minio.{{ _kube.cluster.domain }}
+    - registry.{{ _kube.cluster.domain }}
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}

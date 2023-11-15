@@ -5,7 +5,7 @@ metadata:
   namespace: harbor-system
 spec:
   virtualhost:
-    fqdn: notary.{{ harbor.domain }}
+    fqdn: notary.harbor.{{ _kube.cluster.domain }}
     tls:
       secretName: harbor-ingress-tls
   routes:

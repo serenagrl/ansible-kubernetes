@@ -6,13 +6,13 @@ expose:
     # For harbor api
     enabled: true
     auto:
-      commonName: {{ harbor.domain }}
+      commonName: harbor.{{ _kube.cluster.domain }}
     certSource: secret
     secret:
       secretName: "harbor-ingress-tls"
       notarySecretName: "harbor-ingress-tls"
 
-externalURL: https://core.{{ harbor.domain }}
+externalURL: https://core.harbor.{{ _kube.cluster.domain }}
 
 persistence:
   enabled: true
