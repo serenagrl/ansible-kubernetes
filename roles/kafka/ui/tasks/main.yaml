@@ -6,26 +6,16 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Add kafka portal DNS entries to /etc/hosts
-  become_user: root
-  delegate_to: "{{ item }}"
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    insertafter: "127.0.0.1 localhost"
-    line: "{{ _kube.cluster.address }} kafka.{{ _kube.cluster.domain }}"
-  loop: "{{ fact_active_hosts + ['localhost'] }}"
-  ignore_errors: yes
-  ignore_unreachable: yes
-  when: not _kube.cluster.use_dns_server
-
-- name: Register CNAME record to DNS server
-  include_role:
-    name: "infrastructure/dns/register"
+- name: Register DNS entries
   vars:
+    # DNS Server parameters
     in_server_name: "{{ _kube.cluster.name }}"
     in_cname: "kafka"
     in_type: "CNAME"
-  when: _kube.cluster.use_dns_server
+    # DNS hosts file parameters
+    in_host_entry: "{{ _kube.cluster.address }} kafka.{{ _kube.cluster.domain }}"
+  ansible.builtin.include_role:
+    name: "{{ _kube.cluster.use_dns_server | ternary('infrastructure/dns/register','common/dns-host-file') }}"
 
 - name: Install kafka-ui
   block:

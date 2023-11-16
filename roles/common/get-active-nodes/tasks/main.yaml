@@ -1,3 +1,10 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
 - name: Get active nodes in kubernetes cluster
   kubernetes.core.k8s_info:
     api_version: v1

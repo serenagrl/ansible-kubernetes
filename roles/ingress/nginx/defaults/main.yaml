@@ -1,3 +1,4 @@
 MANIFEST_FILE: "{{ _work_dir }}/ingress-nginx-deployment.yaml"
 CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 HAPROXY_CONFIG_TEMPLATE: "{{ lookup('template', 'haproxy-ingress.j2') }}"
+SERVICE_DEFINITION: "{{ lookup('template', 'service-definition.j2') | from_yaml }}"

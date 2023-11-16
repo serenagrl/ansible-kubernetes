@@ -91,18 +91,25 @@
     name: ingress-nginx-controller
   register: ingress_service
 
-- name: Add entry to hosts file
-  delegate_to: "{{ item }}"
-  become_user: root
-  vars:
-    address: "{{ ingress_service.resources.0.spec.externalIPs.0 }}"
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    insertafter: "127.0.0.1 localhost"
-    line: "{{ address }} {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
-  loop: "{{ fact_active_hosts + ['localhost'] }}"
-  ignore_unreachable: yes
-  ignore_errors: yes
+- name: Configure ingress for hosts file
+  block:
+
+    - name: Add entry to hosts file
+      vars:
+        in_host_entry: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
+      ansible.builtin.include_role:
+        name: "{{ _kube.cluster.use_dns_server | ternary('infrastructure/dns/register','common/dns-host-file') }}"
+
+    - name: Patch ingress controller service type
+      kubernetes.core.k8s:
+        state: patched
+        namespace: ingress-nginx
+        kind: Service
+        name: ingress-nginx-controller
+        definition: |
+          {{ SERVICE_DEFINITION }}
+      when: not register_to_load_balancer
+
   when: not _kube.cluster.use_dns_server
 
 - name: Configure ingress for edge load-balancing
@@ -125,4 +132,5 @@
     - name: Configure HAProxy load-balancers to expose ingress
       ansible.builtin.include_tasks: update-haproxy.yaml
       loop: "{{ groups['load_balancers'] }}"
+      
   when: register_to_load_balancer

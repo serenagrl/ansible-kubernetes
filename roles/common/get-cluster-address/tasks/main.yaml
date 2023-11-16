@@ -1,6 +1,12 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
 - vars:
     services:
-      contour: 
+      contour:
         name: envoy
         namespace: projectcontour
       nginx:
@@ -23,4 +29,4 @@
 
     - ansible.builtin.set_fact:
         fact_cluster_address: "{% if lb_status.stdout == 'Active' %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ ingress_service.resources[0].spec.externalIPs.0 }}{% endif %}"
- 
+
