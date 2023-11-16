@@ -6,16 +6,11 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Register DNS entries
+- name: Register DNS entry
   vars:
-    # DNS Server parameters
-    in_server_name: "{{ _kube.cluster.name }}"
-    in_cname: "kafka"
-    in_type: "CNAME"
-    # DNS hosts file parameters
-    in_host_entry: "{{ _kube.cluster.address }} kafka.{{ _kube.cluster.domain }}"
+    domain_prefix: kafka
   ansible.builtin.include_role:
-    name: "{{ _kube.cluster.use_dns_server | ternary('infrastructure/dns/register','common/dns-host-file') }}"
+    name: common/dns-register
 
 - name: Install kafka-ui
   block:

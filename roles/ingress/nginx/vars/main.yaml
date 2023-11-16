@@ -4,6 +4,13 @@ ingress_nginx:
   version: latest # 4.7.2
   scale: no
 
+  # The nodeports to expose the ingress service controller service to the edge load-balancer (i.e. Haproxy)
   nodePort:
-    http: 32080
+    http: 32080   # Currently not used/configured
     https: 32443
+
+  metallb:
+    enabled: yes
+
+    # Name will be concatenated with _kube.cluster.name and _kube.cluster.domain to form FQDN i.e. portal.serena.k8s.local
+    host_prefix: portal

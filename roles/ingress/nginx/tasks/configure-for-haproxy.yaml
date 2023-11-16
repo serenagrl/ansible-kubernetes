@@ -1,0 +1,49 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Configure ingress for hosts file
+  block:
+    - name: Add entry to hosts file
+      vars:
+        in_host_entry: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
+      ansible.builtin.include_role:
+        name: "{{ _kube.cluster.use_dns_server | ternary('infrastructure/dns/register','common/dns-host-file') }}"
+
+    - name: Patch ingress controller service type to ClusterIP
+      kubernetes.core.k8s:
+        state: patched
+        namespace: ingress-nginx
+        kind: Service
+        name: ingress-nginx-controller
+        definition: |
+          {{ SERVICE_DEFINITION }}
+      when: not register_to_load_balancer
+
+  when: not _kube.cluster.use_dns_server
+
+- name: Configure ingress for edge load-balancing
+  block:
+    - name: Patch ingress controller service nodePorts
+      kubernetes.core.k8s:
+        state: patched
+        namespace: ingress-nginx
+        kind: Service
+        name: ingress-nginx-controller
+        definition: |
+          spec:
+            type: NodePort
+            ports:
+              - nodePort: {{ ingress_nginx.nodePort.http }}
+                port: 80
+              - nodePort: {{ ingress_nginx.nodePort.https }}
+                port: 443
+
+    - name: Configure HAProxy load-balancers to expose ingress
+      ansible.builtin.include_tasks: update-haproxy.yaml
+      loop: "{{ groups['load_balancers'] }}"
+
+  when: register_to_load_balancer

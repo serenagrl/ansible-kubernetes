@@ -1,0 +1,30 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Get ingress host
+  shell: kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
+  register: ingress_host_result
+
+- name: Get ingress loadbalancer ip (if any)
+  shell: kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+  register: ingress_ip_result
+
+- name: Register DNS entries
+  vars:
+    # DNS Server parameters
+    in_server_name: "{{ (ingress_host_result.stdout == '') | ternary(_kube.cluster.name, (ingress_host_result.stdout | replace(_kube.cluster.domain, ''))[:-1]) }}"
+    in_cname: "{{ host_entry }}"
+    in_type: "CNAME"
+    # DNS hosts file parameters
+    in_host_entry: "{{ (ingress_ip_result.stdout == '') | ternary(_kube.cluster.address, ingress_ip_result.stdout) }} {{ host_entry }}.{{ _kube.cluster.domain }}"
+  ansible.builtin.include_role:
+    name: "{{ _kube.cluster.use_dns_server | ternary('infrastructure/dns/register','common/dns-host-file') }}"
+  loop:
+    - "core.harbor"
+    - "notary.harbor"
+  loop_control:
+    loop_var: host_entry

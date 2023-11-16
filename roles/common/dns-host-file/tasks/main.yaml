@@ -4,7 +4,7 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Add argocd portal DNS entries to /etc/hosts
+- name: Add DNS entries to /etc/hosts
   become_user: root
   delegate_to: "{{ item }}"
   ansible.builtin.lineinfile:

@@ -5,16 +5,15 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Register DNS entries
+- name: Register DNS entry
   vars:
-    # DNS Server parameters
-    in_server_name: "{{ _kube.cluster.name }}"
-    in_cname: "sonarqube"
-    in_type: "CNAME"
-    # DNS hosts file parameters
-    in_host_entry: "{{ _kube.cluster.address }} sonarqube.{{ _kube.cluster.domain }}"
+    domain_prefix: sonarqube
   ansible.builtin.include_role:
-    name: "{{ _kube.cluster.use_dns_server | ternary('infrastructure/dns/register','common/dns-host-file') }}"
+    name: common/dns-register
+
+- name: Configure vm.max_map_count (elasticsearch pre-requisite)
+  ansible.builtin.include_tasks: update-sysctl.yaml
+  loop: "{{ fact_active_hosts }}"
 
 - name: Create sonarqube namespace
   kubernetes.core.k8s:

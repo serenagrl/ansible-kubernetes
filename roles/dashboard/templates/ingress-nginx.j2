@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: {{ ingress_name }}
   rules:
-    - host: {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}
+    - host: {{ ingress_host }}
       http:
         paths:
           - path: /dashboard(/|$)(.*)
