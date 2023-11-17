@@ -13,6 +13,7 @@ PLAYBOOKS:
   SETUP_KUBERNETES_SERVERS: setup-kubernetes-servers.yaml
   SETUP_KUBERNETES: setup-kubernetes.yaml
   SETUP_LOAD_BALANCERS: setup-load-balancers.yaml
+  SETUP_DNS: setup-dns.yaml
   SETUP_NFS: setup-nfs.yaml
   SETUP_WORKER_NODE_SERVERS: setup-worker-node-servers.yaml
   SETUP_WORKER_NODES: setup-worker-nodes.yaml

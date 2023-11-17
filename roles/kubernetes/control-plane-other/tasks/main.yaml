@@ -4,6 +4,15 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
+- name: Register to Load Balancer
+  vars:
+    in_backend_port: 6443
+    in_backend_name: "{{ _kube.cluster.name }}-apiserver"
+  ansible.builtin.include_role:
+    name: infrastructure/haproxy/register
+  when: register_to_load_balancer
+
 - name: Get control-plane join command
   delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   ansible.builtin.shell: echo $(kubeadm token create --print-join-command) --control-plane --certificate-key $(kubeadm init phase upload-certs --upload-certs | grep -vw -e upload-certs)

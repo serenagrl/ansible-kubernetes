@@ -36,7 +36,7 @@
           ansible.builtin.include_role:
             name: infrastructure/dns/register
           vars:
-            server_name: "{{ ingress_host }}"
+            server_name: "{{ ingress_nginx.metallb.host_prefix }}.{{ _kube.cluster.name }}"
             server_ip: "{{ ingress_ip }}"
 
       when: _kube.cluster.use_dns_server

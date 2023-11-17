@@ -4,7 +4,7 @@
   ansible.builtin.uri:
     url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/templates"
     method: POST
-    headers: 
+    headers:
       Content-Type: application/json
       Accept: application/json
       Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
@@ -28,21 +28,23 @@
     status_code: 201 # Created
   when: item.create
   loop:
-    - { name: "1. Setup Load-Balancers", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "1. Setup DNS Server", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_DNS }}", desc: "Configures a basic BIND DNS server. Optionally, can provision a virtual machine for it." }
+    - { name: "2. Setup Load-Balancers", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_LOAD_BALANCERS }}", desc: "Provisions Load Balancer VMs, install/configure HAProxy and Keepalived." }
-    - { name: "2. Provision Control-Planes VMs", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "3. Provision Control-Planes VMs", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_SERVERS }}", desc: "Provisions control-plane virtual machines." }
-    - { name: "3. Setup Control-Plane (Primary)", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "4. Setup Control-Plane (Primary)", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_PRIMARY }}", desc: "Creates primary control-plane in kubernetes cluster." }
-    - { name: "4. Setup Control-Planes (Secondary)", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "5. Setup Control-Planes (Secondary)", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_OTHER }}", desc: "Join secondary control-planes into kubernetes cluster." }
-    - { name: "5. Provision Worker Nodes VMs", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "6. Provision Worker Nodes VMs", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Provisions worker node virtual machines." }
-    - { name: "6. Setup Worker Nodes", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "7. Setup Worker Nodes", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Join worker nodes into the kubernetes cluster." }
-    - { name: "7. Setup NFS Server", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "8. Setup NFS Server", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
-    - { name: "8. Setup Basic Components", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "9. Setup Basic Components", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs basic kubernetes components." }
     - { name: "Provision Kubernetes VMs", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES_SERVERS }}", desc: "Provisions all the virtual machines for the kubernetes cluster." }

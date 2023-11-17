@@ -1,7 +1,2 @@
 dependencies:
   - role: kubernetes/cluster-node
-
-  - role: infrastructure/haproxy/register
-    in_backend_port: 6443
-    in_backend_name: "{{ _kube.cluster.name }}-apiserver"
-    when: register_to_load_balancer
