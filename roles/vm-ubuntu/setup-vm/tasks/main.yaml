@@ -170,7 +170,7 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ _kube.cluster._use_dns_server | ternary('127.0.0.1', ansible_host) }} {{ ansible_hostname }}"
+    line: "{{ _kube.cluster.use_dns_server | ternary('127.0.0.1', ansible_host) }} {{ ansible_hostname }}"
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
 - name: Checkpoint VM
