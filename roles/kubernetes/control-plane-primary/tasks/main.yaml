@@ -6,13 +6,11 @@
 #
 - name: Register Cluster ({{ _kube.cluster.name }}) DNS
   vars:
-    # DNS Server parameters
     in_server_name: "{{ _kube.cluster.name }}"
     in_server_ip: "{{ _kube.cluster.address }}"
-    # host file parameters
-    in_host_entry: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
   ansible.builtin.include_role:
-    name: "{{ _kube.cluster.use_dns_server | ternary('infrastructure/dns/register', 'common/dns-host-file') }}"
+    name: infrastructure/dns/register
+  when: _kube.cluster.use_dns_server
 
 - name: Register node to Haproxy
   vars:

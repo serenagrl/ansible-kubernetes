@@ -170,3 +170,30 @@
         content: |
                   runtime-endpoint: unix:///run/containerd/containerd.sock
                   image-endpoint: unix:///run/containerd/containerd.sock
+
+- name: Configure DNS (if required)
+  become_user: root
+  vars:
+    register_dns: "{{ _kube.cluster.use_dns_server | default(false) }}"
+  block:
+    - name: Register to DNS server
+      ansible.builtin.include_role:
+        name: infrastructure/dns/register
+
+    - name: Installing dns utility package
+      ansible.builtin.apt:
+        pkg:
+          - resolvconf
+        state: latest
+        update_cache: yes
+
+    - name: Add nameserver entry in resolvconf
+      ansible.builtin.lineinfile:
+        path: /etc/resolvconf/resolv.conf.d/head
+        line: "nameserver {{ hostvars.dns_server.ansible_host }}"
+
+    - name: Update resolveconf
+      ansible.builtin.shell: |
+        sudo resolvconf -u
+        sudo systemctl restart systemd-resolved
+  when: register_dns
