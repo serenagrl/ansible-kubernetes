@@ -17,6 +17,12 @@
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/cert-manager.yaml"]
 
+    - name: Configure cert manager controller
+      ansible.builtin.lineinfile:
+        dest: "{{ MANIFEST_FILE }}"
+        insertafter: '- --cluster-resource-namespace'
+        line: "          - --enable-certificate-owner-ref"
+
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
