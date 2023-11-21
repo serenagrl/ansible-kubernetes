@@ -5,6 +5,17 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Register DNS entry
+  vars:
+    domain_prefix: "{{ host_entry }}"
+  ansible.builtin.include_role:
+    name: common/dns-register
+  loop:
+    - "gitlab.minio"
+    - "gitlab-console.minio"
+  loop_control:
+    loop_var: host_entry
+
 - name: Create minio tenant for gitlab
   block:
     - name: Add minio chart repo
@@ -17,13 +28,13 @@
         name: gitlab-minio
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
-    # Notes: Uses own domain names.    
+    # Notes: Uses own domain names.
     - name: Setup ingress
       include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying minio tenant for gitlab
       vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if gitlab_minio.version is defined and gitlab_minio.version and gitlab_minio.version != 'latest' %}{{ gitlab_minio.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
@@ -47,7 +58,7 @@
   block:
     - name: Get minio credentials
       vars:
-        overrides: 
+        overrides:
           "{% if not _kube.allow_scheduling %}
             --overrides='{\"spec\":{\"nodeSelector\":{\"node-role.kubernetes.io/control-plane\":\"\"},\"tolerations\":[{\"effect\": \"NoSchedule\", \"key\": \"node-role.kubernetes.io/control-plane\", \"operator\": \"Exists\"}]}}'
           {% endif %}"
