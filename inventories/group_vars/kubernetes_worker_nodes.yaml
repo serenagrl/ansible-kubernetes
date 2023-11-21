@@ -14,6 +14,3 @@ host_specs:
 
 # Indicates whether to automatically register the control-planes to the HAproxy load balancers config file.
 register_to_load_balancer: yes
-
-# Indicates whether to register to a DNS server for name resolution.
-register_to_dns_server: yes
