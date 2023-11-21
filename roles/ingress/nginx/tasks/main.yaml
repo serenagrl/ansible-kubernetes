@@ -12,7 +12,7 @@
 - include_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: ingress-nginx
-    ingress_host: "{{ ingress_nginx.metallb.enabled | ternary(ingress_nginx.metallb.host_prefix + '.', '') }}{{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
+    ingress_host: "{{ ingress_nginx.metallb.enabled | ternary(ingress_nginx.metallb.hostname, '_kube.cluster.name') }}.{{ _kube.cluster.domain }}"
     certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
 - become_user: root

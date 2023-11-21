@@ -13,5 +13,6 @@ ingress_nginx:
     # Fails if metallb is not installed first.
     enabled: no
 
-    # Name will be concatenated with _kube.cluster.name and _kube.cluster.domain to form FQDN i.e. portal.serena.k8s.local
-    host_prefix: portal
+    # Ingress hostname when metallb is enabled.
+    # Name will be concatenated with _kube.cluster.domain to form FQDN i.e. portal.k8s.local
+    hostname: portal
