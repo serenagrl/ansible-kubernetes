@@ -19,6 +19,8 @@ _kube:
     cidr_network: 10.1.0.0/16
 
     # Indicates whether to use a dns server for naming.
+    # yes - will attempt to register hostnames to dns server.
+    # no - will use host file.
     use_dns_server: yes
 
   # Specify which ingress type to use - nginx or contour
