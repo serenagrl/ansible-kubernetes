@@ -26,7 +26,7 @@
 - name: Setup ingress
   ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
   vars:
-    name: rabbitmq-management
+    name: rabbitmq-management-{{ namespace }}
     namespace: "{{ rabbitmq.namespace }}"
     definition: "{{ INGRESS_TEMPLATE }}"
 

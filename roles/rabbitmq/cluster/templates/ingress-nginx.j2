@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ name }}-{{ namespace }}-ingress
+  name: {{ name }}-ingress
   namespace: {{ namespace }}
   labels:
-    app.kubernetes.io/name: {{ name }}-{{ namespace }}-ingress
+    app.kubernetes.io/name: {{ name }}-ingress
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: {{ rabbitmq.enable_tls | ternary('HTTPS', 'HTTP') }}
 spec:
