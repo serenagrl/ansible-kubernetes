@@ -4,3 +4,4 @@
     force: yes
     definition: "{{ item }}"
   loop: "{{ HTTP_PROXY_TEMPLATES }}"
+  when: item != ''
