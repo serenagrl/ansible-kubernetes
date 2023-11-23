@@ -41,8 +41,8 @@
         update_cache: yes
 
 # Prevents warnings when running ansible helm commands.
-- become_user: "{{ _kube.user }}"
-  name: Install helm diff
+- name: Install helm diff
+  become_user: "{{ _kube.user }}"
   ansible.builtin.shell: |
     helm plugin install https://github.com/databus23/helm-diff
 

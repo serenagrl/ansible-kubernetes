@@ -171,7 +171,7 @@
                   runtime-endpoint: unix:///run/containerd/containerd.sock
                   image-endpoint: unix:///run/containerd/containerd.sock
 
-- name: Configure DNS (if required)
+- name: Configure DNS Server (if required)
   become_user: root
   vars:
     register_dns: "{{ _kube.cluster.use_dns_server | default(false) }}"
