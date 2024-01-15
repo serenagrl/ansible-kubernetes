@@ -1,9 +1,6 @@
-- name: Check for root HTTPProxy availability
-  kubernetes.core.k8s_info:
-    kind: HTTPProxy
-    name: root-httpproxy
-    namespace: projectcontour
-  register: ingress_result  
+- name: Get root HTTPProxy
+  shell: kubectl get HTTPProxy -n projectcontour -o jsonpath='{.items[0].metadata.name}'
+  register: ingress_result
 
 - block:
     - name: Create HTTPProxy
@@ -23,5 +20,4 @@
               name: "{{ name }}-httpproxy"
               namespace: "{{ namespace }}"
 
-  when:
-    - (ingress_result.resources | length > 0)  
+  when: ingress_result.stdout != ''

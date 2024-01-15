@@ -10,7 +10,17 @@
   register: password_result
 
 - name: Get ingress host
-  shell: kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
+  vars:
+    services:
+      contour:
+        name: envoy
+        namespace: projectcontour
+      nginx:
+        name: ingress-nginx-controller
+        namespace: ingress-nginx
+    ingress: "{{ services[_kube.ingress_type] }}"
+  shell: | 
+    kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
   register: ingress_host_result
 
 - name: Setup AWX environment

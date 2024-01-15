@@ -5,13 +5,25 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Get ingress host
-  shell: kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
-  register: ingress_host_result
+- name: Get Ingress details
+  vars:
+    services:
+      contour:
+        name: envoy
+        namespace: projectcontour
+      nginx:
+        name: ingress-nginx-controller
+        namespace: ingress-nginx
+    ingress: "{{ services[_kube.ingress_type] }}"
+  block:
+    - name: Get ingress host
+      shell: |
+        kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
+      register: ingress_host_result
 
-- name: Get ingress loadbalancer ip (if any)
-  shell: kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[].ip}'
-  register: ingress_ip_result
+    - name: Get ingress loadbalancer ip (if any)
+      shell: kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+      register: ingress_ip_result
 
 - name: Register DNS entries
   vars:

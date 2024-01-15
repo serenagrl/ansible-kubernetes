@@ -45,14 +45,18 @@
     state: absent
   when: _cleanup
 
-- ansible.builtin.import_tasks: ./tasks/task-create-certificate.yaml
+- name: Setup root HTTPProxy
   vars:
-    name: projectcontour
-    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+    ingress_host: "{{ contour.metallb.enabled | ternary(contour.metallb.hostname, _kube.cluster.name) }}.{{ _kube.cluster.domain }}"
+  block:
+    - ansible.builtin.import_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: projectcontour
+        certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
-- name: Create root HTTPProxy
-  kubernetes.core.k8s:
-    definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"
+    - name: Create root HTTPProxy
+      kubernetes.core.k8s:
+        definition: "{{ INGRESS_CONTOUR_TEMPLATE }}"
 
 - name: Get ingress service information
   kubernetes.core.k8s_info:
@@ -61,26 +65,11 @@
     name: envoy
   register: ingress_service
 
-- name: Add host name into DNS entries
-  become_user: root
+- name: Configure Ingress
+  ansible.builtin.include_tasks: "{{ contour.metallb.enabled | ternary('../tasks/configure-for-metallb.yaml', '../tasks/configure-for-haproxy.yaml') }}"
   vars:
-    address: "{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}"
-  block:
-    - name: Register A record to DNS server
-      include_role:
-        name: "infrastructure/dns/register"
-      vars:
-        in_server_name: "{{ _kube.cluster.name }}"
-        in_server_ip: "{{ address }}"
-      when: _kube.cluster.use_dns_server
-
-    - name: Add entry to hosts file
-      delegate_to: "{{ item }}"
-      ansible.builtin.lineinfile:
-        path: /etc/hosts
-        insertafter: "127.0.0.1 localhost"
-        line: "{{ address }} {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
-      loop: "{{ fact_active_hosts + ['localhost'] }}"
-      ignore_unreachable: yes
-      ignore_errors: yes
-      when: not _kube.cluster.use_dns_server
+    service_definition: "{{ SERVICE_DEFINITION }}"
+    haproxy_config_template: "{{ HAPROXY_CONFIG_TEMPLATE }}"
+    name: envoy
+    namespace: projectcontour
+    ingress: "{{ contour }}"
