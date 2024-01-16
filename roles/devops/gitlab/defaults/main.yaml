@@ -3,7 +3,7 @@ CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 HTTP_PROXY_TEMPLATES:
   -  "{{ lookup('template', 'ingress-contour-gitlab.j2') | from_yaml }}"
   -  "{{ lookup('template', 'ingress-contour-kas.j2') | from_yaml }}"
-  -  "{{ lookup('template', 'ingress-contour-minio.j2') | from_yaml if not gitlab.external_minio else '' }}"
+  -  "{{ lookup('template', 'ingress-contour-minio.j2') | from_yaml }}"
   # Uncomment the below line if you are installing the registry.
   # -  "{{ lookup('template', 'ingress-contour-registry.j2') | from_yaml }}"
 

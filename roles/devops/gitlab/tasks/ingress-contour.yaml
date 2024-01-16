@@ -4,4 +4,4 @@
     force: yes
     definition: "{{ item }}"
   loop: "{{ HTTP_PROXY_TEMPLATES }}"
-  when: item != ''
+  when: 'not "minio" in item.metadata.name or ("minio" in item.metadata.name and not gitlab.external_minio)'
