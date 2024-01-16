@@ -20,7 +20,7 @@
         kind: Service
         name: "{{ name }}"
         definition: |
-          {{ service_definition }}
+          {{ SERVICE_DEFINITION }}
       when: not register_to_load_balancer
 
   when: not _kube.cluster.use_dns_server

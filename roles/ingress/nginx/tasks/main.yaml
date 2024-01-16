@@ -88,8 +88,6 @@
 - name: Configure Ingress
   ansible.builtin.include_tasks: "{{ ingress_nginx.metallb.enabled | ternary('../tasks/configure-for-metallb.yaml', '../tasks/configure-for-haproxy.yaml') }}"
   vars:
-    service_definition: "{{ SERVICE_DEFINITION }}"
-    haproxy_config_template: "{{ HAPROXY_CONFIG_TEMPLATE }}"
     name: ingress-nginx-controller
     namespace: ingress-nginx
     ingress: "{{ ingress_nginx }}"

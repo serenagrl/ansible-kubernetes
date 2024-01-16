@@ -14,7 +14,7 @@
         marker: ""
         insertbefore: "listen stats"
         block: |
-          {{ haproxy_config_template }}
+          {{ HAPROXY_CONFIG_TEMPLATE }}
 
     - name: Restart Haproxy to let changes take effect
       ansible.builtin.systemd:

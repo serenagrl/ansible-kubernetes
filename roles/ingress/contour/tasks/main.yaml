@@ -68,8 +68,6 @@
 - name: Configure Ingress
   ansible.builtin.include_tasks: "{{ contour.metallb.enabled | ternary('../tasks/configure-for-metallb.yaml', '../tasks/configure-for-haproxy.yaml') }}"
   vars:
-    service_definition: "{{ SERVICE_DEFINITION }}"
-    haproxy_config_template: "{{ HAPROXY_CONFIG_TEMPLATE }}"
     name: envoy
     namespace: projectcontour
     ingress: "{{ contour }}"
