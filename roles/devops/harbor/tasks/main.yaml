@@ -7,13 +7,9 @@
 
 - name: Register DNS entry
   vars:
-    domain_prefix: "{{ host_entry }}"
+    domain_prefix: core.harbor
   ansible.builtin.include_role:
     name: common/dns-register
-  loop:
-    - "core.harbor"
-  loop_control:
-    loop_var: host_entry
 
 - name: Create harbor-system namespace
   kubernetes.core.k8s:
