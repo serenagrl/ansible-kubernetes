@@ -6,7 +6,6 @@ metadata:
 spec:
   dnsNames:
     - core.harbor.{{ _kube.cluster.domain }}
-    - notary.harbor.{{ _kube.cluster.domain }}
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}

@@ -12,7 +12,6 @@
     name: common/dns-register
   loop:
     - "core.harbor"
-    - "notary.harbor"
   loop_control:
     loop_var: host_entry
 

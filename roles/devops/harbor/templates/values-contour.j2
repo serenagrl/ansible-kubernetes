@@ -10,7 +10,6 @@ expose:
     certSource: secret
     secret:
       secretName: "harbor-ingress-tls"
-      notarySecretName: "harbor-ingress-tls"
 
 externalURL: https://core.harbor.{{ _kube.cluster.domain }}
 
@@ -60,23 +59,6 @@ trivy:
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
 
-notary:
-  server:
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-
-  signer:
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-
 database:
   internal:
     tolerations:
@@ -104,10 +86,5 @@ exporter:
     node-role.kubernetes.io/control-plane: ""
 
 nginx:
-  tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/control-plane
-      operator: Exists
-  nodeSelector:
-    node-role.kubernetes.io/control-plane: ""
+  replicas: 0
 {% endif %}

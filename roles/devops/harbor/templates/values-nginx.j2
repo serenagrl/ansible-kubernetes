@@ -8,7 +8,6 @@ expose:
     certSource: secret
     secret:
       secretName: "harbor-ingress-tls"
-      notarySecretName: "harbor-ingress-tls"
 {% else %}
     certSource: auto
 {% endif %}
@@ -16,7 +15,6 @@ expose:
   ingress:
     hosts:
       core: core.harbor.{{ _kube.cluster.domain }}
-      notary: notary.harbor.{{ _kube.cluster.domain }}
     controller: default
     className: "{{ ingress_name }}"
     annotations:
@@ -74,23 +72,6 @@ trivy:
       operator: Exists
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
-
-notary:
-  server:
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-
-  signer:
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
 
 database:
   internal:
