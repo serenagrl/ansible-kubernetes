@@ -1,7 +1,8 @@
 - name: Create httpproxies for Gitlab services
+  vars:
+    templates: "{{ gitlab.external_minio | ternary((HTTP_PROXY_TEMPLATES | rejectattr('metadata.name', 'eq', 'minio-httpproxy') | list), HTTP_PROXY_TEMPLATES) }}"
   kubernetes.core.k8s:
     apply: yes
     force: yes
     definition: "{{ item }}"
-  loop: "{{ HTTP_PROXY_TEMPLATES }}"
-  when: 'not "minio" in item.metadata.name or ("minio" in item.metadata.name and not gitlab.external_minio)'
+  loop: "{{ templates }}"
