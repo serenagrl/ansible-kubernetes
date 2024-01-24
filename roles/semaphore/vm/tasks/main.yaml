@@ -9,7 +9,8 @@
     - name: Add Ansible repository
       ansible.builtin.apt_repository:
         repo: "ppa:ansible/ansible"
-        state: present  
+        state: present
+        update_cache: yes
 
     - name: Installing Ansible
       ansible.builtin.apt:
@@ -17,7 +18,8 @@
           - software-properties-common
           - ansible
         state: latest
-        update_cache: true
+        update_cache: yes
+
   when: semaphore.install_ansible
 
 - name: Install Postgres
@@ -32,7 +34,7 @@
       ansible.builtin.shell: sudo -i -u postgres psql -c "ALTER USER postgres WITH password '{{ semaphore.db_password }}';"
   when: semaphore.install_postgres
 
-- name: Install Ansible Semaphore 
+- name: Install Ansible Semaphore
   become_user: root
   vars:
     has_version_specified: "{{ (semaphore.version is defined and semaphore.version and semaphore.version != 'latest') | bool }}"
@@ -57,11 +59,11 @@
         state: directory
 
     - name: Create hashes and tokens
-      ansible.builtin.shell: | 
+      ansible.builtin.shell: |
         head -c32 /dev/urandom | base64
         head -c32 /dev/urandom | base64
         head -c32 /dev/urandom | base64
-      register: tokens_result    
+      register: tokens_result
 
     - name: Create config file
       vars:
@@ -72,7 +74,7 @@
         content: |
           {{ CONFIG_TEMPLATE | to_nice_json(sort_keys=false) }}
         dest: "{{ config_file }}"
-    
+
     - name: Run semaphore migrations
       ansible.builtin.shell: sudo semaphore --config {{ config_file }} migrate
 

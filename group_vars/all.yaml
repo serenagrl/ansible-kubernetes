@@ -5,29 +5,39 @@ _kube:
   # Password is p@ssw0rd
   pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
   cluster:
-    # You need to point this to a load balancer domain name and ip if you are running multiple control planes.
-    name: k8s-cluster
+    # The DNS domain name
+    domain: k8s.local
+
+    # The name of your k8s cluster.
+    # Will be appended with domain to form FQDN i.e. serena.k8s.local
+    name: serena
+
+    # The virtual ip address if you are running with load balancers, or the ip address of the 1st control plane.
     address: 192.168.0.200
+
+    # The internal network of your kubernetes cluster.
     cidr_network: 10.1.0.0/16
+
+    # Indicates whether to use a dns server for naming.
+    # yes - will attempt to register hostnames to dns server.
+    # no - will use host file.
+    use_dns_server: yes
 
   # Specify which ingress type to use - nginx or contour
   ingress_type: nginx
 
-  # The FQDN for the ingress domain (appears in web browser url)
-  hostname: serena.k8s.local
-  
   # This setting has the following effect:
   #   yes - Remove the taints on all control-planes and allow all pods (including user applications) to be scheduled on any nodes.
   #   no - Keep the taints on all control-planes but will configure tolerations on add-on components to run on the control-planes.
   allow_scheduling: no
 
   # Specify the name of the roles to which kubernetes add-on components to install
-  add_ons: 
+  add_ons:
     - name: metallb
     - name: cert-manager
     - name: ingress
     - name: dashboard
-    # - name: monitoring
+    - name: monitoring
     - name: metrics-server
     - name: csi/nfs
     # - name: csi/rook-ceph
@@ -54,5 +64,5 @@ _work_dir: /var/automate
 # Creates VM checkpoints at specific stages of automation.
 _checkpoint: yes
 
-# Clean up residue files after installation. 
+# Clean up residue files after installation.
 _cleanup: yes

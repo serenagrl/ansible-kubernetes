@@ -1,7 +1,7 @@
 fullnameOverride: gitlab
 global:
   hosts:
-    domain: {{ gitlab.domain }}
+    domain: {{ _kube.cluster.domain }}
   ingress:
     enabled: false
     configureCertmanager: false
@@ -14,28 +14,28 @@ global:
 
     lfs:
       bucket: git-lfs
-      connection: 
+      connection:
         secret: gitlab-storage-secret
         key: connection
-    
+
     artifacts:
       bucket: gitlab-artifacts
-      connection: 
+      connection:
         secret: gitlab-storage-secret
         key: connection
-    
+
     uploads:
       bucket: gitlab-uploads
-      connection: 
+      connection:
         secret: gitlab-storage-secret
         key: connection
-    
+
     packages:
       bucket: gitlab-packages
-      connection: 
+      connection:
         secret: gitlab-storage-secret
         key: connection
-    
+
     backups:
       enabled: true
       bucket: gitlab-backups
@@ -88,7 +88,7 @@ postgresql:
 
   persistence:
       size: {{ gitlab.postgres.storage_size }}
-      
+
 minio:
   tolerations:
     - effect: NoSchedule
@@ -105,7 +105,7 @@ redis:
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
-  
+
   replica:
     tolerations:
       - effect: NoSchedule
@@ -131,7 +131,7 @@ gitlab:
       objectStorage:
         config:
           secret: gitlab-storage-secret
-          key: connection 
+          key: connection
 {% endif %}
 
   migrations:

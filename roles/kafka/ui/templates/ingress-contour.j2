@@ -5,12 +5,12 @@ metadata:
   namespace: {{ kafka.namespace }}
 spec:
   virtualhost:
-    fqdn: {{ kafka.ui.domain }}
+    fqdn: kafka.{{ _kube.cluster.domain }}
     tls:
       secretName: kafka-ingress-tls
   routes:
     - conditions:
         - prefix: /
       services:
-        - name: kafka-kafka-ui
+        - name: kafka-ui
           port: 80

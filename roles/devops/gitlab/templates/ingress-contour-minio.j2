@@ -5,7 +5,7 @@ metadata:
   namespace: gitlab
 spec:
   virtualhost:
-    fqdn: minio.{{ gitlab.domain }}
+    fqdn: minio.{{ _kube.cluster.domain }}
     tls:
       secretName: gitlab-ingress-tls
   routes:

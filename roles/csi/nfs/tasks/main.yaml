@@ -8,7 +8,7 @@
   vars:
     nfs_client: "{{ item }}"
     nfs_shared: "{{ csi_nfs.shared }}"
-  ansible.builtin.include_role: 
+  ansible.builtin.include_role:
     name: nfs/client
   loop: "{{ fact_active_hosts }}"
 
@@ -24,7 +24,7 @@
         version_prefix: "nfs-subdir-external-provisioner-"
         url: "https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/"
         dest: "{{ REPO_DIR }}"
-        
+
     - name: Configure nfs provisioner
       ansible.builtin.shell: |
               sed -i 's/nfs-subdir-external-provisioner$/nfs-provisioner/g' deployment.yaml
@@ -54,14 +54,14 @@
     - name: Create {{ csi_nfs.provisioner_namespace }} namespace
       kubernetes.core.k8s:
         kind: Namespace
-        name: "{{ csi_nfs.provisioner_namespace }}" 
+        name: "{{ csi_nfs.provisioner_namespace }}"
 
     - name: Apply configuration changes
       kubernetes.core.k8s:
         apply: yes
         force: yes
-        definition: "{{ lookup('file', '{{ item }}') | from_yaml_all }}"
-      with_fileglob:
+        definition: "{{ lookup('file', item) | from_yaml_all }}"
+      loop:
         - "{{ DEPLOY_DIR }}/rbac.yaml"
         - "{{ DEPLOY_DIR }}/class.yaml"
         - "{{ DEPLOY_DIR }}/deployment.yaml"

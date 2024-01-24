@@ -6,13 +6,12 @@ expose:
     # For harbor api
     enabled: true
     auto:
-      commonName: {{ harbor.domain }}
+      commonName: harbor.{{ _kube.cluster.domain }}
     certSource: secret
     secret:
       secretName: "harbor-ingress-tls"
-      notarySecretName: "harbor-ingress-tls"
 
-externalURL: https://core.{{ harbor.domain }}
+externalURL: https://core.harbor.{{ _kube.cluster.domain }}
 
 persistence:
   enabled: true
@@ -60,23 +59,6 @@ trivy:
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
 
-notary:
-  server:
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-
-  signer:
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-
 database:
   internal:
     tolerations:
@@ -102,4 +84,8 @@ exporter:
       operator: Exists
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
+
 {% endif %}
+
+nginx:
+  replicas: 0

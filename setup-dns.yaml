@@ -1,0 +1,22 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Setup a DNS Server
+  hosts: dns_server
+  gather_facts: no
+
+  roles:
+    - role: vm-ubuntu
+      when: provision_vm
+    - role: infrastructure/dns
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+  post_tasks:
+    - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "DNS configured."
+      when: _checkpoint

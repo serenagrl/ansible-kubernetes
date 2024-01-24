@@ -14,7 +14,8 @@
 
 - name: Install AWX
   vars:
-    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+    ingress_name: "{{ ingress_result.stdout }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
     has_version_specified: "{{ (awx.version is defined and awx.version and awx.version != 'latest') | bool }}"
     release: "{{ has_version_specified | ternary(awx.version, release_tag.stdout) }}"
   block:
@@ -27,7 +28,7 @@
           curl -s "https://api.github.com/repos/ansible/awx-operator/releases/latest" | grep tag_name | cut -d '"' -f 4
       register: release_tag
       when: not has_version_specified
-    
+
     - delegate_to: localhost
       become_user: root
       block:
@@ -51,7 +52,7 @@
         - "{{ lookup('kubernetes.core.kustomize', dir=MANIFEST_FOLDER) }}"
         - "{{ MANIFEST_TEMPLATE }}"
 
-- name: Cleanup manifest 
+- name: Cleanup manifest
   delegate_to: localhost
   become_user: root
   ansible.builtin.file:
@@ -68,7 +69,7 @@
         pkg:
           - python3-pip
         state: latest
-        update_cache: true
+        update_cache: yes
 
     - name: Installing AWX cli on Ansible host
       ansible.builtin.pip:
@@ -85,9 +86,12 @@
     for d in $(kubectl -n awx get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx deployment/$d; done;
     for d in $(kubectl -n awx get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx statefulset/$d; done;
 
-- name: Waiting for AWX controller host to be up
+- name: Waiting for {{ host_uri }}
+  vars:
+    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    host_uri: "https://{{ ingress_host }}/awx/"
   ansible.builtin.uri:
-    url: "{{ AWX_HOST }}"
+    url: "{{ host_uri }}"
   register: result
   until: result.status == 200
   retries: 20

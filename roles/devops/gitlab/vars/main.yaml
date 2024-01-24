@@ -1,8 +1,7 @@
 gitlab:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
-  version: latest 
-  domain: k8s.local
+  version: latest
 
   # Make sure minio operator is installed before setting this to yes.
   # Note: You can use the minio role to setup the operator.

@@ -23,7 +23,7 @@ nodeSelector:
 
 ingress:
   enabled: true
-  host: {{ kafka.ui.domain }}
+  host: kafka.{{ _kube.cluster.domain }}
   tls:
 {% if has_issuer %}
     enabled: true

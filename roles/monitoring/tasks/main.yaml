@@ -23,16 +23,16 @@
       args:
         chdir: "{{ SETUP_DIR }}"
 
-    - name: Scale down the pods for lesser than 3 kubernetes_worker_nodes configuration
-      vars:
-        node_count: "{% if (groups['kubernetes_worker_nodes'] | length) > 0 %}{{ groups['kubernetes_worker_nodes'] | length }}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
-      ansible.builtin.shell: |
-        sed -i 's/replicas: 2/replicas: 1/g' prometheus-prometheus.yaml
-        sed -i 's/replicas: 2/replicas: 1/g' prometheusAdapter-deployment.yaml
-        sed -i 's/replicas: 3/replicas: 1/g' alertmanager-alertmanager.yaml
-      args:
-        chdir: "{{ MANIFEST_DIR }}"
-      when: node_count | int < 3
+   # - name: Scale down the pods for lesser than 3 kubernetes_worker_nodes configuration
+    #   vars:
+    #     node_count: "{% if (groups['kubernetes_worker_nodes'] | length) > 0 %}{{ groups['kubernetes_worker_nodes'] | length }}{% else %}{{ groups['kubernetes_control_planes'] | length }}{% endif %}"
+    #   ansible.builtin.shell: |
+    #     sed -i 's/replicas: 2/replicas: 1/g' prometheus-prometheus.yaml
+    #     sed -i 's/replicas: 2/replicas: 1/g' prometheusAdapter-deployment.yaml
+    #     sed -i 's/replicas: 3/replicas: 1/g' alertmanager-alertmanager.yaml
+    #   args:
+    #     chdir: "{{ MANIFEST_DIR }}"
+    #   when: node_count | int < 3
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
@@ -46,11 +46,11 @@
                   \1
                     node-role.kubernetes.io/control-plane: ""
       loop:
-        - prometheusAdapter-deployment.yaml 
+        - prometheusAdapter-deployment.yaml
         - kubeStateMetrics-deployment.yaml
-        - prometheusOperator-deployment.yaml 
-        - grafana-deployment.yaml 
-        - blackboxExporter-deployment.yaml 
+        - prometheusOperator-deployment.yaml
+        - grafana-deployment.yaml
+        - blackboxExporter-deployment.yaml
       when: not _kube.allow_scheduling
 
     - name: Configure to run on control-planes only
@@ -65,8 +65,8 @@
                   \1
                     node-role.kubernetes.io/control-plane: ""
       loop:
-        - prometheus-prometheus.yaml 
-        - alertmanager-alertmanager.yaml 
+        - prometheus-prometheus.yaml
+        - alertmanager-alertmanager.yaml
       when: not _kube.allow_scheduling
 
 - name: Install kube prometheus custom resources
@@ -88,7 +88,7 @@
   vars:
     name: monitoring
     namespace: monitoring
-    definition: "{{ INGRESS_TEMPLATE }}"  
+    definition: "{{ INGRESS_TEMPLATE }}"
 
 - name: Configure ingress
   block:
@@ -131,7 +131,7 @@
             marker: "    # ANSIBLE MANAGED BLOCK"
             block: |2
                   [server]
-                  domain = {{ _kube.hostname }}
+                  domain = {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}
                   root_url = %(protocol)s://%(domain)s:%(http_port)s/grafana/
                   serve_from_sub_path = true
 
@@ -155,7 +155,7 @@
         kubectl rollout restart deployment grafana -n monitoring
         kubectl rollout status -n monitoring deployment/grafana
 
-  when: (ingress_result.resources | length > 0)
+  when: (ingress_result.stdout != '')
 
 - name: Cleanup directories
   delegate_to: localhost

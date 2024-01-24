@@ -3,3 +3,16 @@ ingress_nginx:
   # releases with breaking changess. Try reducing the version number if errors occur during installation.
   version: latest # 4.7.2
   scale: no
+
+  # The nodeports to expose the ingress service controller service to the edge load-balancer (i.e. Haproxy)
+  nodePort:
+    http: 32080   # Currently not used/configured
+    https: 32443
+
+  metallb:
+    # Fails if metallb is not installed first.
+    enabled: no
+
+    # Ingress hostname when metallb is enabled.
+    # Name will be concatenated with _kube.cluster.domain to form FQDN i.e. portal.k8s.local
+    hostname: portal

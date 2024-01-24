@@ -9,12 +9,29 @@
     kubectl get secret -n awx awx-admin-password -o jsonpath='{.data.password}' | base64 --decode
   register: password_result
 
+- name: Get ingress host
+  vars:
+    services:
+      contour:
+        name: envoy
+        namespace: projectcontour
+      nginx:
+        name: ingress-nginx-controller
+        namespace: ingress-nginx
+    ingress: "{{ services[_kube.ingress_type] }}"
+  shell: | 
+    kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
+  register: ingress_host_result
+
 - name: Setup AWX environment
   delegate_to: localhost
+  vars:
+    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    host_uri: "https://{{ ingress_host }}/awx/"
   block:
-    - name: Checking/waiting for awx host 
+    - name: Checking/waiting for awx host
       uri:
-        url: "{{ AWX_HOST }}"
+        url: "{{ host_uri }}"
       register: result
       until: result.status == 200
       retries: 15
@@ -24,7 +41,7 @@
       vars:
         password: "{{ (awx.password is not undefined and awx.password != None) | ternary(awx.password, password_result.stdout) }}"
       awx.awx.token:
-        controller_host: "{{ AWX_HOST }}"
+        controller_host: "{{ host_uri }}"
         description: 'Login token'
         scope: "write"
         state: present
@@ -35,7 +52,7 @@
       block:
         - name: Creating organization '{{ awx.setup.organization.name }}'
           awx.awx.organization:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "{{ awx.setup.organization.name }}"
             description: "{{ awx.setup.organization.desc }}"
@@ -43,7 +60,7 @@
 
         - name: Creating inventory '{{ NAMES.INVENTORY }}'
           awx.awx.inventory:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "{{ NAMES.INVENTORY }}"
             description: "Collection of hosts for {{ awx.setup.name }}"
@@ -53,7 +70,7 @@
 
         - name: Creating host for kubernetes control planes
           awx.awx.host:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "{{ hostvars[item].ansible_hostname }}"
             description: "{{ awx.setup.name }} Kubernetes Control Plane."
@@ -66,7 +83,7 @@
 
         - name: Creating host for kubernetes nodes
           awx.awx.host:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "{{ hostvars[item].ansible_hostname }}"
             description: "{{ awx.setup.name }} Kubernetes node."
@@ -79,7 +96,7 @@
 
         - name: Creating group 'kubernetes_control_planes'
           awx.awx.group:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "kubernetes_control_planes"
             description: "{{ awx.setup.name }} Kubernetes control plane group."
@@ -89,7 +106,7 @@
 
         - name: Creating group 'kubernetes_worker_nodes'
           awx.awx.group:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "kubernetes_worker_nodes"
             description: "{{ awx.setup.name }} Kubernetes kubernetes worker nodes group."
@@ -99,7 +116,7 @@
 
         - name: Creating group 'kubernetes_cluster'
           awx.awx.group:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "kubernetes_cluster"
             description: "{{ awx.setup.name }} Kubernetes cluster main group."
@@ -111,7 +128,7 @@
 
         - name: Creating source control credential
           awx.awx.credential:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "{{ NAMES.SCM_CREDENTIAL }}"
             description: "Source control credential for {{ NAMES.PROJECT }}"
@@ -124,7 +141,7 @@
 
         - name: Creating project '{{ NAMES.PROJECT }}'
           awx.awx.project:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "{{ NAMES.PROJECT }}"
             description: "Collection of playbooks for {{ awx.setup.name }}"
@@ -139,7 +156,7 @@
 
         - name: Creating machine credential
           awx.awx.credential:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "{{ NAMES.HOST_CREDENTIAL }}"
             description: "Credentials for {{ NAMES.CP }}"
@@ -151,7 +168,7 @@
 
         - name: Creating new credential type
           awx.awx.credential_type:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "Gitlab API Access Token (Custom)"
             description: "Used for accessing Gitlab API."
@@ -169,7 +186,7 @@
 
         - name: Creating gitlab credential
           awx.awx.credential:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "{{ NAMES.API_CREDENTIAL }}"
             description: "Credentials used for assessing Gitlab API"
@@ -181,7 +198,7 @@
 
         - name: Creating job template '{{ NAMES.JOB_TEMPLATE }}'
           awx.awx.job_template:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             controller_oauthtoken: "{{ controller_token }}"
             name: "{{ NAMES.JOB_TEMPLATE }}"
             description: "Deploys applications to the kubernetes cluster"
@@ -200,7 +217,7 @@
       always:
         - name: Delete authentication token
           awx.awx.token:
-            controller_host: "{{ AWX_HOST }}"
+            controller_host: "{{ host_uri }}"
             existing_token: "{{ controller_token }}"
             state: absent
             controller_oauthtoken: "{{ controller_token }}"

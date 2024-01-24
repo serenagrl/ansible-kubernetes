@@ -11,7 +11,7 @@
     - name: Create working directory
       ansible.builtin.file:
         path: "{{ _work_dir }}"
-        state: directory        
+        state: directory
 
     - name: Installing iso and image tools
       ansible.builtin.apt:
@@ -20,12 +20,12 @@
           - qemu-utils
           - genisoimage
         state: latest
-        update_cache: true
+        update_cache: yes
 
-    - name: Downloading ubuntu cloud image 
+    - name: Downloading ubuntu cloud image
       ansible.builtin.get_url:
         url: "{{ vm.ubuntu_img_url }}"
-        dest: "{{ _work_dir }}/ubuntu-cloud.img"     
+        dest: "{{ _work_dir }}/ubuntu-cloud.img"
 
     - name: Generate ssh keys for Ansible host (if required)
       ansible.builtin.shell: ssh-keygen -t rsa -q -f "/root/.ssh/id_rsa" -N ""
@@ -42,11 +42,11 @@
     iso_dir: "{{ vm.local | ternary('/mnt/' + (vm.iso_folder[0] | lower) + (vm.iso_folder[2:] | replace( backslash, '/')),
                                    mount_path + '/' + (vm.iso_folder[3:] | replace(backslash, '/'))) }}"
   block:
-    - name: Mount winrm_host (Hyper-V Host) shared folders 
+    - name: Mount winrm_host (Hyper-V Host) shared folders
       ansible.builtin.include_tasks: mount.yaml
       vars:
         folder: "{{ item }}"
-      loop: 
+      loop:
         - "{{ vm.vm_folder.split(backslash).1 }}"
         - "{{ vm.iso_folder.split(backslash).1 }}"
       when: not vm.local
@@ -54,7 +54,7 @@
     - name: Create Virtual Hard Disks directory
       ansible.builtin.file:
         path: "{{ vm_dir }}/{{ ansible_hostname }}/Virtual Hard Disks"
-        state: directory    
+        state: directory
 
     - name: Check for existing Virtual Hard Disks
       ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
@@ -91,7 +91,7 @@
               mkdir -p "{{ iso_dir }}"
               genisoimage -output "{{ iso_dir }}/{{ ansible_hostname }}-seed.iso" -volid cidata -joliet -rock {{ METADATA_DIR }}
 
-    - name: Remove metadata directory 
+    - name: Remove metadata directory
       ansible.builtin.file:
         path: "{{ METADATA_DIR }}"
         state: absent
@@ -104,9 +104,9 @@
         qemu-img convert -f qcow2 ubuntu-cloud.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
       args:
         chdir: "{{ _work_dir }}"
-  
+
   always:
-    - name: Unmount winrm_host (Hyper-V Host) shared folders 
+    - name: Unmount winrm_host (Hyper-V Host) shared folders
       vars:
         folder: "{{ mount_path }}/{{ item }}"
       ansible.builtin.shell: |
@@ -118,7 +118,7 @@
               umount "{{ folder }}"
             fi
         ) 9>/tmp/mount.lock
-      loop: 
+      loop:
         - "{{ vm.vm_folder.split(backslash).1 }}"
         - "{{ vm.iso_folder.split(backslash).1 }}"
       when: not vm.local
@@ -138,10 +138,10 @@
       ansible.windows.win_powershell:
         script: |
           Resize-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ vm.specs.disk_size }}
-          New-VM -Name {{ ansible_hostname }} -Generation 2 -MemoryStartupBytes {{ vm.specs.ram_size }} -Path "{{ vm.vm_folder }}" -VHDPath "{{ vhd_disk }}" -SwitchName "{{ vm.switch }}" 
+          New-VM -Name {{ ansible_hostname }} -Generation 2 -MemoryStartupBytes {{ vm.specs.ram_size }} -Path "{{ vm.vm_folder }}" -VHDPath "{{ vhd_disk }}" -SwitchName "{{ vm.switch }}"
           Add-VMDvdDrive {{ ansible_hostname }} -Path "{{ vm.iso_folder }}\\{{ ansible_hostname }}-seed.iso"
           Set-VMProcessor {{ ansible_hostname }} -Count {{ vm.specs.v_cpu }}
-          Set-VMFirmware -VMName {{ ansible_hostname }} -EnableSecureBoot Off 
+          Set-VMFirmware -VMName {{ ansible_hostname }} -EnableSecureBoot Off
           Set-VMMemory {{ ansible_hostname }} -MinimumBytes {{ vm.specs.min_ram_size }} -DynamicMemoryEnabled 1
           Start-VM {{ ansible_hostname }}
         error_action: stop
@@ -152,7 +152,7 @@
           Wait-VM -Name {{ ansible_hostname }} -For Reboot
         error_action: stop
 
-    - name: Unmount and remove seed.iso 
+    - name: Unmount and remove seed.iso
       ansible.windows.win_powershell:
         script: |
           Get-VMDvdDrive -VMName "{{ ansible_hostname }}" | Remove-VMDvdDrive
@@ -164,6 +164,13 @@
 - name: Setup SSH
   ansible.builtin.include_role:
     name: vm-ubuntu/setup-ssh
+
+- name: Add hostname to /etc/hosts
+  become_user: root
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    insertafter: "127.0.0.1 localhost"
+    line: "{{ _kube.cluster.use_dns_server | ternary('127.0.0.1', ansible_host) }} {{ ansible_hostname }}"
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
 - name: Checkpoint VM

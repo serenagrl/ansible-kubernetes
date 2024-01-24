@@ -1,6 +1,6 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
@@ -8,16 +8,17 @@
 - delegate_to: "{{ item }}"
   become_user: root
   block:
-    - name: Register control plane to HAProxy load-balancers
-      ansible.builtin.lineinfile:
+    - name: Configure Haproxy for ingress
+      ansible.builtin.blockinfile:
         path: /etc/haproxy/haproxy.cfg
-        insertafter: "default-server"
-        line: |2-
-             server {{ ansible_hostname }} {{ ansible_host }}:6443
-        create: yes
+        marker: ""
+        insertbefore: "listen stats"
+        block: |
+          {{ HAPROXY_CONFIG_TEMPLATE }}
 
     - name: Restart Haproxy to let changes take effect
       ansible.builtin.systemd:
         enabled: yes
         state: restarted
         name: haproxy
+

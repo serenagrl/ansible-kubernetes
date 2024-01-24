@@ -1,0 +1,25 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- delegate_to: "{{ item }}"
+  become_user: root
+  block:
+    - name: Register server to HAProxy load-balancers
+      vars:
+        backend_port: "{{ in_backend_port | default(443) }}"
+        backend_name: "{{ in_backend_name | default(_kube.cluster.name + '-ingress') }}"
+      ansible.builtin.replace:
+        path: /etc/haproxy/haproxy.cfg
+        regexp: '^\s*(backend {{ backend_name }}.*\n(?:^.+\n)*)$'
+        replace: |2-
+          \n\1   server {{ ansible_hostname }} {{ ansible_host }}:{{ backend_port }}\n
+
+    - name: Restart Haproxy to let changes take effect
+      ansible.builtin.systemd:
+        enabled: yes
+        state: restarted
+        name: haproxy

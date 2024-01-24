@@ -1,0 +1,3 @@
+NAMED_CONF_LOCAL_TEMPLATE: "{{ lookup('template', 'named.conf.local.j2') }}"
+FORWARD_LOOKUP_TEMPLATE: "{{ lookup('template', 'forward.j2') }}"
+REVERSE_LOOKUP_TEMPLATE: "{{ lookup('template', 'reverse.j2') }}"

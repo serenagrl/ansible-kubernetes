@@ -1,6 +1,6 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
@@ -28,6 +28,7 @@
       ansible.builtin.apt_repository:
         filename: helm
         repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+        update_cache: yes
 
     - name: Installing helm
       vars:
@@ -36,12 +37,12 @@
         pkg:
           - "helm{{ release }}"
         state: latest
-        update_cache: yes
         allow_downgrade: yes
+        update_cache: yes
 
 # Prevents warnings when running ansible helm commands.
-- become_user: "{{ _kube.user }}"
-  name: Install helm diff
+- name: Install helm diff
+  become_user: "{{ _kube.user }}"
   ansible.builtin.shell: |
     helm plugin install https://github.com/databus23/helm-diff
 
@@ -69,7 +70,7 @@
         block: "{{ ALIASES_TEMPLATE }}"
 
     - name: Apply changes
-      ansible.builtin.shell: . ~/.bashrc  
+      ansible.builtin.shell: . ~/.bashrc
 
 - become_user: "{{ _kube.user }}"
   block:
@@ -77,6 +78,6 @@
       ansible.builtin.shell: kubectl label nodes {{ ansible_hostname }} {{ item }}
       loop: "{{ kubernetes.control_plane_node_labels }}"
 
-    - name: Remove taint to allow scheduling on control plane nodes 
+    - name: Remove taint to allow scheduling on control plane nodes
       ansible.builtin.shell: kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/control-plane-
       when: _kube.allow_scheduling

@@ -4,7 +4,7 @@ nginx:
 ingress:
   enabled: true
   hosts:
-    - name: sonarqube.{{ sonarqube.domain }}
+    - name: sonarqube.{{ _kube.cluster.domain }}
       path: /
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "8m"
@@ -14,7 +14,7 @@ ingress:
   tls:
     - secretName: sonarqube-ingress-tls
       hosts:
-        - sonarqube.{{ sonarqube.domain }}
+        - sonarqube.{{ _kube.cluster.domain }}
 {% endif %}
 
 {% if not _kube.allow_scheduling %}
@@ -36,4 +36,3 @@ postgresql:
       node-role.kubernetes.io/control-plane: ""
 
 {% endif %}
-     

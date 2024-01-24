@@ -35,24 +35,24 @@ ingress:
   api:
     enabled: true
     ingressClassName: {{ ingress_name }}
-    host: gitlab.{{ gitlab_minio.domain }}
+    host: gitlab.minio.{{ _kube.cluster.domain }}
     path: /
     pathType: Prefix
 {% if has_issuer %}
     tls:
       - hosts:
-          - gitlab.{{ gitlab_minio.domain }}
+          - gitlab.minio.{{ _kube.cluster.domain }}
         secretName: gitlab-minio-ingress-tls
-{% endif %}       
+{% endif %}
   console:
     enabled: true
     ingressClassName: {{ ingress_name }}
-    host: gitlab-console.{{ gitlab_minio.domain }}
+    host: gitlab-console.minio.{{ _kube.cluster.domain }}
     path: /
     pathType: Prefix
 {% if has_issuer %}
     tls:
       - hosts:
-          - gitlab-console.{{ gitlab_minio.domain }}
+          - gitlab-console.minio.{{ _kube.cluster.domain }}
         secretName: gitlab-minio-ingress-tls
-{% endif %}       
+{% endif %}

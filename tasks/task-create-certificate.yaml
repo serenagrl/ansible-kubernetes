@@ -21,5 +21,4 @@
     has_issuer: issuer_status.stdout == "Ready"
   kubernetes.core.k8s:
     definition: "{{ certificate_template }}"
-    force: yes
   when: has_issuer

@@ -1,4 +1,4 @@
-ansible_user: root 
+ansible_user: root
 ansible_become: yes
 
 # You can also set this in individual host if you are splitting the nodes to different physical
@@ -13,12 +13,12 @@ host_specs:
   v_cpu: 6
 
 # Indicates whether to automatically register the control-planes to the HAproxy load balancers config file.
-load_balancer_enabled: yes
+register_to_load_balancer: yes
 
-remote_admin: 
+remote_admin:
   # Enable this to allow remote administration from the Ansible controller host.
   # Use 'kubectl config' to change the context to the cluster that you want to manage.
   enabled: yes
 
   # Specify whether to install the latest kubectl on the Ansible controller host.
-  install_kubectl: yes 
+  install_kubectl: yes

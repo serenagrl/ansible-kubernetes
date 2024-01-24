@@ -34,11 +34,11 @@ tenant:
 ingress:
   api:
     enabled: false
-    host: gitlab.{{ gitlab_minio.domain }}
+    host: gitlab.minio.{{ _kube.cluster.domain }}
     path: /
     pathType: Prefix
   console:
     enabled: false
-    host: gitlab-console.{{ gitlab_minio.domain }}
+    host: gitlab-console.minio.{{ _kube.cluster.domain }}
     path: /
     pathType: Prefix
