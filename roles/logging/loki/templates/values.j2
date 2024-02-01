@@ -1,0 +1,76 @@
+fullnameOverride: loki
+
+loki:
+{% if loki.external_minio.enabled %}
+  storage:
+    type: s3
+    s3:
+      endpoint: {{ loki.external_minio.tenant_endpoint }}
+      region: us-east-1
+      accessKeyId: {{ minio_credentials.accesskey }}
+      secretAccessKey: {{ minio_credentials.secretkey }}
+      s3ForcePathStyle: true
+      insecure: true
+{% endif %}
+
+minio:
+ enabled: {{ not loki.external_minio.enabled }}
+
+{% if not _kube.allow_scheduling %}
+write:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+read:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+backend:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+monitoring:
+  selfMonitoring:
+    grafanaAgent:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+
+  lokiCanary:
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+
+singleBinary:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+gateway:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
