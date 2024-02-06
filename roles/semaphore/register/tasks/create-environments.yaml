@@ -13,6 +13,7 @@
         - "{{ local_repo_dir }}/roles/nfs/server/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/metallb/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/cert-manager/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/ingress/nginx/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/csi/nfs/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/csi/rook-ceph/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/rabbitmq/vars/main.yaml"
@@ -72,11 +73,12 @@
         k8s_cluster_vars:
           - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }
           - { name: cert-manager, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/cert-manager/vars`)].content') | b64decode | from_yaml }}" }
-          - { name: ingress }
+          - { name: ingress, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/ingress/nginx/vars`)].content') | b64decode | from_yaml }}" }
           - { name: dashboard }
           - { name: monitoring }
           - { name: metrics-server }
           - { name: csi/nfs, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}" }
+
 
         rabbitmq_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
         rabbitmq_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/operator/vars`)].content') | b64decode | from_yaml }}"

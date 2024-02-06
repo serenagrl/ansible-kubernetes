@@ -1,4 +1,7 @@
-- name: Get ingress class
-  kubernetes.core.k8s_info:
-    kind: IngressClass
-  register: ingress_class
+- name: Get Ingress class name
+  shell: kubectl get ingressclass -o jsonpath='{.items[0].metadata.name}'
+  register: ingress_result
+
+- name: Get ingress host
+  shell: kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
+  register: ingress_host_result

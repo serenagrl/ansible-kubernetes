@@ -5,16 +5,11 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Add harbor portal DNS entries to /etc/hosts
-  become_user: root
-  delegate_to: "{{ item }}"
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    insertafter: "127.0.0.1 localhost"
-    line: "{{ fact_cluster_address }} core.{{ harbor.domain }} notary.{{ harbor.domain }}"
-  loop: "{{ fact_active_hosts + ['localhost'] }}"
-  ignore_errors: yes
-  ignore_unreachable: yes
+- name: Register DNS entry
+  vars:
+    domain_prefix: core.harbor
+  ansible.builtin.include_role:
+    name: common/dns-register
 
 - name: Create harbor-system namespace
   kubernetes.core.k8s:
@@ -39,7 +34,7 @@
 
     - name: Deploying harbor
       vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if harbor.version is defined and harbor.version and harbor.version != 'latest' %}{{ harbor.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
@@ -59,7 +54,7 @@
 
     - name: Waiting for Harbor api to be up
       ansible.builtin.uri:
-        url: "https://core.{{ harbor.domain }}/api/v2.0/systeminfo/getcert"
+        url: "https://core.harbor.{{ _kube.cluster.domain }}/api/v2.0/systeminfo/getcert"
         validate_certs: no
         return_content: true
       register: result

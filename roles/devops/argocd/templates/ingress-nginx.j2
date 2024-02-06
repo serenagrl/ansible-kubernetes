@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: {{ ingress_name }}
   rules:
-    - host: {{ argocd.domain }}
+    - host: argocd.{{ _kube.cluster.domain }}
       http:
         paths:
           - path: /
@@ -23,6 +23,6 @@ spec:
 {% if has_issuer %}
   tls:
     - hosts:
-        - {{ argocd.domain }}
+        - argocd.{{ _kube.cluster.domain }}
       secretName: argocd-ingress-tls
 {% endif %}

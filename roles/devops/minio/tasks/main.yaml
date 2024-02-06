@@ -5,21 +5,16 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Add minio portal DNS entries to /etc/hosts
-  become_user: root
-  delegate_to: "{{ item }}"
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    insertafter: "127.0.0.1 localhost"
-    line: "{{ fact_cluster_address }} console.{{ minio.domain }}"
-  loop: "{{ fact_active_hosts + ['localhost'] }}"
-  ignore_errors: yes
-  ignore_unreachable: yes
+- name: Register DNS entry
+  vars:
+    domain_prefix: minio
+  ansible.builtin.include_role:
+    name: common/dns-register
 
 - name: Create minio operator namespace
   kubernetes.core.k8s:
     kind: Namespace
-    name: minio-operator 
+    name: minio-operator
 
 - name: Install MinIO
   block:
@@ -33,13 +28,13 @@
         name: minio-operator
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
-    # Notes: Uses own domain names.    
+    # Notes: Uses own domain names.
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying minio
       vars:
-        ingress_name: "{{ ingress_class.resources[0].metadata.name }}" 
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if minio.version is defined and minio.version and minio.version != 'latest' %}{{ minio.version }}{% endif %}"
         has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:

@@ -2,3 +2,16 @@ contour:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
   version: latest #1.24.1
+
+  # The nodeports to expose the envoy service to the edge load-balancer (i.e. Haproxy)
+  nodePort:
+    http: 32080   # Currently not used/configured
+    https: 32443
+
+  metallb:
+    # Fails if metallb is not installed first.
+    enabled: no
+
+    # Ingress hostname when metallb is enabled.
+    # Name will be concatenated with _kube.cluster.domain to form FQDN i.e. portal.k8s.local
+    hostname: portal

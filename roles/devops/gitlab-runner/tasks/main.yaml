@@ -5,32 +5,30 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Install Gitlab Runner
-  block:
-    - name: Get minio credentials
-      ansible.builtin.shell: | 
-        kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data}'
-      register: minio_secret
+- name: Get minio credentials
+  ansible.builtin.shell: |
+    kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data}'
+  register: minio_secret
 
-    - name: Add Gitlab chart repo
-      kubernetes.core.helm_repository:
-        name: gitlab
-        repo_url: "https://charts.gitlab.io/"
+- name: Add Gitlab chart repo
+  kubernetes.core.helm_repository:
+    name: gitlab
+    repo_url: "https://charts.gitlab.io/"
 
-    - name: Deploying Gitlab Runner
-      vars:
-        credentials: "{{ minio_secret.stdout | from_json }}"
-        minio_credentials:
-          accesskey: "{{ credentials.accesskey | b64decode }}"
-          secretkey: "{{ credentials.secretkey | b64decode }}"
-        version: "{% if gitlab_runner.version is defined and gitlab_runner.version and gitlab_runner.version != 'latest' %}{{ gitlab_runner.version }}{% endif %}"
-      kubernetes.core.helm:
-        name: gitlab-runner
-        atomic: yes
-        chart_ref: gitlab/gitlab-runner
-        chart_version: "{{ version }}"
-        namespace: gitlab
-        create_namespace: yes
-        values: "{{ VALUES_FILE }}"
-        timeout: 10m0s
-        wait: yes
+- name: Deploying Gitlab Runner
+  vars:
+    credentials: "{{ minio_secret.stdout | from_json }}"
+    minio_credentials:
+      accesskey: "{{ credentials.accesskey | b64decode }}"
+      secretkey: "{{ credentials.secretkey | b64decode }}"
+    version: "{% if gitlab_runner.version is defined and gitlab_runner.version and gitlab_runner.version != 'latest' %}{{ gitlab_runner.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: gitlab-runner
+    atomic: yes
+    chart_ref: gitlab/gitlab-runner
+    chart_version: "{{ version }}"
+    namespace: gitlab
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    timeout: 10m0s
+    wait: yes

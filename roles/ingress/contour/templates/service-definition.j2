@@ -1,0 +1,6 @@
+    spec:
+      type: ClusterIP
+      externalIPs:
+{% for host in fact_active_hosts %}
+        - {{ hostvars[host].ansible_host }}
+{% endfor %}

@@ -5,7 +5,7 @@ metadata:
   namespace: ingress-nginx
 spec:
   dnsNames:
-    - {{ _kube.hostname }}
+    - {{ ingress_host }}
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}

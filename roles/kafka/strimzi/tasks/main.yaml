@@ -84,7 +84,7 @@
         pkg:
           - python3-pip
         state: latest
-        update_cache: true
+        update_cache: yes
 
     - name: Installing strimzi kafka cli on Ansible host
       ansible.builtin.pip:

@@ -1,0 +1,49 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Configure as Load-Balancer with Metallb
+  vars:
+    ingress_host: "{{ ingress.metallb.hostname }}.{{ _kube.cluster.domain }}"
+    ingress_ip: "{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}"
+  block:
+    - name: Patch ingress controller service type to LoadBalancer
+      kubernetes.core.k8s:
+        state: patched
+        namespace: "{{ namespace }}"
+        kind: Service
+        name: "{{ name }}"
+        definition: |
+          metadata:
+            annotations:
+              ansible-kubernetes/ingress-host: {{ ingress_host }}
+          spec:
+            type: LoadBalancer
+
+    - name: Get ingress service information
+      kubernetes.core.k8s_info:
+        kind: Service
+        namespace: "{{ namespace }}"
+        name: "{{ name }}"
+      register: ingress_service
+
+    - name: Register to DNS server
+      block:
+        - name: Register A record for host to DNS server
+          ansible.builtin.include_role:
+            name: infrastructure/dns/register
+          vars:
+            server_name: "{{ ingress.metallb.hostname }}"
+            server_ip: "{{ ingress_ip }}"
+
+      when: _kube.cluster.use_dns_server
+
+    - name: Add entry to hosts file
+      vars:
+        in_host_entry: "{{ ingress_ip }} {{ ingress_host }}"
+      ansible.builtin.include_role:
+        name: common/dns-host-file
+      when: not _kube.cluster.use_dns_server

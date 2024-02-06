@@ -1,0 +1,15 @@
+frontend {{ _kube.cluster.name }}-ingress-https
+   bind *:443
+   mode tcp
+   option tcplog
+   default_backend {{ _kube.cluster.name }}-ingress-https-backend
+
+backend {{ _kube.cluster.name }}-ingress-https-backend
+   mode tcp
+   balance roundrobin
+   option tcp-check
+   # check-ssl not compatible with contour.
+   default-server check verify none
+{% for host in fact_active_hosts %}
+   server {{ hostvars[host].ansible_hostname }} {{ hostvars[host].ansible_host }}:{{ contour.nodePort.https }}
+{% endfor %}

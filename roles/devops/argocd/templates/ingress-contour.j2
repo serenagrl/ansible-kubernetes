@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
 spec:
   virtualhost:
-    fqdn: {{ argocd.domain }}
+    fqdn: argocd.{{ _kube.cluster.domain }}
     tls:
       secretName: argocd-ingress-tls
   routes:

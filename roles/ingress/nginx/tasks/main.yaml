@@ -12,6 +12,7 @@
 - include_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: ingress-nginx
+    ingress_host: "{{ ingress_nginx.metallb.enabled | ternary(ingress_nginx.metallb.hostname, _kube.cluster.name) }}.{{ _kube.cluster.domain }}"
     certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
 - become_user: root
@@ -59,25 +60,11 @@
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
-  
-# This is needed. Do not remove.
-- name: Check if metallb is installed
-  ansible.builtin.shell: kubectl get ns metallb-system -o json | jq .status.phase -r
-  register: lb_status
-  ignore_errors: yes
-        
-- name: Configure ingress service type and external IP
-  kubernetes.core.k8s:
-    state: patched
-    namespace: ingress-nginx
-    kind: Service
-    name: ingress-nginx-controller
-    definition: "{{ SERVICE_DEFINITION }}"
 
 - name: Scale ingress controller pods = {{ ingress_nginx.scale }}
   vars:
     replicas: "{{ groups['kubernetes_control_planes'] | length }}"
-  ansible.builtin.shell: | 
+  ansible.builtin.shell: |
       kubectl scale deployment -n ingress-nginx ingress-nginx-controller --replicas={{ replicas }}
   when: ingress_nginx.scale
 
@@ -98,22 +85,9 @@
 - name: Waiting for ingress-nginx-controller to be ready
   ansible.builtin.shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller
 
-- name: Get ingress service information
-  kubernetes.core.k8s_info:
-    kind: Service
-    namespace: ingress-nginx
-    name: ingress-nginx-controller
-  register: ingress_service
-
-- name: Add host name into DNS entries
-  delegate_to: "{{ item }}"
-  become_user: root
+- name: Configure Ingress
+  ansible.builtin.include_tasks: "{{ ingress_nginx.metallb.enabled | ternary('../tasks/configure-for-metallb.yaml', '../tasks/configure-for-haproxy.yaml') }}"
   vars:
-    address: "{% if lb_status.stdout == 'Active' %}{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}{% else %}{{ ingress_service.resources[0].spec.externalIPs.0 }}{% endif %}"
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    insertafter: "127.0.0.1 localhost"
-    line: "{{ address }} {{ _kube.hostname }}"
-  loop: "{{ fact_active_hosts + ['localhost'] }}"
-  ignore_unreachable: yes
-  ignore_errors: yes
+    name: ingress-nginx-controller
+    namespace: ingress-nginx
+    ingress: "{{ ingress_nginx }}"

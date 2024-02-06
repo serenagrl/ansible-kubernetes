@@ -1,0 +1,18 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Get default cluster issuer name
+  block:
+    - name: Check for cluster issuer
+      kubernetes.core.k8s_info:
+        kind: ClusterIssuer
+      register: cluster_issuer_result
+
+    - name: Get default cluster issuer name
+      ansible.builtin.set_fact:
+        fact_cluster_issuer_name: "{{ cluster_issuer_result.resources[0].metadata.name | default('default-cluster-issuer') }}"
+        
+  when: fact_cluster_issuer_name is not defined or fact_cluster_issuer_name == ""

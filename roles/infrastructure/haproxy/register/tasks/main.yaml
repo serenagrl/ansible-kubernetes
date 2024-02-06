@@ -1,9 +1,9 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Register control-plane to HAProxy load-balancers
-  ansible.builtin.include_tasks: register-haproxy.yaml
+- name: Register server to HAProxy load-balancers
+  ansible.builtin.include_tasks: register.yaml
   loop: "{{ groups['load_balancers'] }}"

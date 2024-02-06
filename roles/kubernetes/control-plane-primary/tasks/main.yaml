@@ -1,20 +1,37 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+- name: Register Cluster ({{ _kube.cluster.name }}) DNS
+  vars:
+    in_server_name: "{{ _kube.cluster.name }}"
+    in_server_ip: "{{ _kube.cluster.address }}"
+  ansible.builtin.include_role:
+    name: infrastructure/dns/register
+  when: _kube.cluster.use_dns_server
+
+- name: Register node to Haproxy
+  vars:
+    in_backend_port: 6443
+    in_backend_name: "{{ _kube.cluster.name }}-apiserver"
+  ansible.builtin.include_role:
+    name: infrastructure/haproxy/register
+  when: register_to_load_balancer
+
 - name: Initializing kubernetes cluster (primary control plane)
   vars:
     release: "{% if kubernetes_version is defined and kubernetes_version and kubernetes_version != 'latest' %}--kubernetes-version {{ kubernetes_version }}{% endif %}"
   ansible.builtin.shell: |
           kubeadm init --pod-network-cidr={{ _kube.cluster.cidr_network }} \
           --upload-certs --cri-socket unix:///var/run/containerd/containerd.sock \
-          --control-plane-endpoint={{ _kube.cluster.name }} {{ release }}
-          
+          --control-plane-endpoint={{ _kube.cluster.name }} \
+          {{ release }}
+
 - ansible.builtin.include_role:
     name: kubernetes/control-plane
 
 - ansible.builtin.include_role:
     name: kubernetes/remote-admin
-  when: remote_admin.enabled          
+  when: remote_admin.enabled

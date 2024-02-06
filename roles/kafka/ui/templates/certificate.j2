@@ -5,7 +5,7 @@ metadata:
   namespace: {{ kafka.namespace }}
 spec:
   dnsNames:
-    - {{ kafka.ui.domain }}
+    - kafka.{{ _kube.cluster.domain }}
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}

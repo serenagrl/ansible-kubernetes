@@ -6,25 +6,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-virtual-memory.html
-- name: Configure virtual memory
-  block:
-    # To maintain configuration after reboot 
-    - name: Configure max_map_count in /etc/sysctl.conf
-      become_user: root
-      delegate_to: "{{ item }}"
-      ansible.builtin.lineinfile:
-        path: /etc/sysctl.conf
-        line: "vm.max_map_count=262144"
-      loop: "{{ groups[elasticsearch.configure_map_count_to] }}"
-
-    # Update max_map_count value without rebooting VM 
-    - name: Configure max_map_count
-      become_user: root
-      ansible.builtin.shell: |
-        sysctl -w vm.max_map_count=262144
-      delegate_to: "{{ item }}"
-      loop: "{{ groups[elasticsearch.configure_map_count_to] }}"
+- name: Configure vm.max_map_count (elasticsearch pre-requisite)
+  ansible.builtin.include_tasks: update-sysctl.yaml
+  loop: "{{ fact_active_hosts }}"
 
 - name: Install elasticsearch
   vars:

@@ -6,4 +6,3 @@ NAMES:
   HOST_CREDENTIAL: "{{ awx.setup.name }} {{ hostvars[groups['kubernetes_control_planes'].0].ansible_hostname }} Host Credential"
   SCM_CREDENTIAL: "{{ awx.setup.name }} Source Control Credential"
   API_CREDENTIAL: "{{ awx.setup.name }} Gitlab API Access Token"
-AWX_HOST: "https://{{ _kube.hostname }}/awx/"

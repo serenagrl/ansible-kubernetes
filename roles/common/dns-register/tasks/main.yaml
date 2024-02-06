@@ -1,0 +1,37 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Get Ingress details
+  vars:
+    services:
+      contour:
+        name: envoy
+        namespace: projectcontour
+      nginx:
+        name: ingress-nginx-controller
+        namespace: ingress-nginx
+    ingress: "{{ services[_kube.ingress_type] }}"
+  block:
+    - name: Get ingress host
+      shell: |
+        kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
+      register: ingress_host_result
+
+    - name: Get ingress loadbalancer ip (if any)
+      shell: kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+      register: ingress_ip_result
+
+- name: Register DNS entries
+  vars:
+    # DNS Server parameters
+    in_server_name: "{{ (ingress_host_result.stdout == '') | ternary(_kube.cluster.name, (ingress_host_result.stdout | replace(_kube.cluster.domain, ''))[:-1]) }}"
+    in_cname: "{{ domain_prefix }}"
+    in_type: "CNAME"
+    # DNS hosts file parameters
+    in_host_entry: "{{ (ingress_ip_result.stdout == '') | ternary(_kube.cluster.address, ingress_ip_result.stdout) }} {{ domain_prefix }}.{{ _kube.cluster.domain }}"
+  ansible.builtin.include_role:
+    name: "{{ _kube.cluster.use_dns_server | ternary('infrastructure/dns/register','common/dns-host-file') }}"
