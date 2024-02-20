@@ -50,25 +50,17 @@
         name: "metrics server"
         repo_path: "kubernetes-sigs/metrics-server"
         pkg_version: "{{ metrics.version | default }}"
-        version_prefix: "metrics-server-helm-chart-"
+        version_prefix: "v"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/components.yaml"]
 
     - name: Allow insecure tls
       ansible.builtin.blockinfile:
         path: "{{ MANIFEST_FILE }}"
-        insertafter: "- --secure-port=4443"
+        insertafter: "- --kubelet-use-node-status-port"
         marker: "        # ANSIBLE MANAGED BLOCK 1"
         block: |2
                   - --kubelet-insecure-tls
-
-    - name: Enable host network
-      ansible.builtin.blockinfile:
-        path: "{{ MANIFEST_FILE }}"
-        insertbefore: "nodeSelector:"
-        marker: "      # ANSIBLE MANAGED BLOCK 2"
-        block: |2
-                hostNetwork: true
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
@@ -96,7 +88,7 @@
     path: "{{ MANIFEST_FILE }}"
     state: absent
   when: _cleanup
-  
+
 - name: Waiting for metrics server to be ready
   ansible.builtin.shell: |
           kubectl wait --for=jsonpath={.status.conditions[*].reason}=Passed apiservice v1beta1.metrics.k8s.io --timeout=600s
