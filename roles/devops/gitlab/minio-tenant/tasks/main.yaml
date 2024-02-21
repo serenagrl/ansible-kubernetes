@@ -51,22 +51,22 @@
     - name: Waiting for gitlab minio tenant to be ready
       shell: kubectl wait --for=jsonpath='{.status.currentState}'='Initialized' tenant gitlab-minio -n gitlab --timeout=300s
 
+- name: Get minio credentials
+  vars:
+    overrides:
+      "{% if not _kube.allow_scheduling %}
+        --overrides='{\"spec\":{\"nodeSelector\":{\"node-role.kubernetes.io/control-plane\":\"\"},\"tolerations\":[{\"effect\": \"NoSchedule\", \"key\": \"node-role.kubernetes.io/control-plane\", \"operator\": \"Exists\"}]}}'
+      {% endif %}"
+
+  shell: |
+    kubectl run --rm -i mc -n gitlab --restart=Never --image=minio/mc {{ overrides }} --command -- bash -c "mc alias set gitlab-minio {{ gitlab_minio.tenant_endpoint }} minio minio123 && mc admin user svcacct add gitlab-minio minio"
+  register: minio_credentials
+
 - name: Get minio access and secret keys
   vars:
     accesskey: "{{ minio_credentials.stdout | regex_search('Access Key: (.+)', '\\1') | first }}"
     secretkey: "{{ minio_credentials.stdout | regex_search('Secret Key: (.+)', '\\1') | first }}"
   block:
-    - name: Get minio credentials
-      vars:
-        overrides:
-          "{% if not _kube.allow_scheduling %}
-            --overrides='{\"spec\":{\"nodeSelector\":{\"node-role.kubernetes.io/control-plane\":\"\"},\"tolerations\":[{\"effect\": \"NoSchedule\", \"key\": \"node-role.kubernetes.io/control-plane\", \"operator\": \"Exists\"}]}}'
-          {% endif %}"
-
-      shell: |
-        kubectl run --rm -i mc -n gitlab --restart=Never --image=minio/mc {{ overrides }} --command -- bash -c "mc alias set gitlab-minio {{ gitlab_minio.tenant_endpoint }} minio minio123 && mc admin user svcacct add gitlab-minio minio"
-      register: minio_credentials
-
     - name: Create minio storage secret for gitlab
       kubernetes.core.k8s:
         definition: "{{ STORAGE_SECRET_MANIFEST_TEMPLATE }}"
