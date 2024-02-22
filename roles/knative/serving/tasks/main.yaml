@@ -22,6 +22,12 @@
   register: harbor_status
   ignore_errors: yes
 
+- name: Register DNS entry
+  vars:
+    domain_prefix: knative
+  ansible.builtin.include_role:
+    name: common/dns-register
+
 - name: Create a knative-serving namespace
   kubernetes.core.k8s:
     name: knative-serving
@@ -58,19 +64,46 @@
   ansible.builtin.shell: |
     kubectl wait --for=condition=Ready KnativeServing knative-serving -n knative-serving --timeout=300s
 
-- name: Add hostaliases to controller
+- name: Set to allow configuring nodeSelector and tolerations
   kubernetes.core.k8s:
     state: patched
-    kind: Deployment
-    name: controller
+    kind: ConfigMap
+    name: config-features
     namespace: knative-serving
     definition: |
-      spec:
-        template:
-          spec:
-            hostAliases:
-              - hostnames:
-                  - {{ knative.harbor_domain }}
-                ip: {{ cluster_address }}
+      data:
+        kubernetes.podspec-nodeselector: "enabled"
+        kubernetes.podspec-tolerations: "enabled"
+  when: not _kube.allow_scheduling
+  
+- name: Setup hostaliases to controller
+  vars:
+    services:
+      contour:
+        name: envoy
+        namespace: projectcontour
+      nginx:
+        name: ingress-nginx-controller
+        namespace: ingress-nginx
+    ingress: "{{ services[_kube.ingress_type] }}"
+  block:
+    - name: Get ingress loadbalancer ip (if any)
+      shell: kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+      register: ingress_ip_result
 
-  when: harbor_status.stdout == 'Active'
+    - name: Add hostaliases to controller
+      kubernetes.core.k8s:
+        state: patched
+        kind: Deployment
+        name: controller
+        namespace: knative-serving
+        definition: |
+          spec:
+            template:
+              spec:
+                hostAliases:
+                  - hostnames:
+                      - {{ knative.harbor_domain }}
+                    ip: {{ ingress_ip_result }}
+
+  when: not _kube.cluster.use_dns_server and harbor_status.stdout == 'Active'
