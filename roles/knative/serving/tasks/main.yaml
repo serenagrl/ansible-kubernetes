@@ -104,6 +104,6 @@
                 hostAliases:
                   - hostnames:
                       - {{ knative.harbor_domain }}
-                    ip: {{ ingress_ip_result }}
+                    ip: {{ (ingress_ip_result.stdout == '') | ternary(_kube.cluster.address, ingress_ip_result.stdout) }}
 
   when: not _kube.cluster.use_dns_server and harbor_status.stdout == 'Active'
