@@ -1,0 +1,5 @@
+knative:
+  eventing:
+    install:
+      rabbitmq: yes
+      kafka: yes

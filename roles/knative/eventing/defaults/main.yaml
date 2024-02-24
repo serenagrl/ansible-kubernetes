@@ -1,0 +1,1 @@
+EVENTING_TEMPLATE: "{{ lookup('template', 'eventing.j2') }}"

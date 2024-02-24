@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: harbor-cert
+  namespace: knative-serving
+type: Opaque
+data:
+  ca.crt: {{ harbor_cert | b64encode }}
