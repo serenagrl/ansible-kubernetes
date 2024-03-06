@@ -5,6 +5,9 @@ loki:
 
   use_promtail: yes
 
+  # Set to 3 for high-availability (will use more resources)
+  replicas: 3
+
   external_minio:
     enabled: yes
     secret_name: loki-minio-secret

@@ -13,11 +13,15 @@ loki:
       insecure: true
 {% endif %}
 
+  commonConfig:
+    replication_factor: {{ loki.replicas }}
+
 minio:
  enabled: {{ not loki.external_minio.enabled }}
 
 {% if not _kube.allow_scheduling %}
 write:
+  replicas: {{ loki.replicas }}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -26,6 +30,7 @@ write:
     node-role.kubernetes.io/control-plane: ""
 
 read:
+  replicas: {{ loki.replicas }}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -34,6 +39,7 @@ read:
     node-role.kubernetes.io/control-plane: ""
 
 backend:
+  replicas: {{ loki.replicas }}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -58,6 +64,7 @@ monitoring:
       node-role.kubernetes.io/control-plane: ""
 
 singleBinary:
+  replicas: {{ loki.replicas }}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -66,6 +73,7 @@ singleBinary:
     node-role.kubernetes.io/control-plane: ""
 
 gateway:
+  replicas: {{ loki.replicas }}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
