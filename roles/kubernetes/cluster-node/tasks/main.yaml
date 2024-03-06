@@ -80,21 +80,51 @@
     state: latest
     update_cache: yes
 
-- name: Register repositories
+- name: Install kubernetes
+  vars:
+    has_version_specified: "{{ (kubernetes.version is defined and kubernetes.version and kubernetes.version != 'latest') | bool }}"
+    release: "{{ has_version_specified | ternary('v' + kubernetes.version, release_tag.stdout) }}"
   block:
-    - name: Get kubernetes gpg
+    - name: Get latest kubernetes release
+      ansible.builtin.shell: |
+          curl -s "https://api.github.com/repos/kubernetes/kubernetes/releases/latest" | grep tag_name | cut -d '"' -f 4
+      register: release_tag
+      when: not has_version_specified
+
+    - name: Get kubernetes key
       ansible.builtin.get_url:
-        url:  https://dl.k8s.io/apt/doc/apt-key.gpg
-        dest: /usr/share/keyrings/kubernetes.gpg
+        url:  https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+        dest: /tmp/kubernetes.gpg.key
         mode: '0644'
         force: true
 
+    - name: De-armor kubernetes gpg
+      ansible.builtin.shell: gpg --dearmor < /tmp/kubernetes.gpg.key > /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
     - name: Register kubernetes repository
+      vars:
+         repo_version: "{{ release.split('.')[:2]|join('.') }}"
       ansible.builtin.apt_repository:
         filename: kubernetes
-        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/kubernetes.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ repo_version }}/deb/ /"
         update_cache: yes
 
+    - name: Installing kubernetes ({{ release }})
+      vars:
+        apt_release: "{% if kubernetes.version is defined and kubernetes.version and kubernetes.version != 'latest' %}={{ kubernetes.version }}-1.1{% endif %}"
+      ansible.builtin.apt:
+        pkg:
+          - "kubelet{{ apt_release }}"
+          - "kubeadm{{ apt_release }}"
+          - "kubectl{{ apt_release }}"
+        state: latest
+        update_cache: yes
+
+    - name: Hold kubernetes
+      ansible.builtin.shell: apt-mark hold kubelet kubeadm kubectl
+
+- name: Install containerd
+  block:
     - name: Get containerd gpg
       ansible.builtin.get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
@@ -111,22 +141,6 @@
         repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/containerd.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
         update_cache: yes
 
-- name: Installing kubernetes ({{ kubernetes.version }})
-  vars:
-    release: "{% if kubernetes.version is defined and kubernetes.version and kubernetes.version != 'latest' %}={{ kubernetes.version }}-00{% endif %}"
-  ansible.builtin.apt:
-    pkg:
-      - "kubelet{{ release }}"
-      - "kubeadm{{ release }}"
-      - "kubectl{{ release }}"
-    state: latest
-    update_cache: yes
-
-- name: Hold kubernetes
-  ansible.builtin.shell: apt-mark hold kubelet kubeadm kubectl
-
-- name: Install and configure containerd
-  block:
     - name: Installing containerd ({{ containerd.version }})
       vars:
           release: "{% if containerd.version is defined and containerd.version and containerd.version != 'latest' %}={{ containerd.version }}{% endif %}"
