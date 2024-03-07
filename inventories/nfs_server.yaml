@@ -1,5 +1,5 @@
 nfs:
   hosts:
     nfs_server:
-      ansible_hostname: k8s-nfs
+      ansible_hostname: rh-nfs
       ansible_host: 192.168.0.203

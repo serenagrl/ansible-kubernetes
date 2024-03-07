@@ -1,6 +1,11 @@
 - delegate_to: "{{ item }}"
   become_user: root
   block:
+    - name: Create shared certificate directory
+      ansible.builtin.file:
+        path: "{{ CERT_STORE }}"
+        state: directory
+
     - name: Copy ca certificate to shared certificate directory
       ansible.builtin.copy:
         src: "{{ CRT_FILE }}"
@@ -8,7 +13,8 @@
         mode: 0777
 
     - name: Update certificates
-      ansible.builtin.shell: update-ca-certificates
+      ansible.builtin.shell: update-ca-trust
+      # ansible.builtin.shell: update-ca-certificates
 
   ignore_errors: yes
   ignore_unreachable: yes

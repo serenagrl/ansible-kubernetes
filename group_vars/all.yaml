@@ -13,7 +13,7 @@ _kube:
     name: serena
 
     # The virtual ip address if you are running with load balancers, or the ip address of the 1st control plane.
-    address: 192.168.0.200
+    address: 192.168.0.203
 
     # The internal network of your kubernetes cluster.
     cidr_network: 10.1.0.0/16
@@ -21,7 +21,7 @@ _kube:
     # Indicates whether to use a dns server for naming.
     # yes - will attempt to register hostnames to dns server.
     # no - will use host file.
-    use_dns_server: yes
+    use_dns_server: no
 
   # Specify which ingress type to use - nginx or contour
   ingress_type: nginx
@@ -33,13 +33,13 @@ _kube:
 
   # Specify the name of the roles to which kubernetes add-on components to install
   add_ons:
-    - name: metallb
+    # - name: metallb
     - name: cert-manager
     - name: ingress
     - name: dashboard
     - name: monitoring
     - name: metrics-server
-    - name: csi/nfs
+    # - name: csi/nfs
     # - name: csi/rook-ceph
     # - name: devops/minio
     # - name: devops/gitlab
@@ -49,6 +49,7 @@ _kube:
     # - name: devops/argocd
     # - name: logging/elastic-stack
     # - name: logging/fluentd
+    # - name: logging/loki
     # - name: awx/operator
     # - name: awx/register
     # - name: istio

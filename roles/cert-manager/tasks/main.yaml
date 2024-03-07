@@ -93,7 +93,8 @@
 
     - name: Configure kubernetes nodes to trust ca certificate
       ansible.builtin.include_tasks: trust-cert.yaml
-      loop: "{{ fact_active_hosts + ['localhost'] }}"
+      loop: "{{ fact_active_hosts }}"
+      # loop: "{{ fact_active_hosts + ['localhost'] }}"
 
     - delegate_to: localhost
       become_user: root
@@ -101,7 +102,8 @@
         - name: Copy ca certificate to ansible controller cert store
           ansible.builtin.copy:
             src: "{{ CRT_FILE }}"
-            dest: "{{ CERT_STORE }}"
+            #dest: "{{ CERT_STORE }}"
+            dest: "/usr/local/share/ca-certificates/{{ _kube.cluster.name }}-ca.crt"
             remote_src: yes
             mode: 0777
 

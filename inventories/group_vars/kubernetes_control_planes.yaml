@@ -13,7 +13,7 @@ host_specs:
   v_cpu: 6
 
 # Indicates whether to automatically register the control-planes to the HAproxy load balancers config file.
-register_to_load_balancer: yes
+register_to_load_balancer: no
 
 remote_admin:
   # Enable this to allow remote administration from the Ansible controller host.
