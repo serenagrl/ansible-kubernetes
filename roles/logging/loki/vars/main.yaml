@@ -14,6 +14,6 @@ loki:
     tenant_endpoint: http://loki-minio-hl:9000/
 
   grafana:
-    url: https://serena.k8s.local/grafana
+    url: "http://{{ _kube.cluster.name }}.{{ _kube.cluster.domain }}/grafana"
     username: "admin"
     password: "admin"
