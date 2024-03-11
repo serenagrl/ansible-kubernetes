@@ -22,10 +22,8 @@
         state: latest
         update_cache: yes
 
-    - name: Downloading ubuntu cloud image
-      ansible.builtin.get_url:
-        url: "{{ vm.ubuntu_img_url }}"
-        dest: "{{ _work_dir }}/ubuntu-cloud.img"
+    - name: Get base VMs for {{ vm.os }}
+      ansible.builtin.include_tasks: "get-image-{{ vm.os }}.yaml"
 
     - name: Generate ssh keys for Ansible host (if required)
       ansible.builtin.shell: ssh-keygen -t rsa -q -f "/root/.ssh/id_rsa" -N ""
@@ -84,7 +82,7 @@
         path: "{{ METADATA_DIR }}/user-data"
         create: yes
         marker: ''
-        block: "{{ CLOUD_INIT_TEMPLATE }}"
+        block: "{{ lookup('template', 'cloud-init-' + (vm.os | lower) + '.j2') }}"
 
     - name: Create Seed iso
       ansible.builtin.shell: |
@@ -101,7 +99,7 @@
       vars:
         vhd_disk: "{{ vm_dir }}/{{ ansible_hostname }}/Virtual Hard Disks/{{ ansible_hostname }}.vhdx"
       ansible.builtin.shell: |
-        qemu-img convert -f qcow2 ubuntu-cloud.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
+        qemu-img convert -f qcow2 base-os.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
       args:
         chdir: "{{ _work_dir }}"
 
@@ -146,7 +144,7 @@
           Start-VM {{ ansible_hostname }}
         error_action: stop
 
-    - name: Waiting for ubuntu configuration to complete
+    - name: Waiting for OS configuration to complete
       ansible.windows.win_powershell:
         script: |
           Wait-VM -Name {{ ansible_hostname }} -For Reboot
@@ -163,7 +161,7 @@
 
 - name: Setup SSH
   ansible.builtin.include_role:
-    name: vm-ubuntu/setup-ssh
+    name: vm-linux/setup-ssh
 
 - name: Add hostname to /etc/hosts
   become_user: root
@@ -176,5 +174,5 @@
 - name: Checkpoint VM
   ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
   vars:
-    checkpoint_name: "Ubuntu configured."
+    checkpoint_name: "OS configured."
   when: _checkpoint

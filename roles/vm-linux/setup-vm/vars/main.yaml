@@ -10,8 +10,25 @@ vm:
   # The root password (this is because of using ssh later for Ansible) - Password is p@ssw0rd
   root_pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
 
-  # The url to download the ubuntu cloud image file. You may need to change this when new release is available.
-  ubuntu_img_url: https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img
+  # Valid values for now are ubuntu or redhat
+  os: redhat
+
+  # RHEL images cannot be downloaded without signing in. Therefore, you will need to manually
+  # download it and place it somewhere.
+  redhat:
+    # The full path and name to the RHEL KVM image to use.
+    kvm_image: "/mnt/d/Installation Files/RedHat/rhel-9.3-x86_64-kvm.qcow2"
+    auto_register: yes
+
+    # Your redhat login id
+    username: <username>
+
+    # Your redhat login password
+    password: <password>
+
+  ubuntu:
+    # The url to download the ubuntu cloud image file. You may need to change this when new release is available.
+    img_url: https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img
 
   network:
     # The ipv4 of the gateway.
@@ -30,10 +47,10 @@ vm:
   local: yes
 
   # The location where the seed isos will be placed
-  iso_folder: "E:\\Installation Files\\Ubuntu"
+  iso_folder: "D:\\Installation Files\\RedHat"
 
   # The location where the VMs will be created
-  vm_folder: "E:\\Virtual Machines\\Kubernetes"
+  vm_folder: "D:\\Virtual Machines\\Kubernetes"
 
   # The hyper-v switch to use
   switch: LAN
