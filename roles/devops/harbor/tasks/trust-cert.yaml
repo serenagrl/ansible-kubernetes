@@ -20,7 +20,7 @@
         mode: 0777
 
     - name: Update certificates
-      ansible.builtin.shell: update-ca-certificates
+      ansible.builtin.shell: update-ca-trust
 
   ignore_errors: yes
   ignore_unreachable: yes
