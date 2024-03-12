@@ -1,0 +1,31 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Get containerd gpg
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /tmp/containerd.gpg
+    mode: '0644'
+    force: true
+
+- name: De-armor containerd gpg
+  ansible.builtin.shell: gpg --dearmor < /tmp/containerd.gpg > /usr/share/keyrings/containerd.gpg
+
+- name: Register containerd repository
+  ansible.builtin.apt_repository:
+    filename: containerd
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/containerd.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    update_cache: yes
+
+- name: Installing containerd ({{ containerd.version }})
+  vars:
+      release: "{% if containerd.version is defined and containerd.version and containerd.version != 'latest' %}={{ containerd.version }}{% endif %}"
+  ansible.builtin.apt:
+    pkg:
+      - "containerd.io{{ release }}"
+    state: latest
+    update_cache: yes
+

@@ -1,0 +1,34 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Install Helm
+  become_user: root
+  block:
+    - name: Get helm gpg
+      ansible.builtin.get_url:
+        url: https://baltocdn.com/helm/signing.asc
+        dest: /tmp/helm.gpg
+        mode: '0644'
+        force: true
+
+    - name: De-armor helm gpg
+      ansible.builtin.shell: gpg --dearmor < /tmp/helm.gpg > /usr/share/keyrings/helm.gpg
+
+    - name: Register helm repository
+      ansible.builtin.apt_repository:
+        filename: helm
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+        update_cache: yes
+
+    - name: Installing helm
+      vars:
+        release: "{% if helm.version is defined and helm.version and helm.version != 'latest' %}={{ helm.version }}-1{% endif %}"
+      ansible.builtin.apt:
+        pkg:
+          - "helm{{ release }}"
+        state: latest
+        allow_downgrade: yes
+        update_cache: yes
