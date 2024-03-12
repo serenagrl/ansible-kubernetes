@@ -99,7 +99,7 @@
       vars:
         vhd_disk: "{{ vm_dir }}/{{ ansible_hostname }}/Virtual Hard Disks/{{ ansible_hostname }}.vhdx"
       ansible.builtin.shell: |
-        qemu-img convert -f qcow2 base-os.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
+        qemu-img convert -f qcow2 {{ vm.os }}-cloud.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
       args:
         chdir: "{{ _work_dir }}"
 
