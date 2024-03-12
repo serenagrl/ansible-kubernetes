@@ -10,7 +10,9 @@ vm:
   # The root password (this is because of using ssh later for Ansible) - Password is p@ssw0rd
   root_pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
 
-  # Valid values for now are ubuntu or redhat
+  # Valid values for now are:
+  # debian - for ubuntu
+  # redhat - Red Hat Enterprise Linux
   os: redhat
 
   # RHEL images cannot be downloaded without signing in. Therefore, you will need to manually

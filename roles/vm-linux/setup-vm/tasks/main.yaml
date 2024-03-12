@@ -4,7 +4,7 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: <<<<< Creates Ubuntu Hyper-V Virtual Machines >>>>>
+- name: Create Hyper-V Virtual Machines
   delegate_to: localhost
   run_once: yes
   block:
@@ -23,7 +23,7 @@
         update_cache: yes
 
     - name: Get base VMs for {{ vm.os }}
-      ansible.builtin.include_tasks: "get-image-{{ vm.os }}.yaml"
+      ansible.builtin.include_tasks: "{{ vm.os }}/get-image.yaml"
 
     - name: Generate ssh keys for Ansible host (if required)
       ansible.builtin.shell: ssh-keygen -t rsa -q -f "/root/.ssh/id_rsa" -N ""
@@ -82,7 +82,7 @@
         path: "{{ METADATA_DIR }}/user-data"
         create: yes
         marker: ''
-        block: "{{ lookup('template', 'cloud-init-' + (vm.os | lower) + '.j2') }}"
+        block: "{{ lookup('template',  (vm.os | lower) + '/cloud-init.j2') }}"
 
     - name: Create Seed iso
       ansible.builtin.shell: |

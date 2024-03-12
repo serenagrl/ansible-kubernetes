@@ -42,4 +42,5 @@ runcmd:
   - usermod --password '{{ vm.root_pwd }}' root
   - echo '{{ id_rsa_pub }}' > /root/.ssh/authorized_keys
   - sudo apt install ntp ntpdate -y
+  - sudo update-initramfs -u
   - sudo reboot -f

@@ -1,4 +1,0 @@
-- name: Copy Redhat kvm image
-  ansible.builtin.copy:
-    src: "{{ vm.redhat.kvm_image }}"
-    dest: "{{ _work_dir }}/base-os.img"
