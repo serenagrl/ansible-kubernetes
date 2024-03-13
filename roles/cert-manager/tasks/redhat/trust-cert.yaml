@@ -16,7 +16,6 @@
 
     - name: Update certificates
       ansible.builtin.shell: update-ca-trust
-      # ansible.builtin.shell: update-ca-certificates
 
   ignore_errors: yes
   ignore_unreachable: yes
