@@ -55,7 +55,7 @@ runners:
 {% if not _kube.cluster.use_dns_server %}
         [[runners.kubernetes.host_aliases]]
           ip = "{{ _kube.cluster.address }}"
-          hostnames = ["core.harbor.k8s.local"]
+          hostnames = ["core.harbor.{{ _kube.cluster.domain }}"]
 {% endif %}
 
         [runners.kubernetes.volumes]

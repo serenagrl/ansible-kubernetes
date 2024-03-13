@@ -1,15 +1,17 @@
 - delegate_to: "{{ item }}"
   become_user: root
+  vars:
+    cert_store: "/etc/pki/ca-trust/source/whitelist"
   block:
     - name: Create shared certificate directory
       ansible.builtin.file:
-        path: "{{ CERT_STORE }}"
+        path: "{{ cert_store }}"
         state: directory
 
     - name: Copy ca certificate to shared certificate directory
       ansible.builtin.copy:
         src: "{{ CRT_FILE }}"
-        dest: "{{ CERT_STORE }}"
+        dest: "{{ cert_store }}/{{ _kube.cluster.name }}-ca.crt"
         mode: 0777
 
     - name: Update certificates
