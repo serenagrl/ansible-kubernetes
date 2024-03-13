@@ -13,6 +13,5 @@
       - git
       - nano
       - iproute-tc
-      - firewalld
     state: latest
     update_cache: yes
