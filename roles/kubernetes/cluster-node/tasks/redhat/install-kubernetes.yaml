@@ -128,6 +128,9 @@
         immediate: true
         state: enabled
 
+    - name: Reload Firewall rules
+      shell: sudo firewall-cmd --reload
+
 - name: Install kubernetes
   vars:
     has_version_specified: "{{ (kubernetes.version is defined and kubernetes.version and kubernetes.version != 'latest') | bool }}"
