@@ -25,11 +25,14 @@ users:
 rh_subscription:
   username: {{ vm.redhat.username }}
   password: '{{ vm.redhat.password }}'
-  auto-attach: True
+  auto-attach: true
   service-level: self-support
 {% endif %}
 
 write_files:
+  - path: /etc/cloud/cloud.cfg.d/99-enable-ssh-pwauth.cfg
+    content: |
+      ssh_pwauth: true
   - path: /etc/NetworkManager/system-connections/eth0.nmconnection
     content: |
       [connection]
@@ -53,6 +56,6 @@ runcmd:
   - sudo chown root:root /etc/NetworkManager/system-connections/eth0.nmconnection
   - sudo nmcli connection reload
   - sudo sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
-  - sudo service sshd restart
+  - sudo systemctl restart sshd
   - sudo dnf update -y
   - sudo reboot

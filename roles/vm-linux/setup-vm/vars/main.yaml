@@ -11,7 +11,7 @@ vm:
   root_pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
 
   # Valid values for now are:
-  # debian - for ubuntu
+  # ubuntu - for ubuntu
   # redhat - Red Hat Enterprise Linux
   os: redhat
 
