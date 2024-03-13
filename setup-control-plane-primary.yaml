@@ -8,7 +8,7 @@
 # Configure primary control plane
 - name: Create primary control plane
   hosts: kubernetes_control_planes[0]
-  gather_facts: no
+  gather_facts: yes
 
   roles:
     - role: kubernetes/control-plane-primary

@@ -8,7 +8,7 @@
 - name: Install Kubernetes add-on components
   hosts: kubernetes_control_planes[0]
   become_user: "{{ _kube.user }}"
-  gather_facts: no
+  gather_facts: yes
 
   tasks:
     - name: Install Kubernetes add-on components

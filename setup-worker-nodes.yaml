@@ -8,7 +8,7 @@
 # Configure Worker nodes
 - name: Join worker nodes
   hosts: kubernetes_worker_nodes
-  gather_facts: no
+  gather_facts: yes
 
   roles:
     - kubernetes/worker-node
