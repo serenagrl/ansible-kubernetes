@@ -5,6 +5,9 @@ chpasswd:
     - name: root
       password: '{{ vm.root_pwd }}'
 ssh_pwauth: true
+disable_root_opts: ""
+ssh_authorized_keys:
+  - {{ id_rsa_pub }}
 
 users:
   - default
@@ -15,6 +18,8 @@ users:
     shell: /bin/bash
     passwd: '{{ _kube.pwd }}'
     lock_passwd: false
+    ssh_authorized_keys:
+      - {{ id_rsa_pub }}
 
 {%if vm.redhat.auto_register %}
 rh_subscription:
@@ -47,7 +52,6 @@ runcmd:
   - sudo chmod 600 /etc/NetworkManager/system-connections/eth0.nmconnection
   - sudo chown root:root /etc/NetworkManager/system-connections/eth0.nmconnection
   - sudo nmcli connection reload
-  - echo '{{ id_rsa_pub }}' > /root/.ssh/authorized_keys
   - sudo sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
   - sudo service sshd restart
   - sudo dnf update -y
