@@ -9,10 +9,10 @@
 # You should dedicate 1 server outside the kubernetes cluster to serve as an NFS server.
 - name: Setup the NFS Server
   hosts: nfs_server
-  gather_facts: no
+  gather_facts: yes
 
   roles:
-    - role: vm-ubuntu
+    - role: vm-linux
       when: provision_vm
     - role: nfs/server
 

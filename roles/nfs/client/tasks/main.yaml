@@ -4,16 +4,11 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-
 - delegate_to: "{{ nfs_client }}"
   become_user: root
   block:
-    - name: Installing nfs client package
-      ansible.builtin.apt:
-        pkg:
-          - nfs-common
-        state: latest
-        update_cache: yes
+    - name: Install NFS
+      ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/install-nfs.yaml"
 
     - name: Export shared directory to kubernetes cluster nodes
       delegate_to: nfs_server
