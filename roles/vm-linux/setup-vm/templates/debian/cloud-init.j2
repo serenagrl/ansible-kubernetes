@@ -1,7 +1,13 @@
 #cloud-config
-passwd: '{{ vm.root_pwd }}'
-chpasswd: { expire: False }
+chpasswd:
+  expire: false
+  users:
+    - name: root
+      password: '{{ vm.root_pwd }}'
 ssh_pwauth: True
+disable_root_opts: ""
+ssh_authorized_keys:
+  - {{ id_rsa_pub }}
 
 users:
   - default
@@ -12,6 +18,8 @@ users:
     shell: /bin/bash
     passwd: '{{ _kube.pwd }}'
     lock_passwd: false
+    ssh_authorized_keys:
+      - {{ id_rsa_pub }}
 
 write_files:
   - path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
@@ -39,8 +47,6 @@ runcmd:
   - sudo apt update -y && sudo apt full-upgrade -y
   - sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
   - systemctl restart ssh
-  - usermod --password '{{ vm.root_pwd }}' root
-  - echo '{{ id_rsa_pub }}' > /root/.ssh/authorized_keys
   - sudo apt install ntp ntpdate -y
   - sudo update-initramfs -u
   - sudo reboot -f

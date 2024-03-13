@@ -4,22 +4,6 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Gather facts
-  ansible.builtin.setup:
-
-- name: Configure the user to be used for kubernetes commands
-  block:
-    - name: Allow {{ _kube.user }} to use sudo without password
-      ansible.builtin.lineinfile:
-        dest: /etc/sudoers
-        line: '{{ _kube.user }} ALL=(ALL) NOPASSWD: ALL'
-        validate: 'visudo -cf %s'
-
-    - name: Set up authorized keys for {{ _kube.user }}
-      ansible.posix.authorized_key:
-        user: "{{ _kube.user }}"
-        key: "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
-
 - name: Configure DNS entries
   block:
     - name: Add kubernetes cluster DNS entry to /etc/hosts

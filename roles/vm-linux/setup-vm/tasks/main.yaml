@@ -144,7 +144,7 @@
           Start-VM {{ ansible_hostname }}
         error_action: stop
 
-    - name: Waiting for OS configuration to complete
+    - name: Waiting for updates to complete and reboot
       ansible.windows.win_powershell:
         script: |
           Wait-VM -Name {{ ansible_hostname }} -For Reboot
