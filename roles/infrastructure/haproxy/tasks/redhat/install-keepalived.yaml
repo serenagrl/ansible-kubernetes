@@ -10,3 +10,9 @@
     name: keepalived
     state: latest
     update_cache: yes
+
+- name: Remove default keepalived configuration file
+  become_user: root
+  ansible.builtin.file:
+    path: /etc/keepalived/keepalived.conf
+    state: absent
