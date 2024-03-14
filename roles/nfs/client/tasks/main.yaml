@@ -10,17 +10,33 @@
     - name: Install NFS
       ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/install-nfs.yaml"
 
-    - name: Export shared directory to kubernetes cluster nodes
+    - name: Add NFS hostname to client /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        insertafter: "127.0.0.1 localhost"
+        line: "{{ hostvars['nfs_server'].ansible_host }} {{ hostvars['nfs_server'].ansible_hostname }}"
+      when: not _kube.cluster.use_dns_server
+
+    - name: Register client to NFS server
       delegate_to: nfs_server
       become_user: root
-      ansible.builtin.shell: |
-        (
-            flock -x 9
+      block:
+        - name: Add client hostname to NFS server /etc/hosts
+          ansible.builtin.lineinfile:
+            path: /etc/hosts
+            insertafter: "127.0.0.1 localhost"
+            line: "{{ hostvars[nfs_client].ansible_host }} {{ hostvars[nfs_client].ansible_hostname }}"
+          when: not _kube.cluster.use_dns_server
 
-            cat /etc/exports | grep "{{ nfs_shared }} {{ hostvars[nfs_client].ansible_host }}"
-            if [ $? -eq 1 ]
-            then
-              echo "{{ nfs_shared }} {{ hostvars[nfs_client].ansible_host }}(rw,no_subtree_check,no_root_squash)" >> /etc/exports
-            fi
-            sudo exportfs -ar
-        ) 9>/tmp/nfs.lock
+        - name: Export shared directory to kubernetes cluster nodes
+          ansible.builtin.shell: |
+            (
+                flock -x 9
+
+                cat /etc/exports | grep "{{ nfs_shared }} {{ hostvars[nfs_client].ansible_host }}"
+                if [ $? -eq 1 ]
+                then
+                  echo "{{ nfs_shared }} {{ hostvars[nfs_client].ansible_hostname }}(rw,no_subtree_check,no_root_squash)" >> /etc/exports
+                fi
+                sudo exportfs -ar
+            ) 9>/tmp/nfs.lock

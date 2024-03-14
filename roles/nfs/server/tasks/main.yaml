@@ -4,6 +4,9 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+- name: Gather facts
+  ansible.builtin.setup:
+
 - name: Install NFS server
   ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/install-nfs.yaml"
 
