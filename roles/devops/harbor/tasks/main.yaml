@@ -70,7 +70,7 @@
     dest: "{{ CERT_FILE }}"
 
 - name: Configure kubernetes nodes to trust registry certificate
-  ansible.builtin.include_tasks: trust-cert.yaml
+  ansible.builtin.include_tasks: handle-cert.yaml
   loop: "{{ fact_active_hosts }}"
 
 - name: Cleanup files
