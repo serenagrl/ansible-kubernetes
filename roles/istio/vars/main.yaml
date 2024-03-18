@@ -2,7 +2,7 @@ istio:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
   version: latest #1.15.1
-  istioctl_dir: /usr/local/bin/
+  istioctl_dir: /usr/bin/
 
   # The profile to install. Currently set to 'demo' for testing. Use 'default' for production.
   # https://istio.io/latest/docs/setup/additional-setup/config-profiles/
