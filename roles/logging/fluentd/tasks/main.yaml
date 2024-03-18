@@ -6,6 +6,12 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Create journal directory
+  become_user: root
+  ansible.builtin.file:
+    path: "/var/log/journal"
+    state: directory
+
 - name: Create roles and accounts
   vars:
     elastic_password: "{{ elastic_password_result.stdout }}"
@@ -27,7 +33,6 @@
   become_user: root
   block:
     - name: Get fluentd kubernetes daemonset manifest
-      become_user: root
       ansible.builtin.get_url:
         url: "https://raw.githubusercontent.com/fluent/fluentd-kubernetes-daemonset/master/fluentd-daemonset-elasticsearch-rbac.yaml"
         dest: "{{ MANIFEST_FILE }}"
