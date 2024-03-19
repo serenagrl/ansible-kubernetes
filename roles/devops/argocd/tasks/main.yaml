@@ -4,13 +4,6 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-
-- name: Register DNS entry
-  vars:
-    domain_prefix: argocd
-  ansible.builtin.include_role:
-    name: common/dns-register
-
 - name: Create argocd namespace
   kubernetes.core.k8s:
     kind: Namespace
@@ -68,26 +61,29 @@
     name: "ArgoCD portal password"
     command: "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}'"
 
-- name: Install ingress ({{ _kube.ingress_type }})
-  vars:
-    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-    has_issuer: issuer_status.stdout == "Ready"
+- name: Setup ingress for portal
   block:
-    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
-      vars:
-        name: argocd
-        certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
-
-    - name: Check for ingress availability
-      kubernetes.core.k8s_info:
-        kind: IngressClass
-      register: ingress_class
-      when: _kube.ingress_type == "nginx"
-
-    - name: Create ingress ({{ _kube.ingress_type }}) for argocd server
+    - name: Configure subpath
       kubernetes.core.k8s:
-        apply: yes
-        force: yes
+        state: patched
+        kind: ConfigMap
+        name: argocd-cmd-params-cm
+        namespace: argocd
+        definition: |
+          data:
+            server.basehref: /argocd
+            server.rootpath: /argocd
+
+    - name: Restart deployment
+      ansible.builtin.shell: |
+        kubectl rollout restart -n argocd deployment/argocd-server
+
+      # Notes: Use cluster's domain name and with custom route /dashboard
+    - name: Setup ingress
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: kubernetes-dashboard
+        namespace: kubernetes-dashboard
         definition: "{{ INGRESS_TEMPLATE }}"
 
 - name: Install argocd cli to ansible controller

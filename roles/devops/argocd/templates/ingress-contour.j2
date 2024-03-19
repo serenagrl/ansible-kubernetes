@@ -4,14 +4,13 @@ metadata:
   name: argocd-server-httpproxy
   namespace: argocd
 spec:
-  virtualhost:
-    fqdn: argocd.{{ _kube.cluster.domain }}
-    tls:
-      secretName: argocd-ingress-tls
   routes:
     - conditions:
-        - prefix: /
+        - prefix: /argocd
       services:
         - name: argocd-server
           port: 443
           protocol: tls
+      pathRewritePolicy:
+        replacePrefix:
+          - replacement: /
