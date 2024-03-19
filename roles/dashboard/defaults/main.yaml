@@ -1,4 +1,4 @@
-MANIFEST_FILE: "{{ _work_dir }}/dashboard.yaml" 
+INGRESS_SETUP: "{{ 'ingress-' + _kube.ingress_type + '.yaml' }}"
+VALUES_FILE: "{{ lookup('template', 'values-' + _kube.ingress_type + '.j2') | from_yaml }}"
 
-INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + _kube.ingress_type + '.yaml' }}"
-INGRESS_TEMPLATE: "{{ lookup('template', 'ingress-' + _kube.ingress_type + '.j2') | from_yaml }}"
+HTTP_PROXY_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"

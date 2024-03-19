@@ -8,7 +8,7 @@ spec:
     - conditions:
         - prefix: /dashboard
       services:
-        - name: kubernetes-dashboard
+        - name: kubernetes-dashboard-kong-proxy
           port: 443
           protocol: tls
       pathRewritePolicy:
