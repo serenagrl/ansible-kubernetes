@@ -78,12 +78,12 @@
       ansible.builtin.shell: |
         kubectl rollout restart -n argocd deployment/argocd-server
 
-      # Notes: Use cluster's domain name and with custom route /dashboard
+      # Notes: Use cluster's domain name and with custom route /argocd
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
       vars:
-        name: kubernetes-dashboard
-        namespace: kubernetes-dashboard
+        name: argocd
+        namespace: argocd
         definition: "{{ INGRESS_TEMPLATE }}"
 
 - name: Install argocd cli to ansible controller
