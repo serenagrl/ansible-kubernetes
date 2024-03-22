@@ -1,6 +1,4 @@
-REPO_DIR: "{{ _work_dir }}/kube-prometheus"
-MANIFEST_DIR: "{{ REPO_DIR }}/manifests"
-SETUP_DIR: "{{ MANIFEST_DIR  }}/setup"
+VALUES_FILE: "{{ lookup('template', 'values-' + _kube.ingress_type + '.j2') | from_yaml }}"
+INGRESS_SETUP: "{{ 'ingress-' + _kube.ingress_type + '.yaml' }}"
 
-INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + _kube.ingress_type + '.yaml' }}"
-INGRESS_TEMPLATE: "{{ lookup('template', 'ingress-' + _kube.ingress_type + '.j2') | from_yaml }}"
+HTTP_PROXY_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"

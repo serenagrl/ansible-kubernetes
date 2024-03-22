@@ -1,19 +1,10 @@
 monitoring:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
-  version: latest #0.11.0
-  excludes: [
-    # Exclude the network policies to fix a bug that causes things to not work.
-    "{{ MANIFEST_DIR }}/alertmanager-networkPolicy.yaml",
-    "{{ MANIFEST_DIR }}/blackboxExporter-networkPolicy.yaml",
-    "{{ MANIFEST_DIR }}/grafana-networkPolicy.yaml",
-    "{{ MANIFEST_DIR }}/kubeStateMetrics-networkPolicy.yaml",
-    "{{ MANIFEST_DIR }}/nodeExporter-networkPolicy.yaml",
-    "{{ MANIFEST_DIR }}/prometheus-networkPolicy.yaml",
-    "{{ MANIFEST_DIR }}/prometheusAdapter-networkPolicy.yaml",
-    "{{ MANIFEST_DIR }}/prometheusOperator-networkPolicy.yaml",
+  version: latest
 
-    # Exclude these files if you are installing after metrics server.
-    #"{{ MANIFEST_DIR }}/prometheusAdapter-apiService.yaml",
-    #"{{ MANIFEST_DIR }}/prometheusAdapter-clusterRoleAggregatedMetricsReader.yaml",
-  ]
+  alertmanager:
+    replicas: 1
+
+  prometheus:
+    replicas: 1

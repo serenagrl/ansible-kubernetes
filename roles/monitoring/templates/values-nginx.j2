@@ -1,0 +1,126 @@
+fullnameOverride: monitoring
+
+alertmanager:
+  fullnameOverride:
+  ingress:
+    enabled: true
+    ingressClassName: {{ ingress_name }}
+    hosts:
+      - {{ ingress_host }}
+
+    paths:
+      - /alerts
+    pathType: ImplementationSpecific
+
+  alertmanagerSpec:
+    routePrefix: /alerts
+    replicas: {{ monitoring.alertmanager.replicas }}
+
+{% if not _kube.allow_scheduling %}
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+grafana:
+  enabled: true
+
+  replicas: 1
+
+  ingress:
+    enabled: true
+    ingressClassName: {{ ingress_name }}
+    hosts:
+      - {{ ingress_host }}
+
+    path: /grafana
+    pathType: ImplementationSpecific
+
+  sidecar:
+    datasources:
+      enabled: true
+      url: http://monitoring-prometheus:9090/prometheus/
+
+{% if not _kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+  grafana.ini:
+    server:
+      root_url: "/grafana/"
+      serve_from_sub_path: true
+
+prometheusOperator:
+  enabled: true
+
+{% if not _kube.allow_scheduling %}
+  admissionWebhooks:
+    deployment:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    patch:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+prometheus:
+  enabled: true
+
+  ingress:
+    enabled: true
+    ingressClassName: {{ ingress_name }}
+    hosts:
+      - {{ ingress_host }}
+
+    paths:
+      - /prometheus
+    pathType: ImplementationSpecific
+
+  prometheusSpec:
+    replicas: {{ monitoring.prometheus.replicas }}
+    externalUrl: /prometheus
+    routePrefix: /prometheus
+
+{% if not _kube.allow_scheduling %}
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+kube-state-metrics:
+{% if not _kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+{% endif %}
