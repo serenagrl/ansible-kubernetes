@@ -4,90 +4,22 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Create secret to hold service token
-  kubernetes.core.k8s:
-    apply: yes
+- name: Add metrics server chart repo
+  kubernetes.core.helm_repository:
+    name: metrics-server
+    repo_url: "https://kubernetes-sigs.github.io/metrics-server/"
+
+- name: Deploy metrics server
+  vars:
+    version: "{% if metrics.version is defined and metrics.version and metrics.version != 'latest' %}{{ metrics.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: metrics-server
+    atomic: yes
+    chart_ref: metrics-server/metrics-server
+    chart_version: "{{ version }}"
     namespace: kube-system
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: default-token
-        annotations:
-          kubernetes.io/service-account.name: default
-      type: kubernetes.io/service-account-token
-
-- name: Get service token
-  ansible.builtin.shell: kubectl get secret default-token -n kube-system -o jsonpath='{.data.token}' | base64 --decode
-  register: kubernetes_api_token
-
-- name: Enable aggregator routing at apiserver
-  become_user: root
-  ansible.builtin.blockinfile:
-    path: /etc/kubernetes/manifests/kube-apiserver.yaml
-    insertafter: "- kube-apiserver"
-    marker: "    # ANSIBLE MANAGED BLOCK"
-    block: |2
-          - --enable-aggregator-routing=true
-
-- name: Waiting for apiserver to be restarted
-  ansible.builtin.uri:
-    url: "https://{{ _kube.cluster.name }}:6443/healthz"
-    headers:
-      Authorization: Bearer {{ kubernetes_api_token.stdout }}
-    validate_certs: no
-  register: result
-  until: result.status == 200
-  retries: 10
-  delay: 30
-
-- name: Configure metrics server manifest
-  delegate_to: localhost
-  become_user: root
-  block:
-    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
-      vars:
-        name: "metrics server"
-        repo_path: "kubernetes-sigs/metrics-server"
-        pkg_version: "{{ metrics.version | default }}"
-        version_prefix: "v"
-        dest: "{{ MANIFEST_FILE }}"
-        urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/components.yaml"]
-
-    - name: Allow insecure tls
-      ansible.builtin.blockinfile:
-        path: "{{ MANIFEST_FILE }}"
-        insertafter: "- --kubelet-use-node-status-port"
-        marker: "        # ANSIBLE MANAGED BLOCK 1"
-        block: |2
-                  - --kubelet-insecure-tls
-
-    - name: Configure to run on control-planes only
-      ansible.builtin.replace:
-        path: "{{ MANIFEST_FILE }}"
-        regexp: '^\s*(nodeSelector:)$'
-        replace: |4-
-                  tolerations:
-                    - effect: NoSchedule
-                      key: node-role.kubernetes.io/control-plane
-                      operator: Exists
-                  \1
-                    node-role.kubernetes.io/control-plane: ""
-      when: not _kube.allow_scheduling
-
-- name: Install metrics server
-  kubernetes.core.k8s:
-    apply: yes
-    force: yes
-    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
-
-- name: Cleanup manifest file
-  delegate_to: localhost
-  become_user: root
-  ansible.builtin.file:
-    path: "{{ MANIFEST_FILE }}"
-    state: absent
-  when: _cleanup
+    values: "{{ VALUES_FILE }}"
+    wait: yes
 
 - name: Waiting for metrics server to be ready
   ansible.builtin.shell: |
