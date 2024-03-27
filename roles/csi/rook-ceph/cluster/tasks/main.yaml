@@ -1,0 +1,155 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check for existing Virtual Hard Disks
+  ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
+  vars:
+    win_folder: "{{ csi_ceph.cluster.disk.vm_folder }}"
+    host_name: "{{ hostvars[item].ansible_hostname }}"
+    disk_name: "{{ csi_ceph.cluster.disk.name }}"
+    hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
+  loop: "{{ q('inventory_hostnames', hostnames) }}"
+
+# IMPORTANT! You need to remove the disks manually if you wish to rerun this.
+- name: Create Hyper-V virtual disks and attach them to nodes
+  delegate_to: "{{ hostvars[item].winrm_host }}"
+  vars:
+    hostname: "{{ hostvars[item].ansible_hostname }}"
+    hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
+    vhd_disk: "{{ csi_ceph.cluster.disk.vm_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ csi_ceph.cluster.disk.name }}.vhdx"
+  ansible.windows.win_powershell:
+    script: |
+      New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ csi_ceph.cluster.disk.size }} -Dynamic
+      Add-VMHardDiskDrive {{ hostname }} -Path "{{ vhd_disk }}"
+    creates: "{{ vhd_disk }}"
+  loop: "{{ q('inventory_hostnames', hostnames) }}"
+  run_once: yes
+
+  # Notes: Use cluster's domain name and with custom route /ceph
+- name: Setup ingress
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+
+- name: Deploy rook-ceph cluster
+  vars:
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    version: "{% if csi_ceph.cluster.version is defined and csi_ceph.cluster.version and csi_ceph.cluster.version != 'latest' %}{{ csi_ceph.cluster.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: rook-ceph-cluster
+    atomic: yes
+    chart_ref: rook-release/rook-ceph-cluster
+    chart_version: "{{ version }}"
+    namespace: rook-ceph
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    timeout: 20m0s
+    wait: yes
+
+- name: Waiting for rook-ceph cluster to be ready
+  ansible.builtin.shell: |
+    kubectl wait --for=condition=Ready cephclusters rook-ceph -n rook-ceph --timeout=1200s
+    kubectl wait --for=jsonpath='{.status.phase}'='Ready' cephfilesystems ceph-filesystem -n rook-ceph --timeout=1200s
+    kubectl wait --for=jsonpath='{.status.phase}'='Ready' cephobjectstores ceph-objectstore -n rook-ceph --timeout=1200s
+    for d in $(kubectl -n rook-ceph get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n rook-ceph deployment/$d; done;
+    for d in $(kubectl -n rook-ceph get daemonset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n rook-ceph daemonset/$d; done;
+    for d in $(kubectl -n rook-ceph get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n rook-ceph statefulset/$d; done;
+
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
+  vars:
+    name: "Ceph dashboard password"
+    command: "kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath='{.data.password}'"
+
+- name: Install kubectl krew plugin on ansible controller host 
+  delegate_to: localhost
+  become_user: root
+  vars:
+    release: "{{ release_tag.stdout }}"
+    cli_dir: "{{ _work_dir }}/krew"
+  block:
+    - name: Check if kubectl is installed
+      ansible.builtin.shell: |
+        apt list kubectl
+      register: kubectl_result
+
+    - name: Install kubectl krew plugin
+      vars:
+        kubectl_installed: "{{ (kubectl_result.stdout_lines | select('search', 'installed') | length > 0) | bool }}"
+      block:
+        - name: Get latest krew version
+          ansible.builtin.shell: |
+            curl -s https://api.github.com/repos/kubernetes-sigs/krew/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
+          register: release_tag
+
+        - name: Create krew directory
+          file:
+            path: "{{ cli_dir }}"
+            state: directory
+
+        - name: Downloading and extracting krew
+          ansible.builtin.unarchive:
+            src: "https://github.com/kubernetes-sigs/krew/releases/download/v{{ release }}/krew-linux_amd64.tar.gz"
+            dest: "{{ cli_dir }}"
+            remote_src: yes
+
+        - name: Install krew
+          ansible.builtin.shell: |
+              {{ cli_dir }}/krew-linux_amd64 install krew
+
+        - name: Add krew bin folder to PATH
+          ansible.builtin.blockinfile:
+            path: /root/.bashrc
+            marker: "# {mark} krew PATH"
+            block: 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
+
+        - name: Cleanup files
+          ansible.builtin.file:
+            path: "{{ cli_dir }}"
+            state: absent
+          when: _cleanup
+
+        - name: Install Rook plugin
+          delegate_to: localhost
+          become_user: root
+          ansible.builtin.shell: |
+            kubectl krew install rook-ceph
+      when: kubectl_installed
+  when: csi_ceph.install_plugin
+
+- name: Check if Prometheus is installed
+  ansible.builtin.shell: |
+      kubectl get prometheus monitoring-prometheus -n monitoring -o json | jq .status.conditions[0].type -r
+  register: prometheus_status
+  ignore_errors: yes
+
+- name: Configure prometheus to scrape ceph metrics endpoint
+  block:
+    - name: Get ceph toolbox pod information
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: rook-ceph
+        label_selectors:
+          - app = rook-ceph-tools
+      register: pod_info
+
+    - name: Configure prometheus endpoint
+      vars:
+        pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
+      kubernetes.core.k8s_exec:
+        namespace: rook-ceph
+        pod: '{{ pod_name }}'
+        command: '{{ item }}'
+      loop:
+        - "ceph dashboard set-alertmanager-api-host 'http://monitoring-alertmanager.monitoring.svc:9093/alerts/'"
+        - "ceph dashboard set-prometheus-api-host 'http://monitoring-prometheus.monitoring.svc:9090/prometheus/'"
+        - "ceph dashboard set-prometheus-api-ssl-verify False"
+        - "ceph dashboard set-alertmanager-api-ssl-verify False"
+
+    - name: Create ServiceMonitor
+      kubernetes.core.k8s:
+        definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
+  when: HAS_PROMETHEUS

@@ -15,3 +15,10 @@
       - "containerd.io{{ release }}"
     state: latest
     update_cache: yes
+
+- name: Set LimitNOFILE
+  lineinfile: 
+    path: /usr/lib/systemd/system/containerd.service
+    regexp: 'LimitNOFILE=(.*)$' 
+    line: 'LimitNOFILE=1048576'
+    backrefs: yes

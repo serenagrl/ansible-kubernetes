@@ -1,0 +1,75 @@
+logLevel: WARNING
+
+{% if not _kube.allow_scheduling %}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""
+
+csi:
+  logLevel: 5
+  sidecarLogLevel: 5
+  provisionerTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  provisionerNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  pluginTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  pluginNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  rbdProvisionerTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  rbdProvisionerNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  rbdPluginTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  rbdPluginNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  cephFSProvisionerTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  cephFSProvisionerNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  cephFSPluginTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  cephFSPluginNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  nfsProvisionerTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nfsProvisionerNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  nfsPluginTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nfsPluginNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+discover:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+{% endif %}
+
+hostpathRequiresPrivileged: true

@@ -1,0 +1,6 @@
+- name: Setup ingress
+  ansible.builtin.include_tasks: ./tasks/task-create-ingress-contour.yaml
+  vars:
+    name: rook-ceph
+    namespace: rook-ceph
+    definition: "{{ HTTP_PROXY_TEMPLATE }}"

@@ -1,0 +1,13 @@
+csi_ceph:
+  cluster:
+    # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+    # releases with breaking changes. Try reducing the version number if errors occur during installation.
+    version: latest
+
+    # Change to your desired settings
+    disk:
+      name: CephStorage
+      vm_folder: "E:\\Virtual Machines\\Kubernetes"
+      size: 40GB
+
+  install_plugin: yes

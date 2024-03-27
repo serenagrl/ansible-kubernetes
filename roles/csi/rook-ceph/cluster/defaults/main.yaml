@@ -1,0 +1,9 @@
+INGRESS_SETUP: "{{ 'ingress-' + _kube.ingress_type + '.yaml' }}"
+VALUES_FILE: "{{ lookup('template', 'values-' + _kube.ingress_type + '.j2') | from_yaml }}"
+SERVICE_MONITOR_TEMPLATE: "{{ lookup('template', 'service-monitor.j2') | from_yaml }}"
+
+HTTP_PROXY_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"
+
+SCRAPE_CONFIG: "prometheus-additional.yaml"
+SECRET_CONFIG: "additional-scrape-configs.yaml"
+HAS_PROMETHEUS: "{{ prometheus_status.stdout == 'Available' }}"
