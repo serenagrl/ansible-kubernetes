@@ -1,67 +1,58 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: awx-migration-24.1.0
+  name: awx-migration-{{ awx_release }}
   namespace: awx
   labels:
     app.kubernetes.io/component: awx
     app.kubernetes.io/managed-by: awx-operator
-    app.kubernetes.io/operator-version: 2.14.0
+    app.kubernetes.io/operator-version: {{ operator_release }}
     app.kubernetes.io/part-of: awx
-    app.kubernetes.io/version: 24.1.0
-  name: awx-migration-24.1.0
-  namespace: awx
+    app.kubernetes.io/version: {{ awx_release }}
 spec:
-  backoffLimit: 6
-  completionMode: NonIndexed
-  completions: 1
-  manualSelector: false
-  parallelism: 1
-  podReplacementPolicy: TerminatingOrFailed
-  suspend: false
   template:
     spec:
+      containers:
+        - command:
+          - awx-manage
+          - migrate
+          - --noinput
+          image: quay.io/ansible/awx:{{ awx_release }}
+          imagePullPolicy: IfNotPresent
+          name: migration-job
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /etc/tower/conf.d/credentials.py
+              name: awx-application-credentials
+              readOnly: true
+              subPath: credentials.py
+            - mountPath: /etc/tower/SECRET_KEY
+              name: awx-secret-key
+              readOnly: true
+              subPath: SECRET_KEY
+            - mountPath: /etc/tower/settings.py
+              name: awx-settings
+              readOnly: true
+              subPath: settings.py
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: awx
+      serviceAccountName: awx
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane
           operator: Exists
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
-      containers:
-      - command:
-        - awx-manage
-        - migrate
-        - --noinput
-        image: quay.io/ansible/awx:24.1.0
-        imagePullPolicy: IfNotPresent
-        name: migration-job
-        resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /etc/tower/conf.d/credentials.py
-          name: awx-application-credentials
-          readOnly: true
-          subPath: credentials.py
-        - mountPath: /etc/tower/SECRET_KEY
-          name: awx-secret-key
-          readOnly: true
-          subPath: SECRET_KEY
-        - mountPath: /etc/tower/settings.py
-          name: awx-settings
-          readOnly: true
-          subPath: settings.py
-      dnsPolicy: ClusterFirst
-      restartPolicy: Never
-      schedulerName: default-scheduler
-      securityContext: {}
-      serviceAccount: awx
-      serviceAccountName: awx
-      terminationGracePeriodSeconds: 30
       volumes:
       - name: awx-application-credentials
         secret:
-          defaultMode: 420
+          secretName: awx-app-credentials
           items:
           - key: credentials.py
             path: credentials.py
@@ -69,18 +60,15 @@ spec:
             path: ldap.py
           - key: execution_environments.py
             path: execution_environments.py
-          secretName: awx-app-credentials
       - name: awx-secret-key
         secret:
-          defaultMode: 420
+          secretName: awx-secret-key
           items:
           - key: secret_key
             path: SECRET_KEY
-          secretName: awx-secret-key
-      - configMap:
-          defaultMode: 420
+      - name: awx-settings
+        configMap:
+          name: awx-awx-configmap
           items:
           - key: settings
             path: settings.py
-          name: awx-awx-configmap
-        name: awx-settings

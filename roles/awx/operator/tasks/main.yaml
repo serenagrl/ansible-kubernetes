@@ -16,8 +16,10 @@
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
     ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
-    has_version_specified: "{{ (awx.version is defined and awx.version and awx.version != 'latest') | bool }}"
-    release: "{{ has_version_specified | ternary(awx.version, release_tag.stdout) }}"
+    has_operator_version_specified: "{{ (awx.operator.version is defined and awx.operator.version and awx.operator.version != 'latest') | bool }}"
+    operator_release: "{{ has_operator_version_specified | ternary(awx.operator.version, operator_release_tag.stdout) }}"
+    has_awx_version_specified: "{{ (awx.version is defined and awx.version and awx.version != 'latest') | bool }}"
+    awx_release: "{{ has_awx_version_specified | ternary(awx.version, awx_release_tag.stdout) }}"
   block:
     # Notes: Uses cluster's domain name and with custom route /awx
     - name: Setup ingress
@@ -28,11 +30,17 @@
         in_definition: "{{ INGRESS_TEMPLATE }}"
         in_create: "{{ INGRESS_CREATE }}"
 
-    - name: Get latest awx release
+    - name: Get latest operator release
       ansible.builtin.shell: |
           curl -s "https://api.github.com/repos/ansible/awx-operator/releases/latest" | grep tag_name | cut -d '"' -f 4
-      register: release_tag
-      when: not has_version_specified
+      register: operator_release_tag
+      when: not has_operator_version_specified
+
+    - name: Get latest awx release
+      ansible.builtin.shell: |
+          curl -s "https://api.github.com/repos/ansible/awx/releases/latest" | grep tag_name | cut -d '"' -f 4
+      register: awx_release_tag
+      when: not has_awx_version_specified
 
     - delegate_to: localhost
       become_user: root
@@ -89,19 +97,11 @@
 
 - name: Waiting for AWX deployments to be ready
   ansible.builtin.shell: |
+    kubectl wait --for=jsonpath='{.status.conditions[?(@.type=="Running")].reason}'="Successful" awx awx -n awx --timeout=600s
+    kubectl wait --for=jsonpath='{.status.conditions[?(@.type=="Successful")].reason}'="Successful" awx awx -n awx --timeout=600s
+    kubectl wait --for=jsonpath='{.status.conditions[?(@.type=="Successful")].status}'="True" awx awx -n awx --timeout=600s
     for d in $(kubectl -n awx get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx deployment/$d; done;
     for d in $(kubectl -n awx get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx statefulset/$d; done;
-
-- name: Waiting for {{ host_uri }}
-  vars:
-    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
-    host_uri: "https://{{ ingress_host }}/awx/"
-  ansible.builtin.uri:
-    url: "{{ host_uri }}"
-  register: result
-  until: result.status == 200
-  retries: 20
-  delay: 30
 
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:

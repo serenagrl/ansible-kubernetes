@@ -1,8 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - github.com/ansible/awx-operator/config/default?ref={{ release }}
+  - github.com/ansible/awx-operator/config/default?ref={{ operator_release }}
   - patch-job-tolerations.yaml
+
+images:
+  - name: quay.io/ansible/awx-operator
+    newTag: {{ operator_release }}
 
 {% if not _kube.allow_scheduling %}
 patches:
@@ -13,5 +17,5 @@ patches:
   - path: patch-job-tolerations.yaml
     target:
       kind: Job
-      name: awx-migration-24.1.0
+      name: awx-migration-{{ awx_release }}
 {% endif %}
