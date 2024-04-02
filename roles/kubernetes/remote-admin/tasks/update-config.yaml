@@ -1,0 +1,31 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Add cluster information to kube config
+  vars:
+    remote_config: "{{ remote_config_file['content'] | b64decode | replace('kubernetes', _kube.cluster.name) | from_yaml }}"
+    local_config: "{{ local_config_file['content'] | b64decode | from_yaml }}"
+    clusters: "{{ (local_config.clusters | rejectattr('name', 'equalto', _kube.cluster.name)) + remote_config.clusters }}"
+    contexts: "{{ (local_config.contexts | rejectattr('name', 'search', _kube.cluster.name + '-admin')) + remote_config.contexts }}"
+    users: "{{ (local_config.users | rejectattr('name', 'equalto', _kube.cluster.name + '-admin')) + remote_config.users }}"
+    current_context: "{{ remote_config['current-context'] }}"
+  block:
+    - name: Get kube config file from control plane
+      delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
+      ansible.builtin.slurp:
+        src: /etc/kubernetes/admin.conf
+      register: remote_config_file
+
+    - name: Get kube config file from ansible controller host
+      ansible.builtin.slurp:
+        src: /root/.kube/config
+      register: local_config_file
+
+    - ansible.builtin.copy:
+        content: "{{ KUBE_CONFIG_TEMPLATE | to_nice_yaml }}"
+        dest: /root/.kube/config
+        force: true
