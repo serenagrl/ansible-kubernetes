@@ -1,7 +1,7 @@
 - delegate_to: "{{ item }}"
   become_user: root
   vars:
-    cert_store: "/etc/pki/ca-trust/source/whitelist"
+    cert_store: "/etc/pki/ca-trust/source/anchors"
   block:
     - name: Create shared certificate directory
       ansible.builtin.file:

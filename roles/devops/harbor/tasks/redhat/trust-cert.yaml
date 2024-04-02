@@ -9,7 +9,7 @@
     - name: Copy registry certificate to shared certificate directory
       ansible.builtin.copy:
         src: "{{ CERT_FILE }}"
-        dest: "/etc/pki/ca-trust/source/whitelist/harbor-ca.crt"
+        dest: "/etc/pki/ca-trust/source/anchors/harbor-ca.crt"
         mode: 0777
 
     - name: Update certificates
