@@ -1,5 +1,0 @@
-- include_tasks: ./tasks/task-create-ingress-contour.yaml
-  vars:
-    name: awx
-    namespace: awx
-    definition: "{{ HTTP_PROXY_TEMPLATE }}"

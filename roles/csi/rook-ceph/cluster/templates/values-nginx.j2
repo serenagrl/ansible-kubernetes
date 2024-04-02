@@ -127,7 +127,7 @@ cephClusterSpec:
           operator: Exists
 {% endif %}
 
-# Due to modifying a value in the collection, all values need to be specified.
+{# Due to modifying a value in the collection, all values need to be specified. #}
 cephFileSystems:
   - name: ceph-filesystem
     spec:
@@ -174,7 +174,7 @@ cephFileSystems:
         csi.storage.k8s.io/node-stage-secret-namespace: "rook-ceph"
         csi.storage.k8s.io/fstype: ext4
 
-# Due to modifying a value in the collection, all values need to be specified.
+{# Due to modifying a value in the collection, all values need to be specified. #}
 cephObjectStores:
   - name: ceph-objectstore
     spec:

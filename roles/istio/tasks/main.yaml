@@ -18,7 +18,6 @@
   args:
     chdir: "{{ _work_dir }}"
 
-
 - name: Copy istioctl from Ansible host to the control plane
   become_user: root
   ansible.builtin.copy:
@@ -112,10 +111,10 @@
         marker: "      # ANSIBLE MANAGED BLOCK"
         block: |2
                 prometheus:
-                  url: "http://prometheus-k8s.monitoring.svc:9090/prometheus"
+                  url: "http://monitoring-prometheus.monitoring.svc:9090/prometheus"
                 grafana:
                   enabled: true
-                  in_cluster_url: 'http://grafana.monitoring.svc:3000/'
+                  in_cluster_url: 'http://monitoring-grafana.monitoring.svc:80/'
                   url: 'http://{{ _kube.cluster.name }}.{{ _kube.cluster.domain }}/grafana'
 
     - name: Configure to run on control-planes only
@@ -152,7 +151,8 @@
       vars:
         name: kiali
         namespace: istio-system
-        definition: "{{ INGRESS_TEMPLATE }}"
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: yes
 
 - name: Cleanup
   block:

@@ -33,6 +33,11 @@
   # Notes: Use cluster's domain name and with custom route /ceph
 - name: Setup ingress
   ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: rook-ceph
+    namespace: rook-ceph
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: "{{ INGRESS_CREATE }}"
 
 - name: Deploy rook-ceph cluster
   vars:
@@ -64,7 +69,41 @@
     name: "Ceph dashboard password"
     command: "kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath='{.data.password}'"
 
-- name: Install kubectl krew plugin on ansible controller host 
+- name: Check if Prometheus is installed
+  ansible.builtin.shell: |
+      kubectl get prometheus monitoring-prometheus -n monitoring -o json | jq .status.conditions[0].type -r
+  register: prometheus_status
+  ignore_errors: yes
+
+- name: Configure prometheus to scrape ceph metrics endpoint
+  block:
+    - name: Get ceph toolbox pod information
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: rook-ceph
+        label_selectors:
+          - app = rook-ceph-tools
+      register: pod_info
+
+    - name: Configure prometheus endpoint
+      vars:
+        pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
+      kubernetes.core.k8s_exec:
+        namespace: rook-ceph
+        pod: '{{ pod_name }}'
+        command: '{{ item }}'
+      loop:
+        - "ceph dashboard set-alertmanager-api-host 'http://monitoring-alertmanager.monitoring.svc:9093/alerts/'"
+        - "ceph dashboard set-prometheus-api-host 'http://monitoring-prometheus.monitoring.svc:9090/prometheus/'"
+        - "ceph dashboard set-prometheus-api-ssl-verify False"
+        - "ceph dashboard set-alertmanager-api-ssl-verify False"
+
+    - name: Create ServiceMonitor
+      kubernetes.core.k8s:
+        definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
+  when: HAS_PROMETHEUS
+
+- name: Install kubectl rook-ceph krew plugin on ansible controller host
   delegate_to: localhost
   become_user: root
   vars:
@@ -72,8 +111,7 @@
     cli_dir: "{{ _work_dir }}/krew"
   block:
     - name: Check if kubectl is installed
-      ansible.builtin.shell: |
-        apt list kubectl
+      ansible.builtin.shell: apt list kubectl
       register: kubectl_result
 
     - name: Install kubectl krew plugin
@@ -112,44 +150,11 @@
             state: absent
           when: _cleanup
 
-        - name: Install Rook plugin
+        - name: Install rook ceph plugin
           delegate_to: localhost
           become_user: root
           ansible.builtin.shell: |
             kubectl krew install rook-ceph
+
       when: kubectl_installed
   when: csi_ceph.install_plugin
-
-- name: Check if Prometheus is installed
-  ansible.builtin.shell: |
-      kubectl get prometheus monitoring-prometheus -n monitoring -o json | jq .status.conditions[0].type -r
-  register: prometheus_status
-  ignore_errors: yes
-
-- name: Configure prometheus to scrape ceph metrics endpoint
-  block:
-    - name: Get ceph toolbox pod information
-      kubernetes.core.k8s_info:
-        kind: Pod
-        namespace: rook-ceph
-        label_selectors:
-          - app = rook-ceph-tools
-      register: pod_info
-
-    - name: Configure prometheus endpoint
-      vars:
-        pod_name: "{{ pod_info | json_query('resources[0].metadata.name') }}"
-      kubernetes.core.k8s_exec:
-        namespace: rook-ceph
-        pod: '{{ pod_name }}'
-        command: '{{ item }}'
-      loop:
-        - "ceph dashboard set-alertmanager-api-host 'http://monitoring-alertmanager.monitoring.svc:9093/alerts/'"
-        - "ceph dashboard set-prometheus-api-host 'http://monitoring-prometheus.monitoring.svc:9090/prometheus/'"
-        - "ceph dashboard set-prometheus-api-ssl-verify False"
-        - "ceph dashboard set-alertmanager-api-ssl-verify False"
-
-    - name: Create ServiceMonitor
-      kubernetes.core.k8s:
-        definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
-  when: HAS_PROMETHEUS

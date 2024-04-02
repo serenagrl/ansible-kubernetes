@@ -35,6 +35,11 @@
     # Notes: Uses own domain name.
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: sonarqube
+        namespace: sonarqube
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: no
 
     - name: Deploying sonarqube
       vars:

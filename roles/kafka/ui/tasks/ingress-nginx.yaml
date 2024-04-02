@@ -1,6 +1,0 @@
-# Ingress creation is not necessary for helm-based installation.
-
-- name: Get ingress class
-  kubernetes.core.k8s_info:
-    kind: IngressClass
-  register: ingress_class

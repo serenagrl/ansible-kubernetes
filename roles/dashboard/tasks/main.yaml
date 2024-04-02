@@ -13,6 +13,11 @@
   # Notes: Use cluster's domain name and with custom route /dashboard
 - name: Setup ingress
   ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: kubernetes-dashboard
+    namespace: kubernetes-dashboard
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: "{{ INGRESS_CREATE }}"
 
 - name: Add kubernetes dashboard chart repo
   kubernetes.core.helm_repository:

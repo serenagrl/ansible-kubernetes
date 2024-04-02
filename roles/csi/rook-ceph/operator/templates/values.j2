@@ -9,8 +9,6 @@ nodeSelector:
   node-role.kubernetes.io/control-plane: ""
 
 csi:
-  logLevel: 5
-  sidecarLogLevel: 5
   provisionerTolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane

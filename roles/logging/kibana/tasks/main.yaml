@@ -30,4 +30,6 @@
   vars:
     name: kibana
     namespace: logging
-    definition: "{{ INGRESS_TEMPLATE }}"
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: yes
+

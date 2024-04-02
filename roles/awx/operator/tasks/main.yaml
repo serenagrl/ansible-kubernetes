@@ -14,7 +14,7 @@
 
 - name: Install AWX
   vars:
-    ingress_name: "{{ ingress_result.stdout }}"
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
     ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
     has_version_specified: "{{ (awx.version is defined and awx.version and awx.version != 'latest') | bool }}"
     release: "{{ has_version_specified | ternary(awx.version, release_tag.stdout) }}"
@@ -22,6 +22,11 @@
     # Notes: Uses cluster's domain name and with custom route /awx
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: awx
+        namespace: awx
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: "{{ INGRESS_CREATE }}"
 
     - name: Get latest awx release
       ansible.builtin.shell: |
@@ -44,6 +49,7 @@
           loop:
             - { content: '{{ KUSTOMIZATION_TEMPLATE }}', filename: kustomization.yaml }
             - { content: '{{ PATCH_TOLERATIONS_TEMPLATE }}', filename: patch-tolerations.yaml }
+            - { content: '{{ PATCH_JOB_TOLERATIONS_TEMPLATE }}', filename: patch-job-tolerations.yaml }
 
     - name: Install awx operator and deploy awx
       kubernetes.core.k8s:

@@ -12,6 +12,11 @@
   # Notes: Use cluster's domain name and with custom route /
 - name: Setup ingress
   ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: monitoring
+    namespace: monitoring
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: "{{ INGRESS_CREATE }}"
 
 - name: Add prometheus-community chart repo
   kubernetes.core.helm_repository:

@@ -31,6 +31,11 @@
     # Notes: Uses own domain names.
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: harbor
+        namespace: harbor-system
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: no
 
     - name: Deploying harbor
       vars:

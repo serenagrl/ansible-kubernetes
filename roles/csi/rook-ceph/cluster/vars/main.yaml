@@ -7,7 +7,7 @@ csi_ceph:
     # Change to your desired settings
     disk:
       name: CephStorage
-      vm_folder: "E:\\Virtual Machines\\Kubernetes"
+      vm_folder: "D:\\Virtual Machines\\Kubernetes"
       size: 40GB
 
   install_plugin: yes

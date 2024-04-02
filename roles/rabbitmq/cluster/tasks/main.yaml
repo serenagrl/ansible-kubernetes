@@ -28,7 +28,8 @@
   vars:
     name: rabbitmq-management
     namespace: "{{ rabbitmq.namespace }}"
-    definition: "{{ INGRESS_TEMPLATE }}"
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: yes
 
 - name: Waiting for rabbitmq cluster to be ready
   ansible.builtin.shell: "kubectl rollout status -n {{ rabbitmq.namespace }} statefulset/{{ rabbitmq.name }}-server"

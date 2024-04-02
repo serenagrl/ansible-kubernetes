@@ -84,7 +84,8 @@
       vars:
         name: argocd
         namespace: argocd
-        definition: "{{ INGRESS_TEMPLATE }}"
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: yes
 
 - name: Install argocd cli to ansible controller
   delegate_to: localhost

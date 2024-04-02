@@ -27,6 +27,11 @@
     # Notes: Uses own domain names.
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: kafka
+        namespace: "{{ kafka.namespace }}"
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: no
 
     - name: Deploying kafka-ui
       vars:

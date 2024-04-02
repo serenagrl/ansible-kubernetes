@@ -1,6 +1,0 @@
-- name: Setup ingress
-  ansible.builtin.include_tasks: ./tasks/task-create-ingress-contour.yaml
-  vars:
-    name: monitoring
-    namespace: monitoring
-    definition: "{{ HTTP_PROXY_TEMPLATE }}"
