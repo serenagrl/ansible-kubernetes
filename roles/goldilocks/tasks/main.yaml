@@ -1,0 +1,41 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Create goldilocks namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: goldilocks
+
+  # Notes: Use cluster's domain name and with custom route /goldilocks
+- name: Setup ingress
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: goldilocks
+    namespace: goldilocks
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: "{{ INGRESS_CREATE }}"
+
+- name: Add goldilocks chart repo
+  kubernetes.core.helm_repository:
+    name: fairwinds-stable
+    repo_url: "https://charts.fairwinds.com/stable"
+
+- name: Deploy goldilocks
+  vars:
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    version: "{% if goldilocks.version is defined and goldilocks.version and goldilocks.version != 'latest' %}{{ goldilocks.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: goldilocks
+    atomic: yes
+    force: yes
+    chart_ref: fairwinds-stable/goldilocks
+    chart_version: "{{ version }}"
+    namespace: goldilocks
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    wait: yes

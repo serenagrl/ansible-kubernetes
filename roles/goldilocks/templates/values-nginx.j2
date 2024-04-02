@@ -1,0 +1,73 @@
+fullnameOverride: goldilocks
+
+controller:
+  flags:
+    on-by-default: {{ goldilocks.on_by_default }}
+{% if not _kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+dashboard:
+  flags:
+    on-by-default: true
+  basePath: /goldilocks//
+  replicaCount: 1
+
+{% if not _kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+  ingress:
+    enabled: true
+
+    ingressClassName: {{ ingress_name }}
+    hosts:
+      - host: {{ ingress_host }}
+        paths:
+          - path: /goldilocks
+            type: ImplementationSpecific
+
+vpa:
+  enabled: true
+
+  recommender:
+    extraArgs:
+
+{% if goldilocks.prometheus.enabled %}
+      prometheus-address: {{ goldilocks.prometheus.url }}
+      metric-for-pod-labels: "kube_pod_labels{job=\"kube-state-metrics\"}[8d]"
+      pod-namespace-label: namespace
+      pod-name-label: pod
+      storage: prometheus
+{% endif %}
+
+{% if not _kube.allow_scheduling %}
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane:
+{% endif %}
+
+{# DO NOT ENABLE #}
+  updater:
+    enabled: false
+
+{# DO NOT ENABLE #}
+  admissionController:
+    enabled: false
+
+{# DO NOT ENABLE #}
+  metrics-server:
+    enabled: false

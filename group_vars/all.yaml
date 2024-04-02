@@ -58,6 +58,7 @@ _kube:
     # - name: database/mssql
     # - name: velero
     # - name: kafka
+    # - name: goldilocks
 
 # The directory for the ansible tasks to store data.
 _work_dir: /var/automate
