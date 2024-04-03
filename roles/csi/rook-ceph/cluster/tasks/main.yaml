@@ -151,9 +151,8 @@
           when: _cleanup
 
         - name: Install rook ceph plugin
-          delegate_to: localhost
-          become_user: root
           ansible.builtin.shell: |
+            export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
             kubectl krew install rook-ceph
 
       when: kubectl_installed
