@@ -22,52 +22,6 @@
     values: "{{ VALUES_FILE }}"
     wait: yes
 
-# - become_user: root
-#   delegate_to: localhost
-#   block:
-#     - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
-#       vars:
-#         name: "metallb"
-#         repo_path: "metallb/metallb"
-#         pkg_version: "{{ metallb.version | default }}"
-#         version_prefix: "v"
-#         dest: "{{ MANIFEST_FILE }}"
-#         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/config/manifests/metallb-native.yaml"]
-
-#     - name: Set metallb log level to reduce excessive logging
-#       ansible.builtin.shell: |
-#         sed -i 's/- --log-level=info$/- --log-level=error/g' "{{ MANIFEST_FILE }}"
-
-#     - name: Configure to run on control-planes only
-#       block:
-#         - name: Patch tolerations
-#           ansible.builtin.lineinfile:
-#             path: "{{ MANIFEST_FILE }}"
-#             insertbefore: "nodeSelector:"
-#             firstmatch: yes
-#             line: |2-
-#                     tolerations:
-#                       - effect: NoSchedule
-#                         key: node-role.kubernetes.io/control-plane
-#                         operator: Exists
-
-#         - name: Patch node selector
-#           ansible.builtin.lineinfile:
-#             path: "{{ MANIFEST_FILE }}"
-#             insertafter: "nodeSelector:"
-#             firstmatch: yes
-#             line: |2-
-#                       node-role.kubernetes.io/control-plane: ""
-
-#       when: not _kube.allow_scheduling
-
-# - name: Installing metallb
-#   kubernetes.core.k8s:
-#     state: present
-#     apply: yes
-#     force: yes
-#     definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
-
 - name: Waiting for metallb-system to be ready
   ansible.builtin.shell: |
      for d in $(kubectl -n metallb-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n metallb-system deployment/$d; done;
@@ -86,38 +40,3 @@
     force: yes
     definition: |
       {{ L2_ADVERTISEMENT_TEMPLATE }}
-
-# - name: Cleanup manifest file
-#   delegate_to: localhost
-#   become_user: root
-#   ansible.builtin.file:
-#     path: "{{ MANIFEST_FILE }}"
-#     state: absent
-#   when: _cleanup
-
-# - name: Configure address pool
-#   kubernetes.core.k8s:
-#     apply: yes
-#     force: yes
-#     definition: |
-#       apiVersion: metallb.io/v1beta1
-#       kind: IPAddressPool
-#       metadata:
-#         name: {{  metallb.address_pool_name }}
-#         namespace: metallb-system
-#       spec:
-#         addresses: {{ metallb.addresses }}
-
-# - name: Configure layer 2 advertisement
-#   kubernetes.core.k8s:
-#     apply: yes
-#     force: yes
-#     definition: |
-#       apiVersion: metallb.io/v1beta1
-#       kind: L2Advertisement
-#       metadata:
-#         name: address-advertisement
-#         namespace: metallb-system
-#       spec:
-#         ipAddressPools:
-#           - {{  metallb.address_pool_name }}
