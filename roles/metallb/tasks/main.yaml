@@ -1,91 +1,123 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- become_user: root
-  delegate_to: localhost
-  block:
-    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
-      vars:
-        name: "metallb"
-        repo_path: "metallb/metallb"
-        pkg_version: "{{ metallb.version | default }}"
-        version_prefix: "v"
-        dest: "{{ MANIFEST_FILE }}"
-        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/config/manifests/metallb-native.yaml"]
+- name: Add metallb chart repo
+  kubernetes.core.helm_repository:
+    name: metallb
+    repo_url: "https://metallb.github.io/metallb"
 
-    - name: Set metallb log level to reduce excessive logging
-      ansible.builtin.shell: |
-        sed -i 's/- --log-level=info$/- --log-level=error/g' "{{ MANIFEST_FILE }}"
+- name: Deploy metallb
+  vars:
+    version: "{% if metallb.version is defined and metallb.version and metallb.version != 'latest' %}{{ metallb.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: metallb
+    atomic: yes
+    chart_ref: metallb/metallb
+    chart_version: "{{ version }}"
+    namespace: metallb-system
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    wait: yes
 
-    - name: Configure to run on control-planes only
-      block:
-        - name: Patch tolerations
-          ansible.builtin.lineinfile:
-            path: "{{ MANIFEST_FILE }}"
-            insertbefore: "nodeSelector:"
-            firstmatch: yes
-            line: |2-
-                    tolerations:
-                      - effect: NoSchedule
-                        key: node-role.kubernetes.io/control-plane
-                        operator: Exists
+# - become_user: root
+#   delegate_to: localhost
+#   block:
+#     - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+#       vars:
+#         name: "metallb"
+#         repo_path: "metallb/metallb"
+#         pkg_version: "{{ metallb.version | default }}"
+#         version_prefix: "v"
+#         dest: "{{ MANIFEST_FILE }}"
+#         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/config/manifests/metallb-native.yaml"]
 
-        - name: Patch node selector
-          ansible.builtin.lineinfile:
-            path: "{{ MANIFEST_FILE }}"
-            insertafter: "nodeSelector:"
-            firstmatch: yes
-            line: |2-
-                      node-role.kubernetes.io/control-plane: ""
+#     - name: Set metallb log level to reduce excessive logging
+#       ansible.builtin.shell: |
+#         sed -i 's/- --log-level=info$/- --log-level=error/g' "{{ MANIFEST_FILE }}"
 
-      when: not _kube.allow_scheduling
+#     - name: Configure to run on control-planes only
+#       block:
+#         - name: Patch tolerations
+#           ansible.builtin.lineinfile:
+#             path: "{{ MANIFEST_FILE }}"
+#             insertbefore: "nodeSelector:"
+#             firstmatch: yes
+#             line: |2-
+#                     tolerations:
+#                       - effect: NoSchedule
+#                         key: node-role.kubernetes.io/control-plane
+#                         operator: Exists
 
-- name: Installing metallb
-  kubernetes.core.k8s:
-    state: present
-    apply: yes
-    force: yes
-    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+#         - name: Patch node selector
+#           ansible.builtin.lineinfile:
+#             path: "{{ MANIFEST_FILE }}"
+#             insertafter: "nodeSelector:"
+#             firstmatch: yes
+#             line: |2-
+#                       node-role.kubernetes.io/control-plane: ""
+
+#       when: not _kube.allow_scheduling
+
+# - name: Installing metallb
+#   kubernetes.core.k8s:
+#     state: present
+#     apply: yes
+#     force: yes
+#     definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
 
 - name: Waiting for metallb-system to be ready
   ansible.builtin.shell: |
      for d in $(kubectl -n metallb-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n metallb-system deployment/$d; done;
      for d in $(kubectl -n metallb-system get daemonset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n metallb-system daemonset/$d; done;
 
-- name: Cleanup manifest file
-  delegate_to: localhost
-  become_user: root
-  ansible.builtin.file:
-    path: "{{ MANIFEST_FILE }}"
-    state: absent
-  when: _cleanup
-  
-- name: Configure address pool 
+- name: Create default IPAddressPool
   kubernetes.core.k8s:
     apply: yes
     force: yes
     definition: |
-      apiVersion: metallb.io/v1beta1
-      kind: IPAddressPool
-      metadata:
-        name: {{  metallb.address_pool_name }}
-        namespace: metallb-system
-      spec:
-        addresses: {{ metallb.addresses }} 
+      {{ ADDRESS_POOL_TEMPLATE }}
 
-- name: Configure layer 2 advertisement
+- name: Create default L2Advertisement
   kubernetes.core.k8s:
     apply: yes
     force: yes
     definition: |
-      apiVersion: metallb.io/v1beta1
-      kind: L2Advertisement
-      metadata:
-        name: address-advertisement
-        namespace: metallb-system
-      spec:
-        ipAddressPools:
-          - {{  metallb.address_pool_name }}
+      {{ L2_ADVERTISEMENT_TEMPLATE }}
+
+# - name: Cleanup manifest file
+#   delegate_to: localhost
+#   become_user: root
+#   ansible.builtin.file:
+#     path: "{{ MANIFEST_FILE }}"
+#     state: absent
+#   when: _cleanup
+
+# - name: Configure address pool
+#   kubernetes.core.k8s:
+#     apply: yes
+#     force: yes
+#     definition: |
+#       apiVersion: metallb.io/v1beta1
+#       kind: IPAddressPool
+#       metadata:
+#         name: {{  metallb.address_pool_name }}
+#         namespace: metallb-system
+#       spec:
+#         addresses: {{ metallb.addresses }}
+
+# - name: Configure layer 2 advertisement
+#   kubernetes.core.k8s:
+#     apply: yes
+#     force: yes
+#     definition: |
+#       apiVersion: metallb.io/v1beta1
+#       kind: L2Advertisement
+#       metadata:
+#         name: address-advertisement
+#         namespace: metallb-system
+#       spec:
+#         ipAddressPools:
+#           - {{  metallb.address_pool_name }}

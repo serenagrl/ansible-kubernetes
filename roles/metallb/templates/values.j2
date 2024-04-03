@@ -1,0 +1,25 @@
+controller:
+  logLevel: warn
+
+{% if not _kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+{% endif %}
+
+speaker:
+  enabled: true
+  logLevel: warn
+  frr:
+    enabled: false
+
+{% if not _kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
