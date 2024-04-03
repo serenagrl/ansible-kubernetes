@@ -3,8 +3,7 @@ VALUES_FILE: "{{ lookup('template', 'values-' + redis.ha_mode + '.j2') | from_ya
 
 CERT_DIR: "{{ _work_dir }}/{{ _kube.cluster.name }}/{{ redis.namespace }}"
 
-SCRAPE_CONFIG: "prometheus-additional.yaml"
-SECRET_CONFIG: "additional-scrape-configs.yaml"
+SERVICE_MONITOR_TEMPLATE: "{{ lookup('template', 'service-monitor.j2') | from_yaml }}"
 HAS_PROMETHEUS: "{{ prometheus_status.stdout == 'Available' }}"
 
 REPO_URLS:
