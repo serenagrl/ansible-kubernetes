@@ -18,14 +18,21 @@
         definition: |
           {{ in_definition }}
 
+    - name: Get existing route
+      shell: |
+        kubectl get httpproxy -n projectcontour root-httpproxy -o json | jq '[.spec.includes[].name] | index("{{ name }}-httpproxy")'
+      register: index_result
+
     - name: Patch root HTTPProxy
+      vars:
+        is_exist: "{{ index_result.stdout != 'null' and (index_result.stdout | int) >= 0 }}"
       kubernetes.core.k8s_json_patch:
         kind: HTTPProxy
         namespace: projectcontour
         name: root-httpproxy
         patch:
-          - op: add
-            path: /spec/includes/-
+          - op: "{{ is_exist | ternary('replace', 'add') }}"
+            path: "/spec/includes/{{ is_exist | ternary(index_result.stdout, '-') }}"
             value:
               name: "{{ name }}-httpproxy"
               namespace: "{{ namespace }}"
