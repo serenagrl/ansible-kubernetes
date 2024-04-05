@@ -1,0 +1,17 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: keycloak-httpproxy
+  namespace: keycloak
+spec:
+  virtualhost:
+    fqdn: keycloak.{{ _kube.cluster.domain }}
+    tls:
+      secretName: keycloak-ingress-tls
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: keycloak-service
+          port: 8443
+          protocol: tls

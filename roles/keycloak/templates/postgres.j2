@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: keycloak-db
+  namespace: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak-db
+  template:
+    metadata:
+      labels:
+        app: keycloak-db
+    spec:
+      containers:
+        - name: keycloak-db
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: database
+              mountPath: /var/lib/postgres
+          env:
+            - name: POSTGRES_DB
+              value: keycloak
+            - name: POSTGRES_USER
+              value: {{ keycloak.postgres.username }}
+            - name: POSTGRES_PASSWORD
+              value: {{ keycloak.postgres.password }}
+            - name: PGDATA
+              value: /data/pgdata
+{% if not _kube.allow_scheduling %}
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+
+      nodeSelector:
+        node-role.kubernetes.io/control-plane:
+{% endif %}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: database
+        namespace: keycloak
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ keycloak.postgres.storage_size }}

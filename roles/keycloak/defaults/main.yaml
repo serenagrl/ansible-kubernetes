@@ -1,0 +1,13 @@
+MANIFEST_DIR: "{{ _work_dir }}/keycloak"
+OPERATOR_CRD: keycloaks.k8s.keycloak.org-v1.yml
+OPERATOR_REALM_IMPORTS_CRD: keycloakrealmimports.k8s.keycloak.org-v1.yml
+MANIFEST_FILE: kubernetes.yml
+
+CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
+POSTGRES_TEMPLATE: "{{ lookup('template', 'postgres.j2') | from_yaml }}"
+POSTGRES_SERVICE_TEMPLATE: "{{ lookup('template', 'postgres-service.j2') | from_yaml }}"
+DATABASE_SECRET_TEMPLATE: "{{ lookup('template', 'secret.j2') | from_yaml }}"
+KEYCLOAK_TEMPLATE: "{{ lookup('template', 'keycloak-' + _kube.ingress_type + '.j2') | from_yaml }}"
+
+INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + _kube.ingress_type + '.yaml' }}"
+INGRESS_TEMPLATE: "{{ (_kube.ingress_type == 'nginx') | ternary('', lookup('template', 'ingress-' + _kube.ingress_type + '.j2') | from_yaml) }}"
