@@ -1,6 +1,6 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
@@ -13,12 +13,12 @@
         repo_path: "projectcalico/calico"
         pkg_version: "{{ calico.version | default }}"
         version_prefix: "v"
-        dest: "{{ _work_dir }}" 
+        dest: "{{ _work_dir }}"
         manifest_url: "https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/manifests"
         urls:
           - "{{ manifest_url }}/{{ OPERATOR_MANIFEST }}"
-          - "{{ manifest_url }}/{{ OPERATOR_CRD }}" 
-      
+          - "{{ manifest_url }}/{{ OPERATOR_CRD }}"
+
     - name: Set CIDR network
       ansible.builtin.replace:
         path: "{{ _work_dir }}/{{ OPERATOR_CRD }}"
