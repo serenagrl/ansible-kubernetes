@@ -1,3 +1,7 @@
+{% if not csi_ceph.operator.enable_request_limit %}
+resources: null
+{% endif %}
+
 logLevel: WARNING
 
 {% if not _kube.allow_scheduling %}
@@ -7,8 +11,10 @@ tolerations:
     operator: Exists
 nodeSelector:
   node-role.kubernetes.io/control-plane: ""
+{% endif %}
 
 csi:
+{% if not _kube.allow_scheduling %}
   provisionerTolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -56,8 +62,72 @@ csi:
       key: node-role.kubernetes.io/control-plane
       operator: Exists
   nfsPluginNodeAffinity: "node-role.kubernetes.io/control-plane="
+{% endif %}
+
+{% if not csi_ceph.operator.enable_request_limit %}
+  csiRBDProvisionerResource: |
+    - name : csi-provisioner
+      resource: {}
+    - name : csi-resizer
+      resource: {}
+    - name : csi-attacher
+      resource: {}
+    - name : csi-snapshotter
+      resource: {}
+    - name : csi-rbdplugin
+      resource: {}
+    - name : csi-omap-generator
+      resource: {}
+    - name : liveness-prometheus
+      resource: {}
+
+  csiRBDPluginResource: |
+    - name : driver-registrar
+      resource: {}
+    - name : csi-rbdplugin
+      resource: {}
+    - name : liveness-prometheus
+      resource: {}
+
+  csiCephFSProvisionerResource: |
+    - name : csi-provisioner
+      resource: {}
+    - name : csi-resizer
+      resource: {}
+    - name : csi-attacher
+      resource: {}
+    - name : csi-snapshotter
+      resource: {}
+    - name : csi-cephfsplugin
+      resource: {}
+    - name : liveness-prometheus
+      resource: {}
+
+  csiCephFSPluginResource: |
+    - name : driver-registrar
+      resource: {}
+    - name : csi-cephfsplugin
+      resource: {}
+    - name : liveness-prometheus
+      resource: {}
+
+  csiNFSProvisionerResource: |
+    - name : csi-provisioner
+      resource: {}
+    - name : csi-nfsplugin
+      resource: {}
+    - name : csi-attacher
+      resource: {}
+
+  csiNFSPluginResource: |
+    - name : driver-registrar
+      resource: {}
+    - name : csi-nfsplugin
+      resource: {}
+{% endif %}
 
 discover:
+{% if not _kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -68,6 +138,9 @@ discover:
       - matchExpressions:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
+{% endif %}
+{% if not csi_ceph.operator.enable_request_limit %}
+  resources: {}
 {% endif %}
 
 hostpathRequiresPrivileged: true

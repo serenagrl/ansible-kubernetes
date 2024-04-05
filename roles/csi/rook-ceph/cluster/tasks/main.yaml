@@ -93,10 +93,11 @@
         pod: '{{ pod_name }}'
         command: '{{ item }}'
       loop:
-        - "ceph dashboard set-alertmanager-api-host 'http://monitoring-alertmanager.monitoring.svc:9093/alerts/'"
         - "ceph dashboard set-prometheus-api-host 'http://monitoring-prometheus.monitoring.svc:9090/prometheus/'"
         - "ceph dashboard set-prometheus-api-ssl-verify False"
-        - "ceph dashboard set-alertmanager-api-ssl-verify False"
+        # Note: pending rookceph to fix.
+        # - "ceph dashboard set-alertmanager-api-host 'http://monitoring-alertmanager.monitoring.svc:9093/alerts/'"
+        # - "ceph dashboard set-alertmanager-api-ssl-verify False"
 
     - name: Create ServiceMonitor
       kubernetes.core.k8s:

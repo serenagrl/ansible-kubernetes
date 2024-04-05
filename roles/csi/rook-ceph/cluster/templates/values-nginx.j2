@@ -108,6 +108,9 @@ toolbox:
           - key: node-role.kubernetes.io/control-plane
             operator: Exists
 {% endif %}
+{% if not csi_ceph.cluster.enable_request_limit %}
+  resources: null
+{% endif %}
 
 cephClusterSpec:
   dashboard:
@@ -126,8 +129,20 @@ cephClusterSpec:
           key: node-role.kubernetes.io/control-plane
           operator: Exists
 {% endif %}
+{% if not csi_ceph.cluster.enable_request_limit %}
+  resources:
+    mgr: null
+    mon: null
+    osd: null
+    prepareosd: null
+    mgr-sidecar: null
+    crashcollector: null
+    logcollector: null
+    cleanup: null
+    exporter: null
+{% endif %}
 
-{# Due to modifying a value in the collection, all values need to be specified. #}
+# Due to modifying a value in the collection, all values need to be specified.
 cephFileSystems:
   - name: ceph-filesystem
     spec:
@@ -142,6 +157,14 @@ cephFileSystems:
       metadataServer:
         activeCount: 1
         activeStandby: true
+{% if csi_ceph.cluster.enable_request_limit %}
+        resources:
+          limits:
+            memory: "4Gi"
+          requests:
+            cpu: "1000m"
+            memory: "4Gi"
+{% endif %}
         priorityClassName: system-cluster-critical
 {% if not _kube.allow_scheduling %}
         placement:
@@ -174,7 +197,7 @@ cephFileSystems:
         csi.storage.k8s.io/node-stage-secret-namespace: "rook-ceph"
         csi.storage.k8s.io/fstype: ext4
 
-{# Due to modifying a value in the collection, all values need to be specified. #}
+# Due to modifying a value in the collection, all values need to be specified.
 cephObjectStores:
   - name: ceph-objectstore
     spec:
@@ -190,6 +213,14 @@ cephObjectStores:
       preservePoolsOnDelete: true
       gateway:
         port: 80
+{% if csi_ceph.cluster.enable_request_limit %}
+        resources:
+          limits:
+            memory: "2Gi"
+          requests:
+            cpu: "1000m"
+            memory: "1Gi"
+{% endif %}
         instances: 1
         priorityClassName: system-cluster-critical
 {% if not _kube.allow_scheduling %}
