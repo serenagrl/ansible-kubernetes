@@ -7,14 +7,19 @@
 
 - delegate_to: "{{ item }}"
   become_user: root
+  vars:
+    config: "{{ haproxy_config_file['content'] | b64decode }}"
+    regex: '^\s*(backend {{ _kube.cluster.name }}-ingress-https-backend.*\n(?:^.+\n)*)$'
+    is_exist: "{{ config | regex_search(regex, multiline=True) }}"
+    action: "{{ is_exist | ternary('update', 'create') }}"
   block:
-    - name: Configure Haproxy for ingress
-      ansible.builtin.blockinfile:
-        path: /etc/haproxy/haproxy.cfg
-        marker: ""
-        insertbefore: "listen stats"
-        block: |
-          {{ HAPROXY_CONFIG_TEMPLATE }}
+    - name: Get haproxy config file from HAProxy load-balancer
+      slurp:
+        src: /etc/haproxy/haproxy.cfg
+      register: haproxy_config_file
+
+    - name: "{{ action }} ingress section in haproxy"
+      ansible.builtin.include_tasks: "{{ action }}-ingress-haproxy.yaml"
 
     - name: Restart Haproxy to let changes take effect
       ansible.builtin.systemd:

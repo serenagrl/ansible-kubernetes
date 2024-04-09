@@ -1,0 +1,20 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Register server to HAProxy load-balancers
+  vars:
+    regex_replace: '^\s*(backend {{ _kube.cluster.name }}-ingress-https-backend.*\n(?:^.+\n)*)(^\s*server {{ hostvars[host].ansible_hostname }}(.*?)\n)'
+    regex_add: '^\s*(backend {{ _kube.cluster.name }}-ingress-https-backend.*\n(?:^.+\n)*)$'
+    is_exist: "{{ config | regex_search(regex_replace, multiline=True) }}"
+  ansible.builtin.replace:
+    path: /etc/haproxy/haproxy.cfg
+    regexp: "{{ is_exist | ternary(regex_replace, regex_add) }}"
+    replace: |2-
+      \n\1   server {{ hostvars[host].ansible_hostname }} {{ hostvars[host].ansible_host }}:{{ ingress_nginx.nodePort.https }}\n
+  loop: "{{ fact_active_hosts }}"
+  loop_control:
+    loop_var: host
