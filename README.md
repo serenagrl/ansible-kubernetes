@@ -87,7 +87,7 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
     |  6. | `setup-worker-node-servers.yaml` | Optional. Provisions VMs for the kubernetes worker nodes and installs the pre-requisites. |
     |  7. | `setup-worker-nodes.yaml` | Optional. Creates/Joins worker nodes into the kubernetes cluster. |
     |  8. | `setup-nfs.yaml` | Installs NFS server on a designated server. Optionally, you can provision a VM for it. |
-    |  9. | `setup-components.yaml` | Install add-on components listed in `_kube.add_ons` in the `group_vars/all.yaml`. |
+    |  9. | `setup-add-ons.yaml` | Install add-on components listed in `add_ons`. |
 
   **Reminder**
   1. If you skipped the creation of the DNS Server, please remember to:
@@ -96,8 +96,8 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
   3. If you skipped the creation of load balancers, please remember to:
      - Set `register_to_load_balancer: no` in the `inventories\group_vars\kubernetes_control_planes.yaml` and `inventories\group_vars\kubernetes_worker_nodes.yaml` files.
      - Set `_kube.cluster.address` in the `group_vars\all.yaml` to your cp1's IP address.
-  4. Specify the addons to install in the `_kube.add_ons` collection in `group_vars\all.yaml`.
-  5. You may rerun the `setup-components.yaml` everytime you change the `_kube.add_ons` but keep an eye on the checkpoints.
+  4. Specify the addons to install in the `add_ons` collection in `setup-add-ons.yaml`.
+  5. You may rerun the `setup-add-ons.yaml` everytime you change the `add_ons` but keep an eye on the checkpoints.
   6. The installation order is important as some add-ons have dependencies on the others.
 
 * The following is a list of playbooks that merges some of the steps above for convenience:
@@ -173,7 +173,7 @@ The roles folders are structured in the following manner:
 | templates      | The jinja2 templates that you can modify to add extra configurations. |
 | meta           | Role dependencies that you should not touch. |
 
-To install the specific add-on, specify them in the `_kube.add_ons` collection in `group_vars\all.yaml` before running `setup-components.yaml`.
+To install the specific add-on, specify them in the `add_ons` collection before running `setup-add-ons.yaml`.
 
 ### Disclaimer
 Everything provided here is 'as-is' and with no warranty or support.

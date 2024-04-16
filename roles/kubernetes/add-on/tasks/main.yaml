@@ -1,0 +1,15 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install Kubernetes add-on components
+  vars:
+    task_file: "{{ (role.vars is undefined or role.vars | length <= 0) | ternary('run-role.yaml', 'run-role-with-vars.yaml') }}"
+  ansible.builtin.include_tasks: "{{ task_file }}"
+  loop: "{{ add_ons }}"
+  loop_control:
+    loop_var: role
+

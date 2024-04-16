@@ -1,0 +1,55 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install Kubernetes add-ons
+  hosts: kubernetes_control_planes[0]
+  become_user: "{{ _kube.user }}"
+  gather_facts: yes
+
+  roles:
+    # Comment/uncomment the add-ons you want to build your stack. The sequence matters.
+    # You can rerun this many times with different add-ons selected.
+    - role: kubernetes/add-on
+      add_ons:
+        # - name: metallb
+        - name: cert-manager
+        - name: ingress
+        - name: dashboard
+        - name: monitoring
+        - name: metrics-server
+        # - name: csi/nfs
+        # - name: csi/rook-ceph
+        - name: csi/longhorn
+        # - name: devops/minio
+        # - name: devops/gitlab
+        # - name: devops/gitlab-runner
+        # - name: devops/sonarqube
+        # - name: devops/harbor
+        # - name: devops/argocd
+        # - name: logging/elastic-stack
+        # - name: logging/fluentd
+        # - name: logging/loki
+        # - name: awx/operator
+        # - name: awx/register
+        # - name: istio
+        # - name: rabbitmq
+        # - name: kafka
+        # - name: redis
+        # - name: database/mssql
+        # - name: velero
+        # - name: goldilocks
+        # - name: keycloak
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+- hosts: kubernetes_control_planes
+  gather_facts: no
+
+  tasks:
+    - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "Add-ons installed."
+      when: _checkpoint
