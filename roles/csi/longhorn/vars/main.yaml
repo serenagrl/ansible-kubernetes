@@ -1,0 +1,10 @@
+longhorn:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  version: latest
+
+  # Log format - plain or json
+  log_format: plain
+
+  # Create Prometheus ServiceMonitor to scrap metrics (Requires prometheus to be installed)
+  prometheus: no
