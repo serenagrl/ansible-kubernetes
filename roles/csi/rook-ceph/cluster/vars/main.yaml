@@ -11,4 +11,4 @@ csi_ceph:
       vm_folder: "D:\\Virtual Machines\\Kubernetes"
       size: 40GB
 
-  install_plugin: yes
+  install_kubectl_plugin: yes

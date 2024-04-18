@@ -157,4 +157,4 @@
             kubectl krew install rook-ceph
 
       when: kubectl_installed
-  when: csi_ceph.install_plugin
+  when: csi_ceph.install_kubectl_plugin
