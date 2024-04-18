@@ -70,4 +70,4 @@
   vars:
     name: envoy
     namespace: projectcontour
-    ingress: "{{ contour }}"
+    in_ingress: "{{ contour }}"

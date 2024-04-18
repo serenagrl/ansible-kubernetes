@@ -90,4 +90,4 @@
   vars:
     name: ingress-nginx-controller
     namespace: ingress-nginx
-    ingress: "{{ ingress_nginx }}"
+    in_ingress: "{{ ingress_nginx }}"

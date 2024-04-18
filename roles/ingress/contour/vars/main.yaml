@@ -5,7 +5,7 @@ contour:
 
   # The nodeports to expose the envoy service to the edge load-balancer (i.e. Haproxy)
   nodePort:
-    http: 32080   # Currently not used/configured
+    http: 32080
     https: 32443
 
   metallb:

@@ -37,13 +37,12 @@
           spec:
             type: NodePort
             ports:
-              - nodePort: {{ ingress.nodePort.http }}
+              - nodePort: {{ in_ingress.nodePort.http }}
                 port: 80
-              - nodePort: {{ ingress.nodePort.https }}
+              - nodePort: {{ in_ingress.nodePort.https }}
                 port: 443
 
     - name: Configure HAProxy load-balancers to expose ingress
       ansible.builtin.include_tasks: update-haproxy.yaml
       loop: "{{ groups['load_balancers'] }}"
-
   when: register_to_load_balancer
