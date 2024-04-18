@@ -4,7 +4,7 @@ haproxy:
   version: 2.8
   username: haproxy
   password: p@ssw0rd
-  port: 80
+  port: 18080
 
 keepalived:
   email: ""

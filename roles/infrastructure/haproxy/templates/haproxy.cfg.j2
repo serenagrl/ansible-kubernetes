@@ -14,7 +14,7 @@ listen stats
    bind *:{{ haproxy.port }}
    mode http
    stats enable
-   stats uri /haproxy
+   stats uri /
    stats refresh 5s
    stats realm Haproxy\ Statistics
    stats auth {{ haproxy.username }}:{{ haproxy.password }}
