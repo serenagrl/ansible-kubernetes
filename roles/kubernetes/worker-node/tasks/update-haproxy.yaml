@@ -1,0 +1,29 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- delegate_to: "{{ item }}"
+  become_user: root
+  block:
+    - name: Get HAProxy config file from HAProxy load-balancer
+      slurp:
+        src: /etc/haproxy/haproxy.cfg
+      register: haproxy_config_file
+
+    - name: Update ingress section in HAProxy
+      vars:
+        config: "{{ haproxy_config_file['content'] | b64decode }}"
+        in_section: "{{ section }}"
+      ansible.builtin.include_tasks: "./roles/ingress/tasks/update-ingress-haproxy.yaml"
+      loop: "{{ in_sections }}"
+      loop_control:
+        loop_var: section
+
+    - name: Restart Haproxy to let changes take effect
+      ansible.builtin.systemd:
+        enabled: yes
+        state: restarted
+        name: haproxy
