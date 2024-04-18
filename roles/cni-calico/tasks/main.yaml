@@ -52,3 +52,41 @@
     - "{{ OPERATOR_MANIFEST_FILE }}"
     - "{{ OPERATOR_CRD_FILE }}"
   when: _cleanup
+
+- name: Install calico cli to ansible controller host
+  delegate_to: localhost
+  vars:
+    has_version_specified: "{{ (calico.version is defined and calico.version and calico.version != 'latest') | bool }}"
+    release: "{{ has_version_specified | ternary('v' + calico.version, release_tag.stdout) }}"
+    repo_path: projectcalico/calico
+  block:
+    - name: Get latest calico release
+      ansible.builtin.shell: |
+        curl -s https://api.github.com/repos/{{ repo_path }}/releases/latest | grep tag_name | cut -d '"' -f 4
+      register: release_tag
+      when: not has_version_specified
+
+    - name: Download calico cli
+      become_user: root
+      ansible.builtin.shell: |
+        curl -sSL -o /usr/local/bin/calicoctl-linux-amd64 https://github.com/{{ repo_path }}/releases/download/{{ release }}/calicoctl-linux-amd64
+        chmod +x /usr/local/bin/calicoctl-linux-amd64
+    
+    - name: Setup calico cli
+      become_user: root
+      ansible.builtin.shell: |
+        cp /usr/local/bin/calicoctl-linux-amd64 /usr/local/bin/calicoctl
+      when: calico.install_cli
+    
+    - name: Setup calico plugin
+      become_user: root
+      ansible.builtin.shell: |
+        cp /usr/local/bin/calicoctl-linux-amd64 /usr/local/bin/kubectl-calico
+      when: calico.install_kubectl_plugin
+
+    - name: Cleanup file
+      ansible.builtin.file:
+        path: "/usr/local/bin/calicoctl-linux-amd64"
+        state: absent
+      when: _cleanup
+  when: calico.install_cli or calico.install_kubectl_plugin
