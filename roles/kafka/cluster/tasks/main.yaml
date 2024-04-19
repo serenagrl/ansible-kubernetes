@@ -53,6 +53,20 @@
 
       when: not _kube.allow_scheduling
 
+    - name: Configure kafka storage size
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(kafka:*\n(.+\n)*?)^\s*(size: .*?\n)'
+        replace: |8-
+                  \1        size: {{ kafka.cluster.storage_size }}\n
+
+    - name: Configure zookeeper storage size
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(zookeeper:*\n(.+\n)*?)^\s*(size: .*?\n)'
+        replace: |8-
+                  \1      size: {{ kafka.cluster.zookeeper.storage_size }}\n
+
 - name: Create namespace
   kubernetes.core.k8s:
     name: "{{ kafka.namespace }}"

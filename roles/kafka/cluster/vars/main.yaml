@@ -1,0 +1,5 @@
+kafka:
+  cluster:
+    storage_size: 10Gi
+    zookeeper:
+      storage_size: 10Gi
