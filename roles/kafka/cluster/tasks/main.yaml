@@ -56,16 +56,16 @@
     - name: Configure kafka storage size
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
-        regexp: '^\s*(kafka:*\n(.+\n)*?)^\s*(size: .*?\n)'
+        regexp: '^\s*(kafka:*\n(.+\n)*?)^\s*(storage:*\n(.+\n)*?)^\s*(volumes:*\n(.+\n)*?)^\s*(size: .*?\n)'
         replace: |8-
-                  \1        size: {{ kafka.cluster.storage_size }}\n
+                  \1    \3      \5        size: {{ kafka.cluster.storage_size }}\n
 
     - name: Configure zookeeper storage size
       ansible.builtin.replace:
         path: "{{ MANIFEST_FILE }}"
-        regexp: '^\s*(zookeeper:*\n(.+\n)*?)^\s*(size: .*?\n)'
+        regexp: '^\s*(zookeeper:*\n(.+\n)*?)^\s*(storage:*\n(.+\n)*?)^\s*(size: .*?\n)'
         replace: |8-
-                  \1      size: {{ kafka.cluster.zookeeper.storage_size }}\n
+                  \1    \3      size: {{ kafka.cluster.zookeeper.storage_size }}\n
 
 - name: Create namespace
   kubernetes.core.k8s:
