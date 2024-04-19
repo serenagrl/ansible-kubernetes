@@ -1,0 +1,19 @@
+loki:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  version: latest
+
+  use_promtail: yes
+
+  # Set to 3 for high-availability (will use more resources)
+  replicas: 3
+
+  external_minio:
+    enabled: yes
+    secret_name: loki-minio-secret
+    tenant_endpoint: http://loki-minio-hl:9000/
+
+  grafana:
+    url: "http://{{ _kube.cluster.name }}.{{ _kube.cluster.domain }}/grafana"
+    username: "admin"
+    password: "admin"
