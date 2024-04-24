@@ -101,8 +101,8 @@ alias kctpon='kubectl top po -n'
 alias kctno='kubectl top no'
 alias kcctx='kubectl config set-context --current --namespace'
 alias kcns='kubectl get namespace'
-alias kcbb='kubectl run -i --tty busybox --image=busybox --restart=Never -- sh'
-alias kcbbcp="kubectl run -i --tty busybox --image=busybox --restart=Never --overrides='{\"spec\":{\"nodeSelector\":{\"node-role.kubernetes.io/control-plane\":\"\"},\"tolerations\":[{\"effect\": \"NoSchedule\", \"key\": \"node-role.kubernetes.io/control-plane\", \"operator\": \"Exists\"}]}}' -- sh"
+alias kcbb="kubectl run -i --tty busybox --image=radial/busyboxplus:curl --restart=Never --overrides='{\"spec\":{\"nodeSelector\":{\"node-role.kubernetes.io/control-plane\":\"\"},\"tolerations\":[{\"effect\": \"NoSchedule\", \"key\": \"node-role.kubernetes.io/control-plane\", \"operator\": \"Exists\"}]}}' -- sh"
+
 alias kcsh='kubectl exec --stdin --tty'
 alias kcshn='kubectl exec --stdin --tty -n'
 complete -o default -F __start_kubectl kc
