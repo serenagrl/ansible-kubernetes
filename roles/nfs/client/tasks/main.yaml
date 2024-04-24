@@ -8,7 +8,7 @@
   become_user: root
   block:
     - name: Install NFS
-      ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/install-nfs.yaml"
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-nfs.yaml"
 
     - name: Add NFS hostname to client /etc/hosts
       ansible.builtin.lineinfile:

@@ -52,15 +52,15 @@
   ansible.builtin.command: sysctl --system
 
 - name: Install dependency packages
-  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/install-packages.yaml"
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-packages.yaml"
 
 - name: Install kubernetes
-  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/install-kubernetes.yaml"
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-kubernetes.yaml"
 
 - name: Install and configure containerd
   block:
     - name: Install containerd
-      ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/install-containerd.yaml"
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-containerd.yaml"
 
     - name: Create containerd certificate directory
       ansible.builtin.file:
@@ -98,34 +98,13 @@
                   image-endpoint: unix:///run/containerd/containerd.sock
 
 - name: Configure DNS Server (if required)
-  become_user: root
   vars:
     register_dns: "{{ _kube.cluster.use_dns_server | default(false) }}"
-  block:
-    - name: Register to DNS server
-      ansible.builtin.include_role:
-        name: infrastructure/dns/register
-
-    - name: Installing dns utility package
-      ansible.builtin.apt:
-        pkg:
-          - resolvconf
-        state: latest
-        update_cache: yes
-
-    - name: Add nameserver entry in resolvconf
-      ansible.builtin.lineinfile:
-        path: /etc/resolvconf/resolv.conf.d/head
-        line: "nameserver {{ hostvars.dns_server.ansible_host }}"
-
-    - name: Update resolveconf
-      ansible.builtin.shell: |
-        sudo resolvconf -u
-        sudo systemctl restart systemd-resolved
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/register-to-dns.yaml"
   when: register_dns
 
 - name: Install Helm
-  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/install-helm.yaml"
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-helm.yaml"
 
 # Prevents warnings when running ansible helm commands.
 - name: Install helm diff

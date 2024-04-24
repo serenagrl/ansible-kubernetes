@@ -14,7 +14,7 @@
         mode: 0777
 
     - name: Configure kubernetes nodes to trust registry certificate
-      ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/trust-cert.yaml"
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/trust-cert.yaml"
 
   ignore_errors: yes
   ignore_unreachable: yes

@@ -92,7 +92,7 @@
               secretName: self-signed-ca
 
     - name: Configure kubernetes nodes to trust ca certificate
-      ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/trust-cert.yaml"
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/trust-cert.yaml"
       loop: "{{ fact_active_hosts }}"
 
     - name: Configure cert in Ansible controller host (WSL)

@@ -8,7 +8,7 @@
   ansible.builtin.setup:
 
 - name: Install NFS server
-  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}/install-nfs.yaml"
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-nfs.yaml"
 
 - name: Create shared directory
   ansible.builtin.file:
