@@ -1,1 +1,5 @@
 NSUPDATE_FILE: "/tmp/{{ ansible_hostname }}.dns"
+
+KEY_LOCATION:
+  ubuntu: /etc/bind
+  redhat: /etc

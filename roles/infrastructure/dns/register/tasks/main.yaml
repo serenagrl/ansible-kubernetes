@@ -12,7 +12,7 @@
         dest: "{{ NSUPDATE_FILE }}"
 
     - name: Register to dns server
-      ansible.builtin.shell: nsupdate -k /etc/bind/rndc.key "{{ NSUPDATE_FILE }}"
+      ansible.builtin.shell: nsupdate -k "{{ KEY_LOCATION[ ansible_distribution | lower ] }}"/rndc.key "{{ NSUPDATE_FILE }}"
 
     - name: Cleanup manifest
       delegate_to: localhost

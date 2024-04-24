@@ -10,7 +10,7 @@
   gather_facts: no
 
   roles:
-    - role: vm-ubuntu
+    - role: vm-linux
       when: provision_vm
     - role: infrastructure/dns
 

@@ -48,6 +48,7 @@ write_files:
       address1={{ ansible_host }}/{{ vm.network.cidr }}
       gateway={{ vm.network.gateway }}
       dns={{ _kube.cluster.use_dns_server | ternary([hostvars.dns_server.ansible_host] + vm.network.dns, vm.network.dns) | join(';') }}
+      dns-search={{ _kube.cluster.domain }}
 
       [ipv6]
       method=disabled

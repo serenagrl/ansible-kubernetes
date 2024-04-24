@@ -4,9 +4,6 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-
-- name: Gather facts
-  ansible.builtin.setup:
-
-- name: Installing bind
-  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-bind.yaml"
+- name: Register to DNS server
+  ansible.builtin.include_role:
+    name: infrastructure/dns/register

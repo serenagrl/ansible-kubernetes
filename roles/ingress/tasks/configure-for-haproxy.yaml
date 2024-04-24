@@ -12,6 +12,7 @@
         in_host_entry: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
       ansible.builtin.include_role:
         name: "common/dns-host-file"
+      when: not _kube.cluster.use_dns_server
 
     - name: Patch ingress controller service type to ClusterIP
       kubernetes.core.k8s:
@@ -22,8 +23,6 @@
         definition: |
           {{ SERVICE_DEFINITION }}
       when: not register_to_load_balancer
-
-  when: not _kube.cluster.use_dns_server
 
 - name: Configure ingress for edge load-balancing
   block:
