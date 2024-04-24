@@ -1,0 +1,29 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install and configure pre-requisites
+  become_user: root
+  delegate_to: "{{ item }}"
+  block:
+    - name: Installing pre-requisites
+      ansible.builtin.dnf:
+        name:
+          - iscsi-initiator-utils
+          - nfs-utils
+        state: latest
+        update_cache: yes
+
+    - name: Setup open-iscsi
+      shell: |
+        modprobe iscsi_tcp
+        echo "InitiatorName=$(/sbin/iscsi-iname)" > /etc/iscsi/initiatorname.iscsi
+
+    - name: Start iscsi service
+      ansible.builtin.systemd:
+        enabled: yes
+        state: restarted
+        name: iscsid

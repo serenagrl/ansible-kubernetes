@@ -5,15 +5,8 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing pre-requisites
-  become_user: root
-  delegate_to: "{{ item }}"
-  ansible.builtin.apt:
-    pkg:
-      - open-iscsi
-      - nfs-common
-    state: latest
-    update_cache: yes
+- name: Install and configure pre-requisites
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-packages.yaml"
   loop: "{{ fact_active_hosts }}"
 
 - name: Create longhorn system namespace
