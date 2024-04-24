@@ -6,10 +6,11 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Create logging namespace
-  kubernetes.core.k8s:
-    kind: Namespace
-    name: logging
+- ansible.builtin.include_role:
+    name: logging/elastic-operator
+
+- ansible.builtin.include_role:
+    name: logging/elasticsearch
 
 - ansible.builtin.include_role:
     name: logging/kibana
