@@ -15,7 +15,7 @@
     - kubernetes/control-plane-other
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
-- hosts: kubernetes_control_planes
+- hosts: kubernetes_control_planes, dns_server
   gather_facts: no
 
   tasks:
