@@ -1,9 +1,9 @@
 tenant:
-  name: loki-minio
+  name: {{ in_tenant_name }}
   pools:
-    - servers: {{ loki_minio.pools.servers }}
-      volumesPerServer: {{ loki_minio.pools.volumes_per_server }}
-      size: {{ loki_minio.pools.size }}
+    - servers: {{ in_minio_tenant.pools.servers }}
+      volumesPerServer: {{ in_minio_tenant.pools.volumes_per_server }}
+      size: {{ in_minio_tenant.pools.size }}
 {% if not _kube.allow_scheduling %}
       tolerations:
         - effect: NoSchedule
@@ -24,11 +24,11 @@ tenant:
 ingress:
   api:
     enabled: false
-    host: loki.minio.{{ _kube.cluster.domain }}
+    host: {{ in_domain_name }}.{{ _kube.cluster.domain }}
     path: /
     pathType: Prefix
   console:
     enabled: false
-    host: console.loki.minio.{{ _kube.cluster.domain }}
+    host: {{ in_console_domain_name }}.{{ _kube.cluster.domain }}
     path: /
     pathType: Prefix

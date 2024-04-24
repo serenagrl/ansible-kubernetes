@@ -16,8 +16,16 @@
     kind: Namespace
     name: gitlab
 
-- ansible.builtin.include_role:
-    name: devops/gitlab/minio-tenant
+- name: Create minio tenant for Gitlab
+  vars:
+    in_name: gitlab
+    in_tenant_name: gitlab-minio
+    in_namespace: gitlab
+    in_domain_name: gitlab.minio
+    in_console_domain_name: gitlab-console.minio
+    in_minio_tenant: "{{ gitlab.minio_tenant }}"
+  ansible.builtin.include_role:
+    name: devops/minio/create-tenant
   when: gitlab.external_minio
 
 - name: Install Gitlab
@@ -67,5 +75,3 @@
     command:
       "echo accesskey=$(kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.accesskey}' | base64 -d);
        echo -n secretkey=; kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.secretkey}'"
-
-

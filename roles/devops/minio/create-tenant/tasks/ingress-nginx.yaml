@@ -3,4 +3,3 @@
   kubernetes.core.k8s_info:
     kind: IngressClass
   register: ingress_class
-

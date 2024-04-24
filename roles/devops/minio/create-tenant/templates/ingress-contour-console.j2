@@ -1,0 +1,16 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: {{ in_tenant_name }}-console-httpproxy
+  namespace: {{ in_namespace }}
+spec:
+  virtualhost:
+    fqdn: {{ in_console_domain_name }}.{{ _kube.cluster.domain }}
+    tls:
+      secretName: {{ in_tenant_name }}-ingress-tls
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: {{ in_tenant_name }}-console
+          port: 9090

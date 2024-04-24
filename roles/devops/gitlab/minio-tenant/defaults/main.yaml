@@ -1,8 +1,0 @@
-HTTP_PROXY_TEMPLATES:
-  -  "{{ lookup('template', 'ingress-contour-api.j2') | from_yaml }}"
-  -  "{{ lookup('template', 'ingress-contour-console.j2') | from_yaml }}"
-
-STORAGE_SECRET_TEMPLATE: "{{ lookup('template', 'storage-secret.j2') | from_yaml }}"
-STORAGE_SECRET_MANIFEST_TEMPLATE: "{{ lookup('template', 'secret.yaml.j2') | from_yaml }}"
-
-VALUES_FILE: "{{ lookup('template', 'values-' + _kube.ingress_type + '.j2') | from_yaml }}"
