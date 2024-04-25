@@ -31,6 +31,8 @@ loki:
           period: "24h"
 
 chunksCache:
+# Resources were reduced for lab environment.
+# Original Helm chart values are 9830Mi for limits and requests.
   resources:
     limits:
       memory: 500Mi
@@ -45,6 +47,8 @@ chunksCache:
     node-role.kubernetes.io/control-plane: ""
 
 resultsCache:
+# Resources were reduced for lab environment.
+# Original Helm chart values are 1229Mi for limits and requests.
   resources:
     limits:
       memory: 500Mi
