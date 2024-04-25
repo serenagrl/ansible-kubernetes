@@ -10,6 +10,26 @@ loki:
 
   external_minio: yes
 
+  chunks_cache:
+    # Resources were reduced for lab environment.
+    # Original Helm chart values are 9830Mi for limits and requests.
+    resources:
+      limits:
+        memory: 550Mi
+      requests:
+        cpu: 500m
+        memory: 550Mi
+
+  results_cache:
+    # Resources were reduced for lab environment.
+    # Original Helm chart values are 1229Mi for limits and requests.
+    resources:
+      limits:
+        memory: 550Mi
+      requests:
+        cpu: 500m
+        memory: 550Mi
+
   grafana:
     url: "https://{{ _kube.cluster.name }}.{{ _kube.cluster.domain }}/grafana"
     username: "admin"

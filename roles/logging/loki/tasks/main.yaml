@@ -43,6 +43,7 @@
   kubernetes.core.helm:
     name: loki
     atomic: no
+    force: yes
     chart_ref: grafana/loki
     chart_version: "{{ version }}"
     namespace: logging

@@ -16,6 +16,7 @@
   kubernetes.core.helm:
     name: promtail
     atomic: yes
+    force: yes
     chart_ref: grafana/promtail
     chart_version: "{{ version }}"
     namespace: logging

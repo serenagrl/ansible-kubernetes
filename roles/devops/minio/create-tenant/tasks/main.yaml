@@ -40,6 +40,7 @@
       kubernetes.core.helm:
         name: "{{ in_tenant_name }}"
         atomic: yes
+        force: yes
         chart_ref: minio/tenant
         chart_version: "{{ version }}"
         namespace: "{{ in_namespace }}"
@@ -73,4 +74,5 @@
 
     - name: Create minio secret for {{ in_name }}
       shell: |
+        kubectl delete secret {{ in_minio_tenant.secret_name }} -n {{ in_namespace }} --ignore-not-found
         kubectl create secret generic {{ in_minio_tenant.secret_name }} -n {{ in_namespace }} --from-literal=accesskey={{ accesskey }} --from-literal=secretkey={{ secretkey }}
