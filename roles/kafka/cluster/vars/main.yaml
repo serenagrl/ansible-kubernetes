@@ -1,5 +1,9 @@
 kafka:
   cluster:
+    # Size was reduced for lab environment.
+    # Original manifest value is 100Gi.
     storage_size: 10Gi
     zookeeper:
+      # Size was reduced for lab environment.
+      # Original manifest value is 100Gi.
       storage_size: 10Gi
