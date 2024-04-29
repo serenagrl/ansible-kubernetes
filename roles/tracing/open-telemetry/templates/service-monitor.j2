@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: opentelemetry-prometheus-exporter
+  namespace: tracing
+  labels:
+    app.kubernetes.io/name: opentelemetry-collector
+    release: monitoring
+spec:
+  endpoints:
+    - port: prom-exporter
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-collector

@@ -1,0 +1,34 @@
+jaeger:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  version: latest
+
+  # Elasticsearch settings
+  # Pre-requisite: Please install the logging/elastic-stack role first
+  elasticsearch:
+    scheme: http
+    host: elasticsearch-es-http.logging.svc.cluster.local
+    port: 9200
+    user: elastic
+    password: <elasticsearch-password>
+
+  # Settings for Kafka.
+  # Pre-requisite: Please install the kafka role if you want to enable this.
+  kafka:
+    enabled: no
+    topic: jaeger_tracing
+    broker_endpoints:
+      - kafka-kafka-brokers.kafka.svc.cluster.local:9092
+
+  # Settings for prometheus
+  prometheus:
+    endpoint: http://monitoring-prometheus.monitoring.svc.cluster.local:9090/prometheus
+
+  # Built-in test application
+  # Disable this to save resources.
+  hotrod:
+    enabled: no
+    # Send to opentelemetry
+    exporter_endpoint: http://opentelemetry-collector.tracing.svc.cluster.local:4318
+    # Send to jaeger collector
+    # exporter_endpoint: http://jaeger-collector.tracing.svc.cluster.local:4318

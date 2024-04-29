@@ -1,0 +1,67 @@
+fullnameOverride: ""
+
+mode: {{ open_telemetry.mode }}
+
+{% if not _kube.allow_scheduling %}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane:
+{% endif %}
+
+service:
+  enabled: true
+
+ingress:
+  enabled: false
+
+image:
+  repository: otel/opentelemetry-collector-contrib
+
+command:
+  name: otelcol-contrib
+
+config:
+  exporters:
+    otlphttp:
+      endpoint: {{ open_telemetry.otlphttp_endpoint }}
+    prometheus:
+      endpoint: 0.0.0.0:8889
+      resource_to_telemetry_conversion:
+        enabled: true
+    debug: {}
+
+  connectors:
+    spanmetrics:
+
+  service:
+    pipelines:
+      traces:
+        exporters:
+          - otlphttp
+          - spanmetrics
+        processors:
+          - memory_limiter
+          - batch
+        receivers:
+          - otlp
+          - jaeger
+          - zipkin
+      metrics:
+        exporters:
+          - prometheus
+        processors:
+          - memory_limiter
+          - batch
+        receivers:
+          - otlp
+          - spanmetrics
+
+ports:
+  prom-exporter:
+    enabled: true
+    containerPort: 8889
+    servicePort: 8889
+    protocol: TCP

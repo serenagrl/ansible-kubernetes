@@ -1,0 +1,12 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: jaeger-query-httpproxy
+  namespace: tracing
+spec:
+  routes:
+    - conditions:
+        - prefix: /jaeger
+      services:
+        - name: jaeger-query
+          port: 80

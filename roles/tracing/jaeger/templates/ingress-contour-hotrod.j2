@@ -1,0 +1,15 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: jaeger-hotrod-httpproxy
+  namespace: tracing
+spec:
+  routes:
+    - conditions:
+        - prefix: /hotrod
+      services:
+        - name: jaeger-hotrod
+          port: 80
+      pathRewritePolicy:
+        replacePrefix:
+          - replacement: /
