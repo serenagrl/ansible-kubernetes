@@ -22,7 +22,7 @@
   kubernetes.core.k8s:
     definition: "{{ TEMPLATE }}"
 
-# Notes: Use cluster's domain name and with custom route /prometheus, /grafana and /alerts
+# Notes: Use cluster's domain name and with custom route /rabbitmq
 - name: Setup ingress
   ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
   vars:
