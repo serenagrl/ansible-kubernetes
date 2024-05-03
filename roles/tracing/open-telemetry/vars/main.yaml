@@ -8,3 +8,5 @@ open_telemetry:
   
   # Sending to jaeger
   otlphttp_endpoint: http://jaeger-collector.tracing.svc.cluster.local:4318
+
+  ingress: false
