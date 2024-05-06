@@ -42,10 +42,11 @@
         - "{{ MANIFEST_DIR }}/{{ MANIFEST_INTERCEPTOR_FILE }}"
       when: not _kube.allow_scheduling
 
-- name: Install tekton triggers
+- name: Installing tekton triggers
   kubernetes.core.k8s:
     apply: yes
     force: yes
+    wait: yes
     namespace: "tekton-pipelines"
     definition: "{{ lookup('file', item) | from_yaml_all }}"
   loop:
