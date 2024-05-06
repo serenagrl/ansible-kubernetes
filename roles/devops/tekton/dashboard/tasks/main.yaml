@@ -15,7 +15,7 @@
         pkg_version: "{{ tekton.dashboard.version | default }}"
         version_prefix: "v"
         dest: "{{ MANIFEST_FILE }}"
-        urls: ["https://storage.googleapis.com/tekton-releases/dashboard/previous/{{ release }}/release.yaml"]
+        urls: ["https://storage.googleapis.com/tekton-releases/dashboard/previous/{{ release }}/release-full.yaml"]
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
