@@ -1,0 +1,76 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Register DNS entry
+  vars:
+    domain_prefix: "{{ host_entry }}"
+  ansible.builtin.include_role:
+    name: common/dns-register
+  loop:
+    - "loki.minio"
+    - "console.loki.minio"
+  loop_control:
+    loop_var: host_entry
+
+- name: Create minio tenant for loki
+  block:
+    - name: Add minio chart repo
+      kubernetes.core.helm_repository:
+        name: minio
+        repo_url: "https://operator.min.io/"
+
+    - include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: loki-minio
+        certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+    # Notes: Uses own domain names.
+    - name: Setup ingress
+      include_tasks: "{{ INGRESS_SETUP }}"
+
+    - name: Deploying minio tenant for loki
+      vars:
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+        version: "{% if loki_minio.version is defined and loki_minio.version and loki_minio.version != 'latest' %}{{ loki_minio.version }}{% endif %}"
+        has_issuer: issuer_status.stdout == "Ready"
+      kubernetes.core.helm:
+        name: loki-minio
+        atomic: yes
+        chart_ref: minio/tenant
+        chart_version: "{{ version }}"
+        namespace: logging
+        create_namespace: yes
+        values: "{{ VALUES_FILE }}"
+        timeout: 10m0s
+        wait: yes
+
+    - name: Waiting for loki minio tenant to be ready
+      shell: kubectl wait --for=jsonpath='{.status.currentState}'='Initialized' tenant loki-minio -n logging --timeout=300s
+
+- name: Get minio credentials
+  vars:
+    overrides:
+      "{% if not _kube.allow_scheduling %}
+        --overrides='{\"spec\":{\"nodeSelector\":{\"node-role.kubernetes.io/control-plane\":\"\"},\"tolerations\":[{\"effect\": \"NoSchedule\", \"key\": \"node-role.kubernetes.io/control-plane\", \"operator\": \"Exists\"}]}}'
+      {% endif %}"
+
+  shell: |
+    kubectl run --rm -i mc -n logging --restart=Never --image=minio/mc {{ overrides }} --command -- bash -c "mc alias set loki-minio {{ loki_minio.tenant_endpoint }} minio minio123 && mc admin user svcacct add loki-minio minio"
+  register: minio_credentials
+
+- name: Get minio access and secret keys
+  vars:
+    accesskey: "{{ minio_credentials.stdout | regex_search('Access Key: (.+)', '\\1') | first }}"
+    secretkey: "{{ minio_credentials.stdout | regex_search('Secret Key: (.+)', '\\1') | first }}"
+  block:
+    - name: Create minio storage secret for loki
+      kubernetes.core.k8s:
+        definition: "{{ STORAGE_SECRET_MANIFEST_TEMPLATE }}"
+
+    - name: Create minio secret for loki
+      shell: |
+        kubectl create secret generic {{ loki_minio.secret_name }} -n logging --from-literal=accesskey={{ accesskey }} --from-literal=secretkey={{ secretkey }}

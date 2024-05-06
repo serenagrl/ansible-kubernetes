@@ -1,0 +1,25 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Add grafana chart repo
+  kubernetes.core.helm_repository:
+    name: grafana
+    repo_url: "https://grafana.github.io/helm-charts"
+
+- name: Deploying promtail
+  vars:
+    version: "{% if promtail.version is defined and promtail.version and promtail.version != 'latest' %}{{ promtail.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: promtail
+    atomic: yes
+    chart_ref: grafana/promtail
+    chart_version: "{{ version }}"
+    namespace: logging
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    timeout: 10m0s
+    wait: yes
