@@ -9,7 +9,6 @@
   delegate_to: localhost
   vars:
     repo_path: knative/client
-    release: "{% if knative.cli_version is defined and knative.cli_version and knative.cli_version != 'latest' %}knative-v{{ knative.cli_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
   block:
     - name: Get latest knative cli release tag
       ansible.builtin.shell: |
@@ -19,7 +18,9 @@
 
     # Download kn and set the binary to be executable.
     - name: Downloading knative cli
+      vars:
+        release: "{% if knative.cli_version is defined and knative.cli_version and knative.cli_version != 'latest' %}knative-v{{ knative.cli_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
       ansible.builtin.get_url:
         url: "https://github.com/{{ repo_path }}/releases/download/{{ release }}/kn-linux-amd64"
-        dest: "{{ BINARY_FILE }}"
+        dest: "{{ CLI_EXECUTABLE }}"
         mode: +x

@@ -22,8 +22,8 @@
 
 - ansible.builtin.include_role: 
     name: knative/eventing/controller/rabbitmq
-  when: knative.eventing.install.rabbitmq
+  when: knative.eventing.rabbitmq.enabled
 
 - ansible.builtin.include_role: 
     name: knative/eventing/controller/kafka
-  when: knative.eventing.install.kafka
+  when: knative.eventing.kafka.enabled

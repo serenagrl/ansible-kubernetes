@@ -17,41 +17,30 @@
     msg: "Please install istio before attempting to setup knative-serving."
   when: istio_status.stdout != 'Active'
 
-- name: Check if harbor is installed
-  ansible.builtin.shell: kubectl get ns harbor-system -o json | jq .status.phase -r
-  register: harbor_status
-  ignore_errors: yes
-
-- name: Register DNS entry
-  vars:
-    domain_prefix: knative
-  ansible.builtin.include_role:
-    name: common/dns-register
-
 - name: Create a knative-serving namespace
   kubernetes.core.k8s:
     name: knative-serving
     kind: Namespace
 
-- name: Setting up harbor registry certificate Secret
-  vars:
-    harbor_cert: "{{ result.content }}"
+- name: Setting up registry certificate Secret
   block:
-    - name: Get harbor registry certificate
+    - name: Get registry certificate
       ansible.builtin.uri:
-        url: "https://{{ knative.harbor_domain }}/api/v2.0/systeminfo/getcert"
+        url: "{{ knative.registry.ca_url }}"
         validate_certs: no
         return_content: true
       register: result
 
-    - name: Create harbor registry certificate Secret
+    - name: Create registry certificate Secret
+      vars:
+        registry_ca_cert: "{{ result.content }}"
       kubernetes.core.k8s:
         apply: yes
         force: yes
         definition: |
-          {{ HARBOR_CERTIFICATE_TEMPLATE }}
+          {{ REGISTRY_SECRET_TEMPLATE }}
 
-  when: harbor_status.stdout == 'Active'
+  when: knative.registry.register
 
 - name: Create knative serving
   kubernetes.core.k8s:
@@ -75,35 +64,29 @@
         kubernetes.podspec-nodeselector: "enabled"
         kubernetes.podspec-tolerations: "enabled"
   when: not _kube.allow_scheduling
-  
-- name: Setup hostaliases to controller
-  vars:
-    services:
-      contour:
-        name: envoy
-        namespace: projectcontour
-      nginx:
-        name: ingress-nginx-controller
-        namespace: ingress-nginx
-    ingress: "{{ services[_kube.ingress_type] }}"
-  block:
-    - name: Get ingress loadbalancer ip (if any)
-      shell: kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.status.loadBalancer.ingress[].ip}'
-      register: ingress_ip_result
 
-    - name: Add hostaliases to controller
-      kubernetes.core.k8s:
-        state: patched
-        kind: Deployment
-        name: controller
-        namespace: knative-serving
-        definition: |
+- name: Set to allow configuring auto scaler
+  kubernetes.core.k8s:
+    state: patched
+    kind: ConfigMap
+    name: config-autoscaler
+    namespace: knative-serving
+    definition: |
+      data:
+        allow-zero-initial-scale: "true"
+
+- name: Add hostaliases to controller
+  kubernetes.core.k8s:
+    state: patched
+    kind: Deployment
+    name: controller
+    namespace: knative-serving
+    definition: |
+      spec:
+        template:
           spec:
-            template:
-              spec:
-                hostAliases:
-                  - hostnames:
-                      - {{ knative.harbor_domain }}
-                    ip: {{ (ingress_ip_result.stdout == '') | ternary(_kube.cluster.address, ingress_ip_result.stdout) }}
-
-  when: not _kube.cluster.use_dns_server and harbor_status.stdout == 'Active'
+            hostAliases:
+              - hostnames:
+                  - {{ knative.registry.host }}
+                ip: {{ knative.registry.ip }}
+  when: not _kube.cluster.use_dns_server and knative.registry.register

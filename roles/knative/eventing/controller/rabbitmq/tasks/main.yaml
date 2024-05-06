@@ -20,12 +20,14 @@
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/rabbitmq-broker.yaml"]
 
+    # Note: Prevent failure during reinstallation.
     - name: Increase readiness probe to fix rabbitmq-broker-webhook-certs not creating.
       ansible.builtin.replace:
         dest: "{{ MANIFEST_FILE }}"
         regexp: 'periodSeconds: 1'
         replace: "periodSeconds: 30"
 
+    # Note: Prevent failure during reinstallation.
     - name: Increase liveness probe to fix rabbitmq-broker-webhook-certs not creating.
       ansible.builtin.replace:
         dest: "{{ MANIFEST_FILE }}"

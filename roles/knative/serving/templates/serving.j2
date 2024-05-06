@@ -8,9 +8,9 @@ spec:
     domain:
       {{ knative.domain }}: ""
 
-{% if harbor_status.stdout == 'Active' %}
+{% if knative.registry.register %}
   controller-custom-certs:
-    name: harbor-cert
+    name: registry-ca-cert
     type: Secret
 {% endif %}
 

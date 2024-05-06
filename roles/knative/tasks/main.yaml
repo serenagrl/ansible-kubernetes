@@ -1,15 +1,19 @@
 # Launch knative installation.
 - ansible.builtin.include_role:
     name: knative/operator
-
-# Install knative serving.
-- ansible.builtin.include_role:
-    name: knative/serving
-
-# Install knative eventing.
-- ansible.builtin.include_role:
-    name: knative/eventing
+  when: knative.install.operator
 
 # Install knative cli.
 - ansible.builtin.include_role:
     name: knative/cli
+  when: knative.install.cli
+
+# Install knative serving.
+- ansible.builtin.include_role:
+    name: knative/serving
+  when: knative.install.serving
+
+# Install knative eventing.
+- ansible.builtin.include_role:
+    name: knative/eventing
+  when: knative.install.eventing

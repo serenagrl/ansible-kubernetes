@@ -1,2 +1,2 @@
-HARBOR_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'harbor-certificate.j2') }}"
+REGISTRY_SECRET_TEMPLATE: "{{ lookup('template', 'registry-secret.j2') }}"
 SERVING_TEMPLATE: "{{ lookup('template', 'serving.j2') }}"
