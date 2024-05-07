@@ -1,0 +1,6 @@
+knative:
+  install:
+    operator: yes
+    cli: yes
+    serving: yes
+    eventing: yes

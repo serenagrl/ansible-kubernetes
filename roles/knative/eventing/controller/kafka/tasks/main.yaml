@@ -1,0 +1,30 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+  become_user: root
+  delegate_to: localhost
+  vars:
+    name: "kafka controller"
+    namespace: "knative-eventing"
+    repo_path: "knative-extensions/eventing-kafka-broker"
+    pkg_version: "{{ knative.eventing.kafka.version | default }}"
+    dest: "{{ _work_dir }}"
+    version_prefix: "knative-v"
+    manifest_url: "https://github.com/{{ repo_path }}/releases/download/{{ release }}"
+    urls:
+      - "{{ manifest_url }}/eventing-kafka-controller.yaml"
+      - "{{ manifest_url }}/eventing-kafka-broker.yaml"
+
+- name: Install Kafka Controller
+  ansible.builtin.include_tasks: install-manifest.yaml
+  loop:
+    - "{{ CONTROLLER_MANIFEST_FILE }}"
+    - "{{ BROKER_MANIFEST_FILE }}"
+  loop_control:
+    loop_var: manifest

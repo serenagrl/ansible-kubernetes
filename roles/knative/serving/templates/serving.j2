@@ -1,0 +1,104 @@
+apiVersion: operator.knative.dev/v1beta1
+kind: KnativeServing
+metadata:
+  name: knative-serving
+  namespace: knative-serving
+spec:
+  config:
+    domain:
+      {{ knative.domain }}: ""
+
+{% if knative.registry.register %}
+  controller-custom-certs:
+    name: registry-ca-cert
+    type: Secret
+{% endif %}
+
+  workloads:
+    - name: migrate
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: activator
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: autoscaler
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: autoscaler-hpa
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: controller
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: domain-mapping
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: domainmapping-webhook
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: net-istio-controller
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: net-istio-webhook
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: webhook
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    - name: storage-version-migration-serving-
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""

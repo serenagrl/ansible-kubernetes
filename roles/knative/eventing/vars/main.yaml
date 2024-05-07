@@ -1,0 +1,6 @@
+knative:
+  eventing:
+    kafka:
+      enabled: yes
+    rabbitmq:
+      enabled: yes
