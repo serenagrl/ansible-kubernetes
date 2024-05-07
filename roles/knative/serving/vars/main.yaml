@@ -1,0 +1,7 @@
+knative:
+  domain: knative.k8s.local
+  registry:
+    register: yes
+    ca_url: "https://core.harbor.k8s.local/api/v2.0/systeminfo/getcert"
+    host: core.harbor.k8s.local
+    ip: "{{ _kube.cluster.address }}"

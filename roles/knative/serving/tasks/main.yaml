@@ -1,0 +1,92 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Istio is required for knative-serving
+- name: Check if istio is installed
+  ansible.builtin.shell: kubectl get ns istio-system -o json | jq .status.phase -r
+  register: istio_status
+  ignore_errors: yes
+
+- name: Istio check (Skipped when passed)
+  ansible.builtin.fail:
+    msg: "Please install istio before attempting to setup knative-serving."
+  when: istio_status.stdout != 'Active'
+
+- name: Create a knative-serving namespace
+  kubernetes.core.k8s:
+    name: knative-serving
+    kind: Namespace
+
+- name: Setting up registry certificate Secret
+  block:
+    - name: Get registry certificate
+      ansible.builtin.uri:
+        url: "{{ knative.registry.ca_url }}"
+        validate_certs: no
+        return_content: true
+      register: result
+
+    - name: Create registry certificate Secret
+      vars:
+        registry_ca_cert: "{{ result.content }}"
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition: |
+          {{ REGISTRY_SECRET_TEMPLATE }}
+
+  when: knative.registry.register
+
+- name: Create knative serving
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: |
+      {{ SERVING_TEMPLATE }}
+
+- name: Wait for knative serving to be ready
+  ansible.builtin.shell: |
+    kubectl wait --for=condition=Ready KnativeServing knative-serving -n knative-serving --timeout=300s
+
+- name: Set to allow configuring nodeSelector and tolerations
+  kubernetes.core.k8s:
+    state: patched
+    kind: ConfigMap
+    name: config-features
+    namespace: knative-serving
+    definition: |
+      data:
+        kubernetes.podspec-nodeselector: "enabled"
+        kubernetes.podspec-tolerations: "enabled"
+  when: not _kube.allow_scheduling
+
+- name: Set to allow configuring auto scaler
+  kubernetes.core.k8s:
+    state: patched
+    kind: ConfigMap
+    name: config-autoscaler
+    namespace: knative-serving
+    definition: |
+      data:
+        allow-zero-initial-scale: "true"
+
+- name: Add hostaliases to controller
+  kubernetes.core.k8s:
+    state: patched
+    kind: Deployment
+    name: controller
+    namespace: knative-serving
+    definition: |
+      spec:
+        template:
+          spec:
+            hostAliases:
+              - hostnames:
+                  - {{ knative.registry.host }}
+                ip: {{ knative.registry.ip }}
+  when: not _kube.cluster.use_dns_server and knative.registry.register
