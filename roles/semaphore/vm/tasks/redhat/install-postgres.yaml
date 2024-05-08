@@ -1,0 +1,30 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Install postgres 16
+- name: Installing postgresql
+  ansible.builtin.dnf:
+    name: '@postgresql:16/server'
+    state: present
+    update_cache: yes
+
+- name: Initialize postgresql
+  ansible.builtin.shell: postgresql-setup --initdb
+  args:
+    creates: /var/lib/pgsql/initdb_postgresql.log
+
+- name: Change authentication method
+  ansible.builtin.replace:
+    path: /var/lib/pgsql/data/pg_hba.conf
+    regexp: ^(host\b)(.*)(127.0.0.1\/32.*?)ident\b
+    replace: \g<1>\g<2>\g<3>scram-sha-256
+
+- name: Start postgresql service
+  ansible.builtin.systemd:
+    enabled: yes
+    state: restarted
+    name: postgresql

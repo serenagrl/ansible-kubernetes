@@ -4,12 +4,7 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Setup the Ansible Semaphore Server
-  hosts: semaphore_server
-  gather_facts: no
 
-  roles:
-    - role: vm-linux
-      when: provision_vm
-
-    - role: semaphore/vm
+- name: Install Semaphore UI
+  ansible.builtin.apt:
+    deb: https://github.com/semaphoreui/semaphore/releases/download/v{{ release }}/semaphore_{{ release }}_linux_amd64.deb

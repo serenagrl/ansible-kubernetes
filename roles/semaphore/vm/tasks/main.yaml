@@ -4,54 +4,39 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Install Ansible
-  block:
-    - name: Add Ansible repository
-      ansible.builtin.apt_repository:
-        repo: "ppa:ansible/ansible"
-        state: present
-        update_cache: yes
 
-    - name: Installing Ansible
-      ansible.builtin.apt:
-        pkg:
-          - software-properties-common
-          - ansible
-        state: latest
-        update_cache: yes
+- name: Gather facts
+  ansible.builtin.setup:
 
+- name: Install ansible
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-ansible.yaml"
   when: semaphore.install_ansible
 
-- name: Install Postgres
-  block:
-    - name: Installing Postgres
-      ansible.builtin.apt:
-        name: postgresql
-        state: latest
-        update_cache: yes
+- block:
+  - name: Install postgres
+    ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-postgres.yaml"
 
-    - name: Configure postgres default password
-      ansible.builtin.shell: sudo -i -u postgres psql -c "ALTER USER postgres WITH password '{{ semaphore.db_password }}';"
+  - name: Configure postgres default password
+    ansible.builtin.shell: sudo -i -u postgres psql -c "ALTER USER postgres WITH password '{{ semaphore.db_password }}';"
+
   when: semaphore.install_postgres
 
-- name: Install Ansible Semaphore
+- name: Install and configure semaphore UI
   become_user: root
   vars:
     has_version_specified: "{{ (semaphore.version is defined and semaphore.version and semaphore.version != 'latest') | bool }}"
     release: "{{ has_version_specified | ternary(semaphore.version, release_tag.stdout) }}"
     config_file: "{{ semaphore.config_dir }}/config.json"
   block:
-    - name: Get latest semaphore version
+    - name: Get latest semaphore UI version
       ansible.builtin.shell: |
-        curl -s https://api.github.com/repos/ansible-semaphore/semaphore/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
+        curl -s https://api.github.com/repos/semaphoreui/semaphore/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
       register: release_tag
       when: not has_version_specified
 
-    - name: Downloading and extracting semaphore
-      ansible.builtin.unarchive:
-        src: "https://github.com/ansible-semaphore/semaphore/releases/download/v{{ release }}/semaphore_{{ release }}_linux_amd64.tar.gz"
-        dest: "{{ semaphore.install_dir }}"
-        remote_src: yes
+    # (var)release is flowed in
+    - name: Install semaphore UI
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-semaphore.yaml"
 
     - name: Create directory to store config
       ansible.builtin.file:
@@ -87,8 +72,9 @@
           {{ SERVICE_TEMPLATE }}
         dest: "/etc/systemd/system/semaphore.service"
 
-    - name: Enable semaphore service
-      ansible.builtin.shell: |
-        sudo systemctl daemon-reload
-        sudo systemctl start semaphore
-        sudo systemctl enable semaphore
+    - name: Start semaphore UI service
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        enabled: yes
+        state: restarted
+        name: semaphore
