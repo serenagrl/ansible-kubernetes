@@ -5,6 +5,10 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+# Setup control-plane servers
+- ansible.builtin.import_playbook: setup-kubernetes-servers.yaml
+  when: provision_vm is defined and provision_vm
+
 # Setup primary control plane
 - ansible.builtin.import_playbook: setup-control-plane-primary.yaml
 

@@ -13,7 +13,7 @@
 
   roles:
     - role: vm-linux
-      when: provision_vm
+      when: provision_vm is defined and provision_vm
     - role: nfs/server
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
