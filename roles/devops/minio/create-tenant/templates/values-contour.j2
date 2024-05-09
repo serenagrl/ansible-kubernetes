@@ -1,7 +1,8 @@
 tenant:
   name: {{ in_tenant_name }}
   pools:
-    - servers: {{ in_minio_tenant.pools.servers }}
+    - name: pool-0
+      servers: {{ in_minio_tenant.pools.servers }}
       volumesPerServer: {{ in_minio_tenant.pools.volumes_per_server }}
       size: {{ in_minio_tenant.pools.size }}
 {% if not _kube.allow_scheduling %}
@@ -17,9 +18,7 @@ tenant:
     requestAutoCert: false
 
   buckets:
-    - name: chunks
-    - name: ruler
-    - name: admin
+    {{ in_minio_tenant.buckets }}
 
 ingress:
   api:
