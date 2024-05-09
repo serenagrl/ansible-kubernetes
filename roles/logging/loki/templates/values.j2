@@ -9,7 +9,7 @@ loki:
       admin: admin
     type: s3
     s3:
-      endpoint: {{ loki.minio_tenant.tenant_endpoint }}
+      endpoint: {{ loki.external_minio.tenant_endpoint }}
       region: us-east-1
       accessKeyId: {{ minio_credentials.accesskey }}
       secretAccessKey: {{ minio_credentials.secretkey }}

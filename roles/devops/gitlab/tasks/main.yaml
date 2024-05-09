@@ -23,10 +23,10 @@
     in_namespace: gitlab
     in_domain_name: gitlab.minio
     in_console_domain_name: gitlab-console.minio
-    in_minio_tenant: "{{ gitlab.minio_tenant }}"
+    in_minio_tenant: "{{ gitlab.external_minio }}"
   ansible.builtin.include_role:
     name: devops/minio/create-tenant
-  when: gitlab.external_minio
+  when: gitlab.external_minio.enabled
 
 - name: Install Gitlab
   block:

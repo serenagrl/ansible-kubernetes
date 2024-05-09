@@ -10,23 +10,24 @@
     kind: Namespace
     name: logging
 
-- name: Create minio tenant for Loki
-  vars:
-    in_name: loki
-    in_tenant_name: loki-minio
-    in_namespace: logging
-    in_domain_name: loki.minio
-    in_console_domain_name: console.loki.minio
-    in_minio_tenant: "{{ loki.minio_tenant }}"
-  ansible.builtin.include_role:
-    name: devops/minio/create-tenant
-  when: loki.external_minio
+- name: Setup minio-tenant
+  block:
+    - name: Create minio tenant for Loki
+      vars:
+        in_name: loki
+        in_tenant_name: loki-minio
+        in_namespace: logging
+        in_domain_name: loki.minio
+        in_console_domain_name: console.loki.minio
+        in_minio_tenant: "{{ loki.external_minio }}"
+      ansible.builtin.include_role:
+        name: devops/minio/create-tenant
 
-- name: Get minio credentials
-  ansible.builtin.shell: |
-    kubectl get secret -n logging {{ loki.minio_tenant.secret_name }} -ojsonpath='{.data}'
-  register: minio_secret
-  when: loki.external_minio
+    - name: Get minio credentials
+      ansible.builtin.shell: |
+        kubectl get secret -n logging {{ loki.external_minio.secret_name }} -ojsonpath='{.data}'
+      register: minio_secret
+  when: loki.external_minio.enabled
 
 - name: Add grafana chart repo
   kubernetes.core.helm_repository:
