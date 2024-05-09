@@ -29,7 +29,7 @@
         namespace: tracing
         in_definition: "{{ INGRESS_TEMPLATE }}"
         in_create: no
-  when: open_telemetry.ingress
+  when: open_telemetry.ingress_enabled
 
 - name: Deploy opentelemetry collector
   vars:

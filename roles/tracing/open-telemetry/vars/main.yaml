@@ -5,8 +5,8 @@ open_telemetry:
 
   # Valid values are "daemonset", "deployment", and "statefulset".
   mode: daemonset
-  
+
   # Sending to jaeger
   otlphttp_endpoint: http://jaeger-collector.tracing.svc.cluster.local:4318
 
-  ingress: false
+  ingress_enabled: false

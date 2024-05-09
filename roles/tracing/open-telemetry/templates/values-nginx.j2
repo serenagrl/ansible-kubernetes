@@ -14,14 +14,14 @@ nodeSelector:
 service:
   enabled: true
 
-{% if open_telemetry.ingress %}
 ingress:
-  enabled: true
+  enabled: {{ open_telemetry.ingress_enabled }}
+{% if open_telemetry.ingress_enabled %}
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: GRPC
   ingressClassName: {{ ingress_name }}
   hosts:
-    - host: opentelemetry.{{ _kube.cluster.domain }}
+    - host: otel.{{ _kube.cluster.domain }}
       paths:
         - path: /
           pathType: ImplementationSpecific
@@ -29,10 +29,7 @@ ingress:
   tls:
     - secretName: opentelemetry-ingress-tls
       hosts:
-        - opentelemetry.{{ _kube.cluster.domain }}
-{% else %}
-ingress:
-  enabled: false
+        - otel.{{ _kube.cluster.domain }}
 {% endif %}
 
 image:
