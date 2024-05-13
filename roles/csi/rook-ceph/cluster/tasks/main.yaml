@@ -9,9 +9,9 @@
 - name: Check for existing Virtual Hard Disks
   ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
   vars:
-    win_folder: "{{ csi_ceph.cluster.disk.vm_folder }}"
+    win_folder: "{{ rook_ceph.cluster.disk.vm_folder }}"
     host_name: "{{ hostvars[item].ansible_hostname }}"
-    disk_name: "{{ csi_ceph.cluster.disk.name }}"
+    disk_name: "{{ rook_ceph.cluster.disk.name }}"
     hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
   loop: "{{ q('inventory_hostnames', hostnames) }}"
 
@@ -21,10 +21,10 @@
   vars:
     hostname: "{{ hostvars[item].ansible_hostname }}"
     hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
-    vhd_disk: "{{ csi_ceph.cluster.disk.vm_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ csi_ceph.cluster.disk.name }}.vhdx"
+    vhd_disk: "{{ rook_ceph.cluster.disk.vm_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ rook_ceph.cluster.disk.name }}.vhdx"
   ansible.windows.win_powershell:
     script: |
-      New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ csi_ceph.cluster.disk.size }} -Dynamic
+      New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ rook_ceph.cluster.disk.size }} -Dynamic
       Add-VMHardDiskDrive {{ hostname }} -Path "{{ vhd_disk }}"
     creates: "{{ vhd_disk }}"
   loop: "{{ q('inventory_hostnames', hostnames) }}"
@@ -43,7 +43,7 @@
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
     ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
-    version: "{% if csi_ceph.cluster.version is defined and csi_ceph.cluster.version and csi_ceph.cluster.version != 'latest' %}{{ csi_ceph.cluster.version }}{% endif %}"
+    version: "{% if rook_ceph.cluster.version is defined and rook_ceph.cluster.version and rook_ceph.cluster.version != 'latest' %}{{ rook_ceph.cluster.version }}{% endif %}"
   kubernetes.core.helm:
     name: rook-ceph-cluster
     atomic: yes
@@ -157,4 +157,4 @@
             kubectl krew install rook-ceph
 
       when: kubectl_installed
-  when: csi_ceph.install_kubectl_plugin
+  when: rook_ceph.install_kubectl_plugin

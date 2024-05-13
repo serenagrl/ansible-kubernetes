@@ -108,7 +108,7 @@ toolbox:
           - key: node-role.kubernetes.io/control-plane
             operator: Exists
 {% endif %}
-{% if not csi_ceph.cluster.enable_request_limit %}
+{% if not rook_ceph.cluster.enable_request_limit %}
   resources: null
 {% endif %}
 
@@ -129,7 +129,7 @@ cephClusterSpec:
           key: node-role.kubernetes.io/control-plane
           operator: Exists
 {% endif %}
-{% if not csi_ceph.cluster.enable_request_limit %}
+{% if not rook_ceph.cluster.enable_request_limit %}
   resources:
     mgr: null
     mon: null
@@ -157,7 +157,7 @@ cephFileSystems:
       metadataServer:
         activeCount: 1
         activeStandby: true
-{% if csi_ceph.cluster.enable_request_limit %}
+{% if rook_ceph.cluster.enable_request_limit %}
         resources:
           limits:
             memory: "4Gi"
@@ -213,7 +213,7 @@ cephObjectStores:
       preservePoolsOnDelete: true
       gateway:
         port: 80
-{% if csi_ceph.cluster.enable_request_limit %}
+{% if rook_ceph.cluster.enable_request_limit %}
         resources:
           limits:
             memory: "2Gi"

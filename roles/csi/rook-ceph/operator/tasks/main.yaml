@@ -12,7 +12,7 @@
 
 - name: Deploy rook-ceph operator
   vars:
-    version: "{% if csi_ceph.operator.version is defined and csi_ceph.operator.version and csi_ceph.operator.version != 'latest' %}{{ csi_ceph.operator.version }}{% endif %}"
+    version: "{% if rook_ceph.operator.version is defined and rook_ceph.operator.version and rook_ceph.operator.version != 'latest' %}{{ rook_ceph.operator.version }}{% endif %}"
   kubernetes.core.helm:
     name: rook-ceph-operator
     atomic: yes

@@ -1,4 +1,4 @@
-{% if not csi_ceph.operator.enable_request_limit %}
+{% if not rook_ceph.operator.enable_request_limit %}
 resources: null
 {% endif %}
 
@@ -64,7 +64,7 @@ csi:
   nfsPluginNodeAffinity: "node-role.kubernetes.io/control-plane="
 {% endif %}
 
-{% if not csi_ceph.operator.enable_request_limit %}
+{% if not rook_ceph.operator.enable_request_limit %}
   csiRBDProvisionerResource: |
     - name : csi-provisioner
       resource: {}
@@ -139,7 +139,7 @@ discover:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
 {% endif %}
-{% if not csi_ceph.operator.enable_request_limit %}
+{% if not rook_ceph.operator.enable_request_limit %}
   resources: {}
 {% endif %}
 
