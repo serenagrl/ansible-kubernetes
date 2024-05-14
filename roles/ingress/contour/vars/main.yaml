@@ -13,5 +13,5 @@ contour:
     enabled: no
 
     # Ingress hostname when metallb is enabled.
-    # Name will be concatenated with _kube.cluster.domain to form FQDN i.e. portal.k8s.local
+    # Name will be concatenated with kube.cluster.domain to form FQDN i.e. portal.k8s.local
     hostname: portal

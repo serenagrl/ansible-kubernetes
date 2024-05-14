@@ -16,7 +16,7 @@
   ansible.builtin.shell: |
     curl -L https://istio.io/downloadIstio | ISTIO_VERSION={{ RELEASE }} sh -
   args:
-    chdir: "{{ _work_dir }}"
+    chdir: "{{ temp_dir }}"
 
 - name: Copy istioctl from Ansible host to the control plane
   become_user: root
@@ -87,7 +87,7 @@
                 grafana:
                   enabled: true
                   in_cluster_url: 'http://monitoring-grafana.monitoring.svc:80/'
-                  url: 'http://{{ _kube.cluster.name }}.{{ _kube.cluster.domain }}/grafana'
+                  url: 'http://{{ kube.cluster.name }}.{{ kube.cluster.domain }}/grafana'
 
     - name: Configure to run on control-planes only
       delegate_to: localhost
@@ -105,7 +105,7 @@
       loop:
         - jaeger.yaml
         - kiali.yaml
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
     - name: Install istio addons
       kubernetes.core.k8s:
@@ -141,4 +141,4 @@
       ansible.builtin.file:
         path: "{{ ISTIO_DIR }}"
         state: absent
-  when: _cleanup
+  when: auto_cleanup

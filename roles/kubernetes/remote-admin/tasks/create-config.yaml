@@ -17,8 +17,8 @@
     dest: /root/.kube/config
     flat: yes
 
-- name: Replace default cluster name with {{ _kube.cluster.name }}
+- name: Replace default cluster name with {{ kube.cluster.name }}
   ansible.builtin.replace:
     path: /root/.kube/config
     regexp: 'kubernetes'
-    replace: "{{ _kube.cluster.name }}"
+    replace: "{{ kube.cluster.name }}"

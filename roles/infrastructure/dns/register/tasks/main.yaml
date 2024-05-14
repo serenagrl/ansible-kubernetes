@@ -20,5 +20,5 @@
       ansible.builtin.file:
         path: "{{ NSUPDATE_FILE }}"
         state: absent
-      when: _cleanup
+      when: auto_cleanup
 

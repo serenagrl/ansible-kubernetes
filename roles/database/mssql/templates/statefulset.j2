@@ -17,7 +17,7 @@ spec:
       securityContext:
         fsGroup: 10001
       containers:
-        - name: mssql 
+        - name: mssql
           image: mcr.microsoft.com/mssql/server:{{ mssql.version }}
           ports:
             - containerPort: 1433
@@ -57,7 +57,7 @@ spec:
             secretName: mssql-tls
             defaultMode: 0755
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane

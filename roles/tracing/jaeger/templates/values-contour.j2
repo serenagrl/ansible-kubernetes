@@ -22,7 +22,7 @@ storage:
     usePassword: true
     password: {{ jaeger.elasticsearch.password }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   kafka:
     brokers: {{ jaeger.kafka.broker_endpoints }}
     topic: {{ jaeger.kafka.topic }}
@@ -30,7 +30,7 @@ storage:
 
 esIndexCleaner:
   enabled: true
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -41,7 +41,7 @@ esIndexCleaner:
 
 esRollover:
   enabled: true
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -52,7 +52,7 @@ esRollover:
 
 esLookback:
   enabled: true
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -63,7 +63,7 @@ esLookback:
 
 ingester:
   enabled: {{ jaeger.kafka.enabled }}
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -85,7 +85,7 @@ collector:
         name: otlp-http
         port: 4318
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -117,7 +117,7 @@ query:
     - name: PROMETHEUS_QUERY_NORMALIZE_DURATION
       value: "true"
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -128,7 +128,7 @@ query:
 
 spark:
   enabled: true
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -146,7 +146,7 @@ hotrod:
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: {{ jaeger.hotrod.exporter_endpoint }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane

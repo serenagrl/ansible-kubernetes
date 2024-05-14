@@ -91,11 +91,11 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
 
   **Reminder**
   1. If you skipped the creation of the DNS Server, please remember to:
-     - Set `_kube.cluster.use_dns_server: no` in the `group_vars\all.yaml` file.
+     - Set `kube.cluster.use_dns_server: no` in the `group_vars\all.yaml` file.
        WARNING: Connecting to an existing DNS server and performing the necessary configuration is not supported.
   3. If you skipped the creation of load balancers, please remember to:
      - Set `register_to_load_balancer: no` in the `inventories\group_vars\kubernetes_control_planes.yaml` and `inventories\group_vars\kubernetes_worker_nodes.yaml` files.
-     - Set `_kube.cluster.address` in the `group_vars\all.yaml` to your cp1's IP address.
+     - Set `kube.cluster.address` in the `group_vars\all.yaml` to your cp1's IP address.
   4. Specify the addons to install in the `add_ons` collection in `setup-add-ons.yaml`.
   5. You may rerun the `setup-add-ons.yaml` everytime you change the `add_ons` but keep an eye on the checkpoints.
   6. The installation order is important as some add-ons have dependencies on the others.

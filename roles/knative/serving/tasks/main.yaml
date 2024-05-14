@@ -63,7 +63,7 @@
       data:
         kubernetes.podspec-nodeselector: "enabled"
         kubernetes.podspec-tolerations: "enabled"
-  when: not _kube.allow_scheduling
+  when: not kube.allow_scheduling
 
 - name: Set to allow configuring auto scaler
   kubernetes.core.k8s:
@@ -89,4 +89,4 @@
               - hostnames:
                   - {{ knative.registry.host }}
                 ip: {{ knative.registry.ip }}
-  when: not _kube.cluster.use_dns_server and knative.registry.register
+  when: not kube.cluster.use_dns_server and knative.registry.register

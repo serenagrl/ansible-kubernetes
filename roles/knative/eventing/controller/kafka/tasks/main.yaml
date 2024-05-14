@@ -14,7 +14,7 @@
     namespace: "knative-eventing"
     repo_path: "knative-extensions/eventing-kafka-broker"
     pkg_version: "{{ knative.eventing.kafka.version | default }}"
-    dest: "{{ _work_dir }}"
+    dest: "{{ temp_dir }}"
     version_prefix: "knative-v"
     manifest_url: "https://github.com/{{ repo_path }}/releases/download/{{ release }}"
     urls:

@@ -4,7 +4,7 @@ resources: null
 
 logLevel: WARNING
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 tolerations:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane
@@ -14,7 +14,7 @@ nodeSelector:
 {% endif %}
 
 csi:
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   provisionerTolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -127,7 +127,7 @@ csi:
 {% endif %}
 
 discover:
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane

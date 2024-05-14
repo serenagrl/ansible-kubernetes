@@ -21,23 +21,23 @@
     path: "/etc/bind/named.conf.local"
     create: yes
     backup: yes
-    marker: "// {mark} {{ _kube.cluster.domain }} zone"
+    marker: "// {mark} {{ kube.cluster.domain }} zone"
     block: |
       {{ NAMED_CONF_LOCAL_TEMPLATE }}
 
 - name: Configure forward lookup
   ansible.builtin.blockinfile:
-    path: "/var/lib/bind/forward.{{ _kube.cluster.domain }}"
+    path: "/var/lib/bind/forward.{{ kube.cluster.domain }}"
     create: yes
-    marker: "; {mark} Forward lookup for {{ _kube.cluster.domain }}"
+    marker: "; {mark} Forward lookup for {{ kube.cluster.domain }}"
     block: |
       {{ FORWARD_LOOKUP_TEMPLATE }}
 
 - name: Configure reverse lookup
   ansible.builtin.blockinfile:
-    path: "/var/lib/bind/reverse.{{ _kube.cluster.domain }}"
+    path: "/var/lib/bind/reverse.{{ kube.cluster.domain }}"
     create: yes
-    marker: "; {mark} Reverse lookup for {{ _kube.cluster.domain }}"
+    marker: "; {mark} Reverse lookup for {{ kube.cluster.domain }}"
     block: |
       {{ REVERSE_LOOKUP_TEMPLATE }}
 

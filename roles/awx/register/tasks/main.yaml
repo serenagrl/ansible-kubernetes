@@ -18,15 +18,15 @@
       nginx:
         name: ingress-nginx-controller
         namespace: ingress-nginx
-    ingress: "{{ services[_kube.ingress_type] }}"
-  shell: | 
+    ingress: "{{ services[kube.ingress_type] }}"
+  shell: |
     kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
   register: ingress_host_result
 
 - name: Setup AWX environment
   delegate_to: localhost
   vars:
-    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
     host_uri: "https://{{ ingress_host }}/awx/"
   block:
     - name: Waiting for AWX deployments to be ready

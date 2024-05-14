@@ -8,5 +8,5 @@ haproxy:
 
 keepalived:
   email: ""
-  vip_address: "{{ _kube.cluster.address }}"
+  vip_address: "{{ kube.cluster.address }}"
   vip_cidr: 24

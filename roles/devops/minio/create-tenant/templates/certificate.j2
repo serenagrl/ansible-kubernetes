@@ -5,8 +5,8 @@ metadata:
   namespace: {{ in_namespace }}
 spec:
   dnsNames:
-    - {{ in_domain_name }}.{{ _kube.cluster.domain }}
-    - {{ in_console_domain_name }}.{{ _kube.cluster.domain }}
+    - {{ in_domain_name }}.{{ kube.cluster.domain }}
+    - {{ in_console_domain_name }}.{{ kube.cluster.domain }}
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}

@@ -13,12 +13,12 @@ tls:
   certFilename: tls.crt
   certKeyFilename: tls.key
   certCAFilename: ca.crt
-{% endif %}  
+{% endif %}
 
 persistence:
   size: {{ redis.storage_size }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 redis:
   tolerations:
     {{ redis.tolerations }}

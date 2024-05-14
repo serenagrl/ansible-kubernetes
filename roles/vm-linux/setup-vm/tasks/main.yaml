@@ -10,7 +10,7 @@
   block:
     - name: Create working directory
       ansible.builtin.file:
-        path: "{{ _work_dir }}"
+        path: "{{ temp_dir }}"
         state: directory
 
     - name: Installing iso and image tools
@@ -93,7 +93,7 @@
       ansible.builtin.file:
         path: "{{ METADATA_DIR }}"
         state: absent
-      when: _cleanup
+      when: auto_cleanup
 
     - name: Preparing vhdx files for the Virtual Machines
       vars:
@@ -101,7 +101,7 @@
       ansible.builtin.shell: |
         qemu-img convert -f qcow2 {{ vm.os }}-cloud.img -O vhdx -o subformat=dynamic "{{ vhd_disk }}"
       args:
-        chdir: "{{ _work_dir }}"
+        chdir: "{{ temp_dir }}"
 
   always:
     - name: Unmount winrm_host (Hyper-V Host) shared folders
@@ -157,7 +157,7 @@
           rm {{ ansible_hostname }}-seed.iso
         error_action: stop
         chdir: "{{ vm.iso_folder }}"
-      when: _cleanup
+      when: auto_cleanup
 
 - name: Setup SSH
   ansible.builtin.include_role:
@@ -168,11 +168,11 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
-    line: "{{ _kube.cluster.use_dns_server | ternary('127.0.0.1', ansible_host) }} {{ ansible_hostname }}"
+    line: "{{ kube.cluster.use_dns_server | ternary('127.0.0.1', ansible_host) }} {{ ansible_hostname }}"
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
 - name: Checkpoint VM
   ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
   vars:
     checkpoint_name: "OS configured."
-  when: _checkpoint
+  when: vm_checkpoint

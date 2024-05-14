@@ -56,7 +56,7 @@
                             - matchExpressions:
                               - key: node-role.kubernetes.io/control-plane
                                 operator: Exists
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
 - name: Install kafka bridge
   kubernetes.core.k8s:
@@ -71,4 +71,4 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup

@@ -1,1 +1,1 @@
-MANIFEST_FILE: "{{ _work_dir }}/kafka-bridge.yaml"
+MANIFEST_FILE: "{{ temp_dir }}/kafka-bridge.yaml"

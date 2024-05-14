@@ -51,7 +51,7 @@ resultsCache:
 minio:
   enabled: {{ not loki.external_minio }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 write:
   replicas: {{ loki.replicas }}
   tolerations:

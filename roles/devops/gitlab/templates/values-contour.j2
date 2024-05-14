@@ -1,7 +1,7 @@
 fullnameOverride: gitlab
 global:
   hosts:
-    domain: {{ _kube.cluster.domain }}
+    domain: {{ kube.cluster.domain }}
   ingress:
     enabled: false
     configureCertmanager: false
@@ -61,7 +61,7 @@ prometheus:
 registry:
   enabled: false
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 upgradeCheck:
   enabled: false
   tolerations:

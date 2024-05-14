@@ -7,7 +7,7 @@
 
 - name: Install Kubernetes add-ons
   hosts: kubernetes_control_planes[0]
-  become_user: "{{ _kube.user }}"
+  become_user: "{{ kube.user }}"
   gather_facts: yes
 
   roles:
@@ -52,4 +52,4 @@
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Add-ons installed."
-      when: _checkpoint
+      when: vm_checkpoint

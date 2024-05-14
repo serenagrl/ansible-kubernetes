@@ -47,6 +47,6 @@ loki:
         memory: 550Mi
 
   grafana:
-    url: "https://{{ _kube.cluster.name }}.{{ _kube.cluster.domain }}/grafana"
+    url: "https://{{ kube.cluster.name }}.{{ kube.cluster.domain }}/grafana"
     username: "admin"
     password: "prom-operator"

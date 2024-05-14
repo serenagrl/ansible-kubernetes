@@ -4,7 +4,7 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-# Notes: If you set _kube.allow_scheduling to no, you will need to manually add tolerations
+# Notes: If you set kube.allow_scheduling to no, you will need to manually add tolerations
 #        to the Instance Group -> default -> custom pod spec from the AWX portal.
 
 - name: Create a awx namespace
@@ -15,7 +15,7 @@
 - name: Install AWX
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
     has_operator_version_specified: "{{ (awx.operator.version is defined and awx.operator.version and awx.operator.version != 'latest') | bool }}"
     operator_release: "{{ has_operator_version_specified | ternary(awx.operator.version, operator_release_tag.stdout) }}"
     has_awx_version_specified: "{{ (awx.version is defined and awx.version and awx.version != 'latest') | bool }}"
@@ -72,7 +72,7 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FOLDER }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup
 
 - name: Install AWX cli and pre-requisites on Ansible host
   delegate_to: localhost

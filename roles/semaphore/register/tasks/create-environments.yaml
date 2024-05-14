@@ -50,11 +50,11 @@
         name_prefix: "{{ semaphore.project.hostname_prefix | default('k8s') }}"
 
         settings:
-          _kube:
+          kube:
             add_ons: []
 
         add_on_vars:
-          _kube:
+          kube:
             add_ons: "{{ item.content }}"
 
         all_vars: "{{ var_files | community.general.json_query('results[?contains(source, `group_vars/all`)].content') | b64decode |

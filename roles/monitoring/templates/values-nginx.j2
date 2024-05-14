@@ -16,7 +16,7 @@ alertmanager:
     routePrefix: /alerts
     replicas: {{ monitoring.alertmanager.replicas }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
@@ -44,7 +44,7 @@ grafana:
       enabled: true
       url: http://monitoring-prometheus:9090/prometheus/
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -61,7 +61,7 @@ grafana:
 prometheusOperator:
   enabled: true
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   admissionWebhooks:
     deployment:
       tolerations:
@@ -105,7 +105,7 @@ prometheus:
     externalUrl: /prometheus
     routePrefix: /prometheus
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
@@ -115,7 +115,7 @@ prometheus:
 {% endif %}
 
 kube-state-metrics:
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane

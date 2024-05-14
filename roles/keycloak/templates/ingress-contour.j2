@@ -5,7 +5,7 @@ metadata:
   namespace: keycloak
 spec:
   virtualhost:
-    fqdn: keycloak.{{ _kube.cluster.domain }}
+    fqdn: keycloak.{{ kube.cluster.domain }}
     tls:
       secretName: keycloak-ingress-tls
   routes:

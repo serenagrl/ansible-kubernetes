@@ -1,0 +1,2 @@
+# Indicates whether to automatically register the control-planes to the HAproxy load balancers config file.
+register_to_load_balancer: yes

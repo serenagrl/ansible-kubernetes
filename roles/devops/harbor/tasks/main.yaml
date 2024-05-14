@@ -59,7 +59,7 @@
 
     - name: Waiting for Harbor api to be up
       ansible.builtin.uri:
-        url: "https://core.harbor.{{ _kube.cluster.domain }}/api/v2.0/systeminfo/getcert"
+        url: "https://core.harbor.{{ kube.cluster.domain }}/api/v2.0/systeminfo/getcert"
         validate_certs: no
         return_content: true
       register: result
@@ -86,4 +86,4 @@
     state: absent
   loop:
     - "{{ CERT_FILE }}"
-  when: _cleanup
+  when: auto_cleanup

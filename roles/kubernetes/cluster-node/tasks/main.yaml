@@ -10,18 +10,18 @@
       ansible.builtin.lineinfile:
         path: /etc/hosts
         insertafter: "127.0.0.1 localhost"
-        line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
+        line: "{{ kube.cluster.address }} {{ kube.cluster.name }}"
 
     - name: Add kubernetes nodes DNS entries to /etc/hosts
       vars:
           node: "{{ hostvars[item] }}"
       ansible.builtin.lineinfile:
         path: /etc/hosts
-        insertafter: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
+        insertafter: "{{ kube.cluster.address }} {{ kube.cluster.name }}"
         line: "{{ node.ansible_host }} {{ node.ansible_hostname }}"
       when: node.ansible_hostname != ansible_hostname
       loop: "{{ groups['kubernetes_cluster'] }}"
-  when: not _kube.cluster.use_dns_server
+  when: not kube.cluster.use_dns_server
 
 - name: Disable swap
   ansible.builtin.shell: |
@@ -99,7 +99,7 @@
 
 - name: Configure DNS Server (if required)
   vars:
-    register_dns: "{{ _kube.cluster.use_dns_server | default(false) }}"
+    register_dns: "{{ kube.cluster.use_dns_server | default(false) }}"
   ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/register-to-dns.yaml"
   when: register_dns
 
@@ -108,6 +108,6 @@
 
 # Prevents warnings when running ansible helm commands.
 - name: Install helm diff
-  become_user: "{{ _kube.user }}"
+  become_user: "{{ kube.user }}"
   ansible.builtin.shell: |
     helm plugin install https://github.com/databus23/helm-diff

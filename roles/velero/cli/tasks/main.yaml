@@ -9,10 +9,10 @@
 - name: Install velero cli to ansible controller
   delegate_to: localhost
   vars:
-    repo_path: vmware-tanzu/velero 
+    repo_path: vmware-tanzu/velero
     release: "{% if velero.cli_version is defined and velero.cli_version and velero.cli_version != 'latest' %}v{{ velero.cli_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
     tar_file: velero-{{ release }}-linux-amd64.tar.gz
-    cli_dir: "{{ _work_dir }}/velero-{{ release }}-linux-amd64"
+    cli_dir: "{{ temp_dir }}/velero-{{ release }}-linux-amd64"
   block:
     - name: Get latest velero release tag
       ansible.builtin.shell: |
@@ -23,14 +23,14 @@
     - name: Downloading and extracting velero cli
       ansible.builtin.unarchive:
         src: "https://github.com/{{ repo_path }}/releases/download/{{ release }}/{{ tar_file }}"
-        dest: "{{ _work_dir }}"
+        dest: "{{ temp_dir }}"
         remote_src: yes
 
-    - name: Move velero cli to /usr/local/bin 
+    - name: Move velero cli to /usr/local/bin
       ansible.builtin.shell: mv {{ cli_dir }}/velero /usr/local/bin
 
     - name: Cleanup files
       ansible.builtin.file:
         path: "{{ cli_dir }}"
         state: absent
-      when: _cleanup
+      when: auto_cleanup

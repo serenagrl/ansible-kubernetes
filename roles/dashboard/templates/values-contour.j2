@@ -1,5 +1,5 @@
 app:
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   scheduling:
     nodeSelector:
       node-role.kubernetes.io/control-plane:
@@ -13,7 +13,7 @@ app:
   ingress:
     enabled: false
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 kong:
   tolerations:
     - effect: NoSchedule

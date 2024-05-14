@@ -6,12 +6,12 @@
 - delegate_to: localhost
   become_user: root
   vars:
-    out_dir: "{{ cert_dir | default(_work_dir + '/' +  _kube.cluster.name) }}"
+    out_dir: "{{ cert_dir | default(temp_dir + '/' +  kube.cluster.name) }}"
   block:
     - name: Create working directory
       ansible.builtin.file:
         path: "{{ out_dir }}"
-        state: directory     
+        state: directory
 
     - name: Copy {{ name }} to Ansible host
       ansible.builtin.copy:

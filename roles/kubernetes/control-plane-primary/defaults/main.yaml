@@ -1,2 +1,2 @@
 ALIASES_TEMPLATE: "{{ lookup('template', 'roles/kubernetes/control-plane/templates/aliases.j2') }}"
-TEMP_CONFIG_FILE: "{{ _work_dir }}/corefile.tmp"
+TEMP_CONFIG_FILE: "{{ temp_dir }}/corefile.tmp"

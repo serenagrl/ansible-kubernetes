@@ -1,5 +1,5 @@
 $TTL    604800
-@       IN      SOA     {{ ansible_hostname }}.{{ _kube.cluster.domain }}. root.{{ ansible_hostname }}.{{ _kube.cluster.domain }}. (
+@       IN      SOA     {{ ansible_hostname }}.{{ kube.cluster.domain }}. root.{{ ansible_hostname }}.{{ kube.cluster.domain }}. (
                               3         ; Serial
                          604800         ; Refresh
                           86400         ; Retry
@@ -7,5 +7,5 @@ $TTL    604800
                          604800 )       ; Negative Cache TTL
 
 ; Name Server
-@               IN      NS     {{ ansible_hostname }}.{{ _kube.cluster.domain }}.
+@               IN      NS     {{ ansible_hostname }}.{{ kube.cluster.domain }}.
 {{ ansible_hostname }}      IN      A       {{ ansible_host }}

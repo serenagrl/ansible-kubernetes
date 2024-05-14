@@ -49,7 +49,7 @@
       ansible.builtin.lineinfile:
         path: /etc/hosts
         insertafter: "127.0.0.1 localhost"
-        line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
+        line: "{{ kube.cluster.address }} {{ kube.cluster.name }}"
 
     - name: Check if kube config file exists on ansible controller host
       ansible.builtin.stat:

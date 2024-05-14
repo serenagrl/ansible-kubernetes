@@ -1,4 +1,4 @@
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 defaultSettings:
   taintToleration: node-role.kubernetes.io/control-plane=:NoSchedule
 {% endif %}
@@ -7,7 +7,7 @@ longhornManager:
   log:
     format: {{ longhorn.log_format }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -16,7 +16,7 @@ longhornManager:
     node-role.kubernetes.io/control-plane:
 {% endif %}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 longhornDriver:
   tolerations:
     - effect: NoSchedule
@@ -28,7 +28,7 @@ longhornDriver:
 
 longhornUI:
   replicas: 2
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane

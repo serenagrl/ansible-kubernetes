@@ -15,7 +15,7 @@
         path: /etc/hosts
         insertafter: "127.0.0.1 localhost"
         line: "{{ hostvars['nfs_server'].ansible_host }} {{ hostvars['nfs_server'].ansible_hostname }}"
-      when: not _kube.cluster.use_dns_server
+      when: not kube.cluster.use_dns_server
 
     - name: Register client to NFS server
       delegate_to: nfs_server
@@ -26,7 +26,7 @@
             path: /etc/hosts
             insertafter: "127.0.0.1 localhost"
             line: "{{ hostvars[nfs_client].ansible_host }} {{ hostvars[nfs_client].ansible_hostname }}"
-          when: not _kube.cluster.use_dns_server
+          when: not kube.cluster.use_dns_server
 
         - name: Export shared directory to kubernetes cluster nodes
           ansible.builtin.shell: |

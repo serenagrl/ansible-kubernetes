@@ -13,7 +13,7 @@
         repo_path: "projectcalico/calico"
         pkg_version: "{{ calico.version | default }}"
         version_prefix: "v"
-        dest: "{{ _work_dir }}"
+        dest: "{{ temp_dir }}"
         manifest_url: "https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/manifests"
         urls:
           - "{{ manifest_url }}/{{ OPERATOR_MANIFEST }}"
@@ -21,11 +21,11 @@
 
     - name: Set CIDR network
       ansible.builtin.replace:
-        path: "{{ _work_dir }}/{{ OPERATOR_CRD }}"
+        path: "{{ temp_dir }}/{{ OPERATOR_CRD }}"
         regexp: '192.168.0.0/16'
-        replace: '{{ _kube.cluster.cidr_network }}'
+        replace: '{{ kube.cluster.cidr_network }}'
 
-- become_user: "{{ _kube.user }}"
+- become_user: "{{ kube.user }}"
   block:
     - name: Installing calico
       kubernetes.core.k8s:
@@ -51,7 +51,7 @@
   loop:
     - "{{ OPERATOR_MANIFEST_FILE }}"
     - "{{ OPERATOR_CRD_FILE }}"
-  when: _cleanup
+  when: auto_cleanup
 
 - name: Install calico cli to ansible controller host
   delegate_to: localhost
@@ -71,13 +71,13 @@
       ansible.builtin.shell: |
         curl -sSL -o /usr/local/bin/calicoctl-linux-amd64 https://github.com/{{ repo_path }}/releases/download/{{ release }}/calicoctl-linux-amd64
         chmod +x /usr/local/bin/calicoctl-linux-amd64
-    
+
     - name: Setup calico cli
       become_user: root
       ansible.builtin.shell: |
         cp /usr/local/bin/calicoctl-linux-amd64 /usr/local/bin/calicoctl
       when: calico.install_cli
-    
+
     - name: Setup calico plugin
       become_user: root
       ansible.builtin.shell: |
@@ -88,5 +88,5 @@
       ansible.builtin.file:
         path: "/usr/local/bin/calicoctl-linux-amd64"
         state: absent
-      when: _cleanup
+      when: auto_cleanup
   when: calico.install_cli or calico.install_kubectl_plugin

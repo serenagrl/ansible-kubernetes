@@ -5,7 +5,7 @@ tenant:
       servers: {{ in_minio_tenant.pools.servers }}
       volumesPerServer: {{ in_minio_tenant.pools.volumes_per_server }}
       size: {{ in_minio_tenant.pools.size }}
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane
@@ -23,11 +23,11 @@ tenant:
 ingress:
   api:
     enabled: false
-    host: {{ in_domain_name }}.{{ _kube.cluster.domain }}
+    host: {{ in_domain_name }}.{{ kube.cluster.domain }}
     path: /
     pathType: Prefix
   console:
     enabled: false
-    host: {{ in_console_domain_name }}.{{ _kube.cluster.domain }}
+    host: {{ in_console_domain_name }}.{{ kube.cluster.domain }}
     path: /
     pathType: Prefix

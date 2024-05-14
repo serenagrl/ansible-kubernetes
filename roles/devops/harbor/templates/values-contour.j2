@@ -6,19 +6,19 @@ expose:
     # For harbor api
     enabled: true
     auto:
-      commonName: harbor.{{ _kube.cluster.domain }}
+      commonName: harbor.{{ kube.cluster.domain }}
     certSource: secret
     secret:
       secretName: "harbor-ingress-tls"
 
-externalURL: https://core.harbor.{{ _kube.cluster.domain }}
+externalURL: https://core.harbor.{{ kube.cluster.domain }}
 
 persistence:
   enabled: true
 
 caSecretName: "harbor-ingress-tls"
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 portal:
   tolerations:
     - effect: NoSchedule

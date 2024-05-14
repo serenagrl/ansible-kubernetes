@@ -38,7 +38,7 @@
                   nodeSelector:
                     node-role.kubernetes.io/control-plane:
                   \1
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
 - name: Configure ClusterRoleBindings
   ansible.builtin.shell: |
@@ -65,7 +65,7 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup
 
 - name: Update deployment environment variable to watch over namespaces
   ansible.builtin.shell: |

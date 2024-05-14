@@ -12,7 +12,7 @@ yamlApplicationConfig:
   auth:
     type: "LOGIN_FORM"
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 tolerations:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane
@@ -23,7 +23,7 @@ nodeSelector:
 
 ingress:
   enabled: true
-  host: kafka.{{ _kube.cluster.domain }}
+  host: kafka.{{ kube.cluster.domain }}
   tls:
 {% if has_issuer %}
     enabled: true

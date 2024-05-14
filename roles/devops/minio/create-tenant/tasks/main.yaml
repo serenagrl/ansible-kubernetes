@@ -55,7 +55,7 @@
 - name: Get minio credentials
   vars:
     overrides:
-      "{% if not _kube.allow_scheduling %}
+      "{% if not kube.allow_scheduling %}
         --overrides='{\"spec\":{\"nodeSelector\":{\"node-role.kubernetes.io/control-plane\":\"\"},\"tolerations\":[{\"effect\": \"NoSchedule\", \"key\": \"node-role.kubernetes.io/control-plane\", \"operator\": \"Exists\"}]}}'
       {% endif %}"
 

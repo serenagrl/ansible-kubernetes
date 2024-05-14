@@ -42,7 +42,7 @@
 - name: Deploy rook-ceph cluster
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
     version: "{% if rook_ceph.cluster.version is defined and rook_ceph.cluster.version and rook_ceph.cluster.version != 'latest' %}{{ rook_ceph.cluster.version }}{% endif %}"
   kubernetes.core.helm:
     name: rook-ceph-cluster
@@ -109,7 +109,7 @@
   become_user: root
   vars:
     release: "{{ release_tag.stdout }}"
-    cli_dir: "{{ _work_dir }}/krew"
+    cli_dir: "{{ temp_dir }}/krew"
   block:
     - name: Check if kubectl is installed
       ansible.builtin.shell: apt list kubectl
@@ -149,7 +149,7 @@
           ansible.builtin.file:
             path: "{{ cli_dir }}"
             state: absent
-          when: _cleanup
+          when: auto_cleanup
 
         - name: Install rook ceph plugin
           ansible.builtin.shell: |

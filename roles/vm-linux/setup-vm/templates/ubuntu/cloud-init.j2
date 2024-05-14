@@ -11,12 +11,12 @@ ssh_authorized_keys:
 
 users:
   - default
-  - name: {{ _kube.user }}
+  - name: {{ kube.user }}
     gecos: K8s Admin
     groups: users, admin
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
-    passwd: '{{ _kube.pwd }}'
+    passwd: '{{ kube.pwd }}'
     lock_passwd: false
     ssh_authorized_keys:
       - {{ id_rsa_pub }}
@@ -36,8 +36,8 @@ write_files:
             addresses:
               - {{ ansible_host }}/{{ vm.network.cidr }}
             nameservers:
-              addresses: {{ _kube.cluster.use_dns_server | ternary([hostvars.dns_server.ansible_host] + vm.network.dns, vm.network.dns) }}
-              search: [{{ _kube.cluster.domain }}]
+              addresses: {{ kube.cluster.use_dns_server | ternary([hostvars.dns_server.ansible_host] + vm.network.dns, vm.network.dns) }}
+              search: [{{ kube.cluster.domain }}]
             routes:
               - to: default
                 via: {{ vm.network.gateway }}

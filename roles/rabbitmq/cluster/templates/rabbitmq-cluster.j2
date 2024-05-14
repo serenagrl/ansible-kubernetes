@@ -26,7 +26,7 @@ spec:
 {% endif %}
       management.path_prefix = /{{ rabbitmq.namespace }}/rabbitmq
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     {{ rabbitmq.tolerations }}
   affinity:

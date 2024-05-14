@@ -9,10 +9,10 @@
   block:
     - name: Add entry to hosts file
       vars:
-        in_host_entry: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}.{{ _kube.cluster.domain }}"
+        in_host_entry: "{{ kube.cluster.address }} {{ kube.cluster.name }}.{{ kube.cluster.domain }}"
       ansible.builtin.include_role:
         name: "common/dns-host-file"
-      when: not _kube.cluster.use_dns_server
+      when: not kube.cluster.use_dns_server
 
     - name: Patch ingress controller service type to ClusterIP
       kubernetes.core.k8s:

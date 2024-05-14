@@ -1,6 +1,17 @@
+ansible_user: root
+ansible_become: yes
+
+# You can also set this in individual host if you are splitting the nodes to different physical
+# servers.
+winrm_host: local_machine
+
+vm_checkpoint: no          # Creates VM checkpoints at specific stages of automation.
+auto_cleanup: yes          # Clean up residue files after installation.
+temp_dir: /var/automate    # The directory for the ansible tasks to store temporary data.
+
 # Kubernetes configuration settings.
 # The user account to create. This account will be used to setup kubernetes.
-_kube:
+kube:
   user: k8s-admin
   # Password is p@ssw0rd
   pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
@@ -13,15 +24,15 @@ _kube:
     name: serena
 
     # The virtual ip address if you are running with load balancers, or the ip address of the 1st control plane.
-    address: 192.168.0.204
+    address: 192.168.0.200
 
     # The internal network of your kubernetes cluster.
     cidr_network: 10.1.0.0/16
 
-    # Indicates whether to use a dns server for naming.
+    # Indicates whether to use the provisioned dns server for naming.
     # yes - will attempt to register hostnames to dns server.
     # no - will use host file.
-    use_dns_server: no
+    use_dns_server: yes
 
   # Specify which ingress type to use - nginx or contour
   ingress_type: nginx
@@ -30,12 +41,3 @@ _kube:
   #   yes - Remove the taints on all control-planes and allow all pods (including user applications) to be scheduled on any nodes.
   #   no - Keep the taints on all control-planes but will configure tolerations on add-on components to run on the control-planes.
   allow_scheduling: no
-
-# The directory for the ansible tasks to store data.
-_work_dir: /var/automate
-
-# Creates VM checkpoints at specific stages of automation.
-_checkpoint: yes
-
-# Clean up residue files after installation.
-_cleanup: yes

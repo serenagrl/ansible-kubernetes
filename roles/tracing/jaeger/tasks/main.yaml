@@ -19,7 +19,7 @@
     namespace: tracing
     in_definition: "{{ item }}"
     in_create: "{{ INGRESS_CREATE }}"
-    templates: "{{ INGRESS_TEMPLATES[_kube.ingress_type] }}"
+    templates: "{{ INGRESS_TEMPLATES[kube.ingress_type] }}"
     # only process the templates when it is not nginx (value = '')
     include_templates: "{{ jaeger.hotrod.enabled | ternary(templates, (templates[0] != '') | ternary((templates | selectattr('metadata.name', 'defined') |
                                                    rejectattr('metadata.name', 'eq', 'jaeger-hotrod-httpproxy') | list), templates)) }}"
@@ -33,7 +33,7 @@
 - name: Deploy jaeger
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
     version: "{% if jaeger.version is defined and jaeger.version and jaeger.version != 'latest' %}{{ jaeger.version }}{% endif %}"
   kubernetes.core.helm:
     name: jaeger

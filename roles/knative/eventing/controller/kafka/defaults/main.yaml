@@ -1,2 +1,2 @@
-CONTROLLER_MANIFEST_FILE: "{{ _work_dir }}/eventing-kafka-controller.yaml"
-BROKER_MANIFEST_FILE: "{{ _work_dir }}/eventing-kafka-broker.yaml"
+CONTROLLER_MANIFEST_FILE: "{{ temp_dir }}/eventing-kafka-controller.yaml"
+BROKER_MANIFEST_FILE: "{{ temp_dir }}/eventing-kafka-broker.yaml"

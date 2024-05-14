@@ -7,4 +7,4 @@
 - name: Downloading ubuntu cloud image
   ansible.builtin.get_url:
     url: "{{ vm.ubuntu.img_url }}"
-    dest: "{{ _work_dir }}/{{ vm.os }}-cloud.img"
+    dest: "{{ temp_dir }}/{{ vm.os }}-cloud.img"

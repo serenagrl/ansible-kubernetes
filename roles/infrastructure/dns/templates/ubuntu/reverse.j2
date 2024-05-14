@@ -1,5 +1,5 @@
 $TTL    604800
-@       IN      SOA     {{ _kube.cluster.domain }}. root.{{ _kube.cluster.domain }}. (
+@       IN      SOA     {{ kube.cluster.domain }}. root.{{ kube.cluster.domain }}. (
                               1         ; Serial
                          604800         ; Refresh
                           86400         ; Retry
@@ -8,8 +8,8 @@ $TTL    604800
 ;
 
 ; Name Server
-@               IN      NS     {{ ansible_hostname }}.{{ _kube.cluster.domain }}.
+@               IN      NS     {{ ansible_hostname }}.{{ kube.cluster.domain }}.
 {{ ansible_hostname }}      IN      A      {{ ansible_host }}
 
 ; Reverse lookup for Name Server
-{{ ansible_host.split('.')[3] }}       IN      PTR     {{ ansible_hostname }}.{{ _kube.cluster.domain }}.
+{{ ansible_host.split('.')[3] }}       IN      PTR     {{ ansible_hostname }}.{{ kube.cluster.domain }}.

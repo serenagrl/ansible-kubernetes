@@ -1,7 +1,7 @@
 CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 TEMPLATE: "{{ lookup('template', 'rabbitmq-cluster.j2') | from_yaml }}"
 
-INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + _kube.ingress_type + '.yaml' }}"
-INGRESS_TEMPLATE: "{{ lookup('template', 'ingress-' + _kube.ingress_type + '.j2') | from_yaml }}"
+INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + kube.ingress_type + '.yaml' }}"
+INGRESS_TEMPLATE: "{{ lookup('template', 'ingress-' + kube.ingress_type + '.j2') | from_yaml }}"
 
-CERT_DIR: "{{ _work_dir }}/{{ _kube.cluster.name }}/{{ rabbitmq.namespace }}"
+CERT_DIR: "{{ temp_dir }}/{{ kube.cluster.name }}/{{ rabbitmq.namespace }}"

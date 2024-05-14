@@ -13,7 +13,7 @@ master:
   persistence:
     size: {{ redis.storage_size }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     {{ redis.tolerations }}
   nodeSelector:
@@ -25,7 +25,7 @@ replica:
   persistence:
     size: {{ redis.storage_size }}
 
-{% if not _kube.allow_scheduling %}  
+{% if not kube.allow_scheduling %}
   tolerations:
     {{ redis.tolerations }}
   nodeSelector:

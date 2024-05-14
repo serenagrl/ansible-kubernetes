@@ -3,7 +3,7 @@ fullnameOverride: goldilocks
 controller:
   flags:
     on-by-default: {{ goldilocks.on_by_default }}
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -18,7 +18,7 @@ dashboard:
   basePath: /goldilocks//
   replicaCount: 1
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -51,7 +51,7 @@ vpa:
       storage: prometheus
 {% endif %}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane

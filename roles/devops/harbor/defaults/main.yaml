@@ -1,9 +1,9 @@
-CERT_FILE: "{{ _work_dir }}/harbor-ca.crt"
+CERT_FILE: "{{ temp_dir }}/harbor-ca.crt"
 CERT_DIR: "/etc/pki/ca-trust/source/anchors"
-CR_CERT_DIR: "/etc/containerd/certs.d/core.harbor.{{ _kube.cluster.domain }}"
+CR_CERT_DIR: "/etc/containerd/certs.d/core.harbor.{{ kube.cluster.domain }}"
 
 CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 
-INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + _kube.ingress_type + '.yaml' }}"
-INGRESS_TEMPLATE: "{{ (_kube.ingress_type == 'nginx') | ternary('', lookup('template', 'ingress-' + _kube.ingress_type + '.j2') | from_yaml) }}"
-VALUES_FILE: "{{ lookup('template', 'values-' + _kube.ingress_type + '.j2') | from_yaml }}"
+INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + kube.ingress_type + '.yaml' }}"
+INGRESS_TEMPLATE: "{{ (kube.ingress_type == 'nginx') | ternary('', lookup('template', 'ingress-' + kube.ingress_type + '.j2') | from_yaml) }}"
+VALUES_FILE: "{{ lookup('template', 'values-' + kube.ingress_type + '.j2') | from_yaml }}"

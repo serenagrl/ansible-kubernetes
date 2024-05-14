@@ -1,10 +1,3 @@
-ansible_user: root
-ansible_become: yes
-
-# You can also set this in individual host if you are splitting the nodes to different physical
-# servers.
-winrm_host: local_machine
-
 # The VM settings for each host.
 # Note: Adjust accordingly to the number of add-ons you plan to install. You can manually adjust it in
 #       Hyper-V manager later.
@@ -13,9 +6,6 @@ host_specs:
   min_ram_size: 8GB
   disk_size: 127GB
   v_cpu: 6
-
-# Indicates whether to automatically register the control-planes to the HAproxy load balancers config file.
-register_to_load_balancer: no
 
 remote_admin:
   # Enable this to allow remote administration from the Ansible controller host.

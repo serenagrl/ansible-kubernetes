@@ -5,7 +5,7 @@ metadata:
   namespace: {{ in_namespace }}
 spec:
   virtualhost:
-    fqdn: {{ in_domain_name }}.{{ _kube.cluster.domain }}
+    fqdn: {{ in_domain_name }}.{{ kube.cluster.domain }}
     tls:
       secretName: {{ in_tenant_name }}-ingress-tls
   routes:

@@ -21,4 +21,4 @@
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Worker node configured."
-      when: _checkpoint and (groups['kubernetes_worker_nodes'] | length > 0)
+      when: vm_checkpoint and (groups['kubernetes_worker_nodes'] | length > 0)

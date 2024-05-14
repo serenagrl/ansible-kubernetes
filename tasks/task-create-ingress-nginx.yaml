@@ -16,7 +16,7 @@
 - name: Create ingress for {{ namespace }}
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
   kubernetes.core.k8s:
     apply: yes
     force: yes

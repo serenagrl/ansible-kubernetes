@@ -1,6 +1,6 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
@@ -14,7 +14,7 @@
   ansible.builtin.shell: |
     {{ join_command.stdout }}
 
-- become_user: "{{ _kube.user }}"
+- become_user: "{{ kube.user }}"
   delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   block:
     - name: Wait for node to be ready
@@ -34,10 +34,10 @@
       nginx:
         name: ingress-nginx-controller
         namespace: ingress-nginx
-    ingress: "{{ services[_kube.ingress_type] }}"
+    ingress: "{{ services[kube.ingress_type] }}"
   block:
     - name: Check if ingress is installed
-      become_user: "{{ _kube.user }}"
+      become_user: "{{ kube.user }}"
       delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
       ansible.builtin.shell: kubectl get ns {{ ingress.namespace }} -o json | jq .status.phase -r
       register: ingress_status
@@ -46,19 +46,19 @@
     - name: Configure ingress section in HAProxy load-balancer
       block:
         - name: Get ingress http node port
-          become_user: "{{ _kube.user }}"
+          become_user: "{{ kube.user }}"
           delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
           shell: |
             kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}'
           register: ingress_http_port_result
 
         - name: Get ingress https node port
-          become_user: "{{ _kube.user }}"
+          become_user: "{{ kube.user }}"
           delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
           shell: |
             kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}'
           register: ingress_https_port_result
-              
+
         - name: Configure HAProxy load-balancers to expose ingress
           vars:
             in_sections:

@@ -31,7 +31,7 @@
 - name: Deploy longhorn
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
     version: "{% if longhorn.version is defined and longhorn.version and longhorn.version != 'latest' %}{{ longhorn.version }}{% endif %}"
   kubernetes.core.helm:
     name: longhorn

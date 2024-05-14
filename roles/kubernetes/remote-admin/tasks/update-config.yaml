@@ -7,11 +7,11 @@
 #
 - name: Add cluster information to kube config
   vars:
-    remote_config: "{{ remote_config_file['content'] | b64decode | replace('kubernetes', _kube.cluster.name) | from_yaml }}"
+    remote_config: "{{ remote_config_file['content'] | b64decode | replace('kubernetes', kube.cluster.name) | from_yaml }}"
     local_config: "{{ local_config_file['content'] | b64decode | from_yaml }}"
-    clusters: "{{ (local_config.clusters | rejectattr('name', 'equalto', _kube.cluster.name)) + remote_config.clusters }}"
-    contexts: "{{ (local_config.contexts | rejectattr('name', 'search', _kube.cluster.name + '-admin')) + remote_config.contexts }}"
-    users: "{{ (local_config.users | rejectattr('name', 'equalto', _kube.cluster.name + '-admin')) + remote_config.users }}"
+    clusters: "{{ (local_config.clusters | rejectattr('name', 'equalto', kube.cluster.name)) + remote_config.clusters }}"
+    contexts: "{{ (local_config.contexts | rejectattr('name', 'search', kube.cluster.name + '-admin')) + remote_config.contexts }}"
+    users: "{{ (local_config.users | rejectattr('name', 'equalto', kube.cluster.name + '-admin')) + remote_config.users }}"
     current_context: "{{ remote_config['current-context'] }}"
   block:
     - name: Get kube config file from control plane

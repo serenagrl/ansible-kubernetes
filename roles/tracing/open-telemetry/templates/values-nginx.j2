@@ -2,7 +2,7 @@ fullnameOverride: ""
 
 mode: {{ open_telemetry.mode }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 tolerations:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane
@@ -21,7 +21,7 @@ ingress:
     nginx.ingress.kubernetes.io/backend-protocol: GRPC
   ingressClassName: {{ ingress_name }}
   hosts:
-    - host: otel.{{ _kube.cluster.domain }}
+    - host: otel.{{ kube.cluster.domain }}
       paths:
         - path: /
           pathType: ImplementationSpecific
@@ -29,7 +29,7 @@ ingress:
   tls:
     - secretName: opentelemetry-ingress-tls
       hosts:
-        - otel.{{ _kube.cluster.domain }}
+        - otel.{{ kube.cluster.domain }}
 {% endif %}
 
 image:

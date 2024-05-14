@@ -12,7 +12,7 @@
 - include_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: ingress-nginx
-    ingress_host: "{{ ingress_nginx.metallb.enabled | ternary(ingress_nginx.metallb.hostname, _kube.cluster.name) }}.{{ _kube.cluster.domain }}"
+    ingress_host: "{{ ingress_nginx.metallb.enabled | ternary(ingress_nginx.metallb.hostname, kube.cluster.name) }}.{{ kube.cluster.domain }}"
     certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
 - become_user: root
@@ -45,7 +45,7 @@
                       operator: Exists
                   \1
                     node-role.kubernetes.io/control-plane: ""
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
 - name: Install ingress nginx
   kubernetes.core.k8s:
@@ -59,7 +59,7 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup
 
 - name: Scale ingress controller pods = {{ ingress_nginx.scale }}
   vars:

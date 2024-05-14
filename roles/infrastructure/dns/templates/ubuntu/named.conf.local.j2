@@ -1,17 +1,17 @@
 include "/etc/bind/rndc.key";
 
-zone "{{ _kube.cluster.domain }}" IN {
+zone "{{ kube.cluster.domain }}" IN {
         type master;
-        file "/var/lib/bind/forward.{{ _kube.cluster.domain }}";
+        file "/var/lib/bind/forward.{{ kube.cluster.domain }}";
         allow-query { any; };
         allow-update {
             {{ ansible_host }};
             key rndc-key;
         };
 };
-zone "{{ _kube.cluster.address.split('.')[2::-1]|join('.') }}.in-addr.arpa" IN {
+zone "{{ kube.cluster.address.split('.')[2::-1]|join('.') }}.in-addr.arpa" IN {
         type master;
-        file "/var/lib/bind/reverse.{{ _kube.cluster.domain }}";
+        file "/var/lib/bind/reverse.{{ kube.cluster.domain }}";
         allow-update {
             {{ ansible_host }};
             key rndc-key;

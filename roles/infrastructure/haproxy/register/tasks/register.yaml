@@ -17,7 +17,7 @@
       vars:
         config: "{{ haproxy_config_file['content'] | b64decode }}"
         backend_port: "{{ in_backend_port | default(443) }}"
-        backend_name: "{{ in_backend_name | default(_kube.cluster.name + '-ingress') }}"
+        backend_name: "{{ in_backend_name | default(kube.cluster.name + '-ingress') }}"
         regex_replace: '^\s*(backend {{ backend_name }}.*\n(?:^.+\n)*)(^\s*server {{ ansible_hostname }} (.*?)\n)'
         regex_add: '^\s*(backend {{ backend_name }}.*\n(?:^.+\n)*)$'
         is_exist: "{{ config | regex_search(regex_replace, multiline=True) }}"

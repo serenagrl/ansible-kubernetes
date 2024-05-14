@@ -29,7 +29,7 @@
                   nodeSelector:
                     node-role.kubernetes.io/control-plane: ""
                   \1
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
 - name: Install contour
   kubernetes.core.k8s:
@@ -43,11 +43,11 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup
 
 - name: Setup root HTTPProxy
   vars:
-    ingress_host: "{{ contour.metallb.enabled | ternary(contour.metallb.hostname, _kube.cluster.name) }}.{{ _kube.cluster.domain }}"
+    ingress_host: "{{ contour.metallb.enabled | ternary(contour.metallb.hostname, kube.cluster.name) }}.{{ kube.cluster.domain }}"
   block:
     - ansible.builtin.import_tasks: ./tasks/task-create-certificate.yaml
       vars:

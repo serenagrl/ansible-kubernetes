@@ -1,4 +1,4 @@
-INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + _kube.ingress_type + '.yaml' }}"
-INGRESS_TEMPLATE: "{{ (_kube.ingress_type == 'nginx') | ternary('', lookup('template', 'ingress-' + _kube.ingress_type + '.j2') | from_yaml) }}"
-INGRESS_CREATE: "{{ _kube.ingress_type == 'contour' }}"
-VALUES_FILE: "{{ lookup('template', 'values-' + _kube.ingress_type + '.j2') | from_yaml }}"
+INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + kube.ingress_type + '.yaml' }}"
+INGRESS_TEMPLATE: "{{ (kube.ingress_type == 'nginx') | ternary('', lookup('template', 'ingress-' + kube.ingress_type + '.j2') | from_yaml) }}"
+INGRESS_CREATE: "{{ kube.ingress_type == 'contour' }}"
+VALUES_FILE: "{{ lookup('template', 'values-' + kube.ingress_type + '.j2') | from_yaml }}"

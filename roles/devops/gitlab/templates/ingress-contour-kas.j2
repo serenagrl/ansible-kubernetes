@@ -5,7 +5,7 @@ metadata:
   namespace: gitlab
 spec:
   virtualhost:
-    fqdn: kas.{{ _kube.cluster.domain }}
+    fqdn: kas.{{ kube.cluster.domain }}
     tls:
       secretName: gitlab-ingress-tls
   routes:

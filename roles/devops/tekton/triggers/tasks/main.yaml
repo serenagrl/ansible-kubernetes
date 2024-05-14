@@ -40,7 +40,7 @@
       loop:
         - "{{ MANIFEST_DIR }}/{{ MANIFEST_TRIGGER_FILE }}"
         - "{{ MANIFEST_DIR }}/{{ MANIFEST_INTERCEPTOR_FILE }}"
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
 - name: Installing tekton triggers
   kubernetes.core.k8s:
@@ -58,4 +58,4 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_DIR }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup

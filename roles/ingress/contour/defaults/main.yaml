@@ -1,4 +1,4 @@
-MANIFEST_FILE: "{{ _work_dir }}/contour.yaml"
+MANIFEST_FILE: "{{ temp_dir }}/contour.yaml"
 CERTIFICATE_TEMPLATE: "{{ lookup('template', 'certificate.j2') | from_yaml }}"
 INGRESS_CONTOUR_TEMPLATE: "{{ lookup('template', 'ingress-contour.j2') | from_yaml }}"
 HAPROXY_CONFIG_TEMPLATE: "{{ lookup('template', 'haproxy-ingress.j2') }}"

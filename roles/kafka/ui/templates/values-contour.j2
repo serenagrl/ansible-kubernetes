@@ -12,7 +12,7 @@ yamlApplicationConfig:
   auth:
     type: "LOGIN_FORM"
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 tolerations:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane

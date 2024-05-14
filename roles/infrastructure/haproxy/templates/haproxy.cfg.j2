@@ -1,10 +1,10 @@
-frontend {{ _kube.cluster.name }}-apiserver
+frontend {{ kube.cluster.name }}-apiserver
    bind *:6443
    mode tcp
    option tcplog
-   default_backend {{ _kube.cluster.name }}-apiserver-backend
+   default_backend {{ kube.cluster.name }}-apiserver-backend
 
-backend {{ _kube.cluster.name }}-apiserver-backend
+backend {{ kube.cluster.name }}-apiserver-backend
    mode tcp
    balance roundrobin
    option tcp-check

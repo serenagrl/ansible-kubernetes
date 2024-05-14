@@ -1,5 +1,5 @@
 operator:
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -9,7 +9,7 @@ operator:
 {% endif %}
 
 console:
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -20,6 +20,6 @@ console:
 
   ingress:
     enabled: false
-    host: minio.{{ _kube.cluster.domain }}
+    host: minio.{{ kube.cluster.domain }}
     path: /
     pathType: Prefix

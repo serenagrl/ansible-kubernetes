@@ -5,7 +5,7 @@ metadata:
   namespace: tracing
 spec:
   virtualhost:
-    fqdn: otel.{{ _kube.cluster.domain }}
+    fqdn: otel.{{ kube.cluster.domain }}
     tls:
       secretName: opentelemetry-ingress-tls
   routes:

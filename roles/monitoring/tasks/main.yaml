@@ -26,7 +26,7 @@
 - name: Deploy kube-prometheus-stack
   vars:
     ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
     version: "{% if monitoring.version is defined and monitoring.version and monitoring.version != 'latest' %}{{ monitoring.version }}{% endif %}"
   kubernetes.core.helm:
     name: monitoring

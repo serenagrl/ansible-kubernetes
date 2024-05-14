@@ -17,11 +17,11 @@ spec:
   http:
     tlsSecret: keycloak-ingress-tls
   hostname:
-    hostname: keycloak.{{ _kube.cluster.domain }}
+    hostname: keycloak.{{ kube.cluster.domain }}
   proxy:
     headers: forwarded
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   unsupported:
     podTemplate:
       spec:

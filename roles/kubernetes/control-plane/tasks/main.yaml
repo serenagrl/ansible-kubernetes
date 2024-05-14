@@ -12,7 +12,7 @@
       - jsonpatch
 
 - name: Configure kube config
-  become_user: "{{ _kube.user }}"
+  become_user: "{{ kube.user }}"
   block:
     - name: Create .kube in home directory
       ansible.builtin.file:
@@ -24,10 +24,10 @@
       become_user: root
       ansible.builtin.copy:
         src: /etc/kubernetes/admin.conf
-        dest: "/home/{{ _kube.user }}/.kube/config"
+        dest: "/home/{{ kube.user }}/.kube/config"
         remote_src: yes
         mode: 0600
-        owner: "{{ _kube.user }}"
+        owner: "{{ kube.user }}"
 
     - name: Add autocomplete and aliases to shell
       ansible.builtin.blockinfile:
@@ -37,7 +37,7 @@
     - name: Apply changes
       ansible.builtin.shell: . ~/.bashrc
 
-- become_user: "{{ _kube.user }}"
+- become_user: "{{ kube.user }}"
   block:
     - name: Add labels to control planes
       ansible.builtin.shell: kubectl label nodes {{ ansible_hostname }} {{ item }}
@@ -45,4 +45,4 @@
 
     - name: Remove taint to allow scheduling on control plane nodes
       ansible.builtin.shell: kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/control-plane-
-      when: _kube.allow_scheduling
+      when: kube.allow_scheduling

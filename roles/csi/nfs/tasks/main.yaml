@@ -103,4 +103,4 @@
   ansible.builtin.file:
     path: "{{ REPO_DIR }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup

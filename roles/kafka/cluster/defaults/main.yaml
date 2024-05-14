@@ -1,1 +1,1 @@
-MANIFEST_FILE: "{{ _work_dir }}/kafka-persistent.yaml"
+MANIFEST_FILE: "{{ temp_dir }}/kafka-persistent.yaml"
