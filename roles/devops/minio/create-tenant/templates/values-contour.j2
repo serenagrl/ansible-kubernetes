@@ -1,10 +1,10 @@
 tenant:
-  name: {{ in_tenant_name }}
+  name: {{ minio_tenant.tenant_name }}
   pools:
     - name: pool-0
-      servers: {{ in_minio_tenant.pools.servers }}
-      volumesPerServer: {{ in_minio_tenant.pools.volumes_per_server }}
-      size: {{ in_minio_tenant.pools.size }}
+      servers: {{ minio_tenant.pools.servers }}
+      volumesPerServer: {{ minio_tenant.pools.volumes_per_server }}
+      size: {{ minio_tenant.pools.size }}
 {% if not kube.allow_scheduling %}
       tolerations:
         - effect: NoSchedule
@@ -18,16 +18,16 @@ tenant:
     requestAutoCert: false
 
   buckets:
-    {{ in_minio_tenant.buckets }}
+    {{ minio_tenant.buckets }}
 
 ingress:
   api:
     enabled: false
-    host: {{ in_domain_name }}.{{ kube.cluster.domain }}
+    host: {{ minio_tenant.domain_name }}.{{ kube.cluster.domain }}
     path: /
     pathType: Prefix
   console:
     enabled: false
-    host: {{ in_console_domain_name }}.{{ kube.cluster.domain }}
+    host: {{ minio_tenant.console_domain_name }}.{{ kube.cluster.domain }}
     path: /
     pathType: Prefix

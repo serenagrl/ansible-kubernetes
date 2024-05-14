@@ -10,8 +10,12 @@ gitlab:
     # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
     # releases with breaking changes. Try reducing the version number if errors occur during installation.
     version: latest
-    tenant_endpoint: http://gitlab-minio-hl:9000/
-    secret_name: gitlab-minio-secret
+    
+    name: gitlab
+    tenant_name: gitlab-minio
+    namespace: gitlab
+    domain_name: gitlab.minio
+    console_domain_name: console.gitlab.minio
 
     pools:
       servers: 2
@@ -33,5 +37,18 @@ gitlab:
       - name: runner-cache
       - name: tmp
 
+  # Original manifest value is 8Gi.
   postgres:
     storage_size: 8Gi
+
+  # Original manifest value is 8Gi.
+  redis:
+    master:
+      storage_size: 8Gi
+    replica:
+      storage_size: 8Gi
+
+  # Size was reduced for lab environment.
+  # Original manifest value is 50Gi.
+  gitaly:
+    storage_size: 10Gi

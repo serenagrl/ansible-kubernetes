@@ -1,16 +1,16 @@
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: {{ in_tenant_name }}-console-httpproxy
-  namespace: {{ in_namespace }}
+  name: {{ minio_tenant.tenant_name }}-console-httpproxy
+  namespace: {{ minio_tenant.namespace }}
 spec:
   virtualhost:
-    fqdn: {{ in_console_domain_name }}.{{ kube.cluster.domain }}
+    fqdn: {{ minio_tenant.console_domain_name }}.{{ kube.cluster.domain }}
     tls:
-      secretName: {{ in_tenant_name }}-ingress-tls
+      secretName: {{ minio_tenant.tenant_name }}-ingress-tls
   routes:
     - conditions:
         - prefix: /
       services:
-        - name: {{ in_tenant_name }}-console
+        - name: {{ minio_tenant.tenant_name }}-console
           port: 9090

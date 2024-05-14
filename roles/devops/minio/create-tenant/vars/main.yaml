@@ -1,0 +1,17 @@
+minio_tenant:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  version: "{{ notdefined | mandatory(msg='version is required.') }}"
+
+  name: "{{ notdefined | mandatory(msg='name is required.') }}"
+  tenant_name: "{{ notdefined | mandatory(msg='tenant_name is required.') }}"
+  namespace: "{{ notdefined | mandatory(msg='namespace is required.') }}"
+  domain_name: "{{ notdefined | mandatory(msg='domain_name is required.') }}"
+  console_domain_name: "{{ notdefined | mandatory(msg='console_domain_name is required.') }}"
+
+  pools:
+    servers: "{{ notdefined | default(2) }}"
+    volumes_per_server: "{{ notdefined | default(2) }}"
+    size: "{{ notdefined | default('10Gi') }}"
+
+  buckets: "{{ notdefined | mandatory(msg='buckets is required.') }}"

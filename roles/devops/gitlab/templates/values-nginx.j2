@@ -90,8 +90,8 @@ postgresql:
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
-  persistence:
-    size: {{ gitlab.postgres.storage_size }}
+    persistence:
+      size: {{ gitlab.postgres.storage_size }}
 
 minio:
   tolerations:
@@ -103,6 +103,8 @@ minio:
 
 redis:
   master:
+    persistence:
+      size: {{ gitlab.redis.master.storage_size }}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
@@ -111,6 +113,8 @@ redis:
       node-role.kubernetes.io/control-plane: ""
 
   replica:
+    persistence:
+      size: {{ gitlab.redis.replica.storage_size }}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
@@ -163,6 +167,8 @@ gitlab:
       node-role.kubernetes.io/control-plane: ""
 
   gitaly:
+    persistence:
+      size: {{ gitlab.gitaly.storage_size }}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane

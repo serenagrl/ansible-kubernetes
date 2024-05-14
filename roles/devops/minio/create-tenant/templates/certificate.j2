@@ -1,13 +1,13 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ in_tenant_name }}-ingress-cert
-  namespace: {{ in_namespace }}
+  name: {{ minio_tenant.tenant_name }}-ingress-cert
+  namespace: {{ minio_tenant.namespace }}
 spec:
   dnsNames:
-    - {{ in_domain_name }}.{{ kube.cluster.domain }}
-    - {{ in_console_domain_name }}.{{ kube.cluster.domain }}
+    - {{ minio_tenant.domain_name }}.{{ kube.cluster.domain }}
+    - {{ minio_tenant.console_domain_name }}.{{ kube.cluster.domain }}
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}
-  secretName: {{ in_tenant_name }}-ingress-tls
+  secretName: {{ minio_tenant.tenant_name }}-ingress-tls

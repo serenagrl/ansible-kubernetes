@@ -18,12 +18,7 @@
 
 - name: Create minio tenant for Gitlab
   vars:
-    in_name: gitlab
-    in_tenant_name: gitlab-minio
-    in_namespace: gitlab
-    in_domain_name: gitlab.minio
-    in_console_domain_name: gitlab-console.minio
-    in_minio_tenant: "{{ gitlab.external_minio }}"
+    minio_tenant: "{{ gitlab.external_minio }}"
   ansible.builtin.include_role:
     name: devops/minio/create-tenant
   when: gitlab.external_minio.enabled
@@ -57,7 +52,7 @@
         namespace: gitlab
         create_namespace: yes
         values: "{{ VALUES_FILE }}"
-        timeout: 10m0s
+        timeout: 20m0s
         wait: yes
 
     - name: Waiting for Gitlab deployments to be ready

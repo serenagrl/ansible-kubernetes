@@ -14,18 +14,15 @@
   block:
     - name: Create minio tenant for Loki
       vars:
-        in_name: loki
-        in_tenant_name: loki-minio
-        in_namespace: logging
-        in_domain_name: loki.minio
-        in_console_domain_name: console.loki.minio
-        in_minio_tenant: "{{ loki.external_minio }}"
+        minio_tenant: "{{ loki.external_minio }}"
       ansible.builtin.include_role:
         name: devops/minio/create-tenant
 
     - name: Get minio credentials
+      vars:
+        secret_name: "{{ loki.external_minio.tenant_name }}-secret"
       ansible.builtin.shell: |
-        kubectl get secret -n logging {{ loki.external_minio.secret_name }} -ojsonpath='{.data}'
+        kubectl get secret -n logging {{ secret_name }} -ojsonpath='{.data}'
       register: minio_secret
   when: loki.external_minio.enabled
 
@@ -40,6 +37,7 @@
     minio_credentials:
       accesskey: "{{ credentials.accesskey | default() | b64decode }}"
       secretkey: "{{ credentials.secretkey | default() | b64decode }}"
+    tenant_endpoint: "http://{{ loki.external_minio.tenant_name }}-hl:9000/"
     version: "{% if loki.version is defined and loki.version and loki.version != 'latest' %}{{ loki.version }}{% endif %}"
   kubernetes.core.helm:
     name: loki
