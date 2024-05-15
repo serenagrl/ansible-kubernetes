@@ -61,6 +61,7 @@
   block:
     - name: Set label
       delegate_to: localhost
+      become_user: root
       ansible.builtin.replace:
         path: "{{ SERVICE_MONITOR_FILE }}"
         regexp: "release: istio"
@@ -77,6 +78,7 @@
   block:
     - name: Configure Prometheus and Grafana
       delegate_to: localhost
+      become_user: root
       ansible.builtin.blockinfile:
         path: "{{ ADDONS_DIR }}/kiali.yaml"
         insertafter: "root_namespace: istio-system"
@@ -91,6 +93,7 @@
 
     - name: Configure to run on control-planes only
       delegate_to: localhost
+      become_user: root
       ansible.builtin.replace:
         path: "{{ ADDONS_DIR }}/{{ item }}"
         regexp: '^\s*(containers:)$'
