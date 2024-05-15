@@ -89,6 +89,7 @@
 
 - name: Install argocd cli to ansible controller
   delegate_to: localhost
+  become_user: root
   vars:
     has_version_specified: "{{ (argocd.version is defined and argocd.version and argocd.version != 'latest') | bool }}"
     release: "{{ has_version_specified | ternary('v' + argocd.version, release_tag.stdout) }}"
@@ -101,7 +102,6 @@
       when: not has_version_specified
 
     - name: Download argocd cli
-      become_user: root
       ansible.builtin.shell: |
         curl -sSL -o /usr/local/bin/argocd https://github.com/{{ repo_path }}/releases/download/{{ release }}/argocd-linux-amd64
         chmod +x /usr/local/bin/argocd
