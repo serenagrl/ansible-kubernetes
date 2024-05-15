@@ -40,16 +40,9 @@
                     template:
                       pod:
                         tolerations:
-                          - effect: NoSchedule
-                            key: node-role.kubernetes.io/control-plane
-                            operator: Exists
+                          {{ kafka.cluster.tolerations }}
                         affinity:
-                          nodeAffinity:
-                            requiredDuringSchedulingIgnoredDuringExecution:
-                              nodeSelectorTerms:
-                              - matchExpressions:
-                                - key: node-role.kubernetes.io/control-plane
-                                  operator: Exists
+                          {{ kafka.cluster.affinity }}
 
       when: not kube.allow_scheduling
 
@@ -89,5 +82,5 @@
 
 - name: Waiting for kafka cluster to be ready
   ansible.builtin.shell: |
-    kubectl wait --for=condition=Ready kafkas kafka -n kafka --timeout=300s
+    kubectl wait --for=condition=Ready kafkas {{ kafka.name }} -n {{ kafka.namespace }} --timeout=300s
     for d in $(kubectl -n {{ kafka.namespace }} get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n {{ kafka.namespace }} deployment/$d; done;

@@ -46,16 +46,9 @@
                   template:
                     pod:
                       tolerations:
-                        - effect: NoSchedule
-                          key: node-role.kubernetes.io/control-plane
-                          operator: Exists
+                        {{ kafka.bridge.tolerations }}
                       affinity:
-                        nodeAffinity:
-                          requiredDuringSchedulingIgnoredDuringExecution:
-                            nodeSelectorTerms:
-                            - matchExpressions:
-                              - key: node-role.kubernetes.io/control-plane
-                                operator: Exists
+                        {{ kafka.bridge.affinity }}
       when: not kube.allow_scheduling
 
 - name: Install kafka bridge

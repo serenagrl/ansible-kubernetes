@@ -1,0 +1,99 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Get kafka ui configmap
+  become_user: "{{ kube.user }}"
+  kubernetes.core.k8s_info:
+    name: kafka-ui-fromvalues
+    kind: ConfigMap
+    namespace: kafka
+  register: configmap_data
+
+- name: Patch kafka ui configmap
+  become_user: "{{ kube.user }}"
+  vars:
+    config_yaml: "{{ configmap_data.resources[0].data['config.yml'] | from_yaml }}"
+    updated_yaml: "{{ config_yaml | combine(updated_data, list_merge='replace', recursive=true) }}"
+    new_clusters:
+      - bootstrapServers: '{{ kafka.name }}-kafka-brokers.{{ kafka.namespace }}.svc.cluster.local:9092'
+        name: '{{ kafka.name }}'
+    updated_data:
+      kafka:
+        clusters: "{{ (config_yaml.kafka.clusters | rejectattr('name', 'equalto', new_clusters[0].name)) + new_clusters }}"
+  kubernetes.core.k8s:
+    kind: ConfigMap
+    name: kafka-ui-fromvalues
+    namespace: kafka
+    apply: yes
+    force: yes
+    state: patched
+    definition:
+      data:
+        config.yml: |-
+          {{ updated_yaml | to_nice_yaml(sort_keys=false, indent=2) }}
+
+# - name: Get kafka ui configmap
+#   become_user: "{{ kube.user }}"
+#   kubernetes.core.k8s_info:
+#     name: kafka-ui-fromvalues
+#     kind: ConfigMap
+#     namespace: kafka
+#   register: config_data
+
+# - name: Retrieve kafka ui config
+#   delegate_to: localhost
+#   become_user: root
+#   block:
+#     - name: Export kafka ui configmap
+#       copy:
+#         content: "{{ config_data.resources.0.data['config.yml'] }}"
+#         dest: "{{ TEMP_CONFIG_FILE }}"
+
+#     - name: Get kafka ui config file
+#       slurp:
+#         src: "{{ TEMP_CONFIG_FILE }}"
+#       register: kafka_ui_config_file
+
+# - name: Update kafka ui config
+#   vars:
+#     config: "{{ kafka_ui_config_file['content'] | b64decode }}"
+#     regex: '^\s*(kafka:*\n(.+\n)*?)^\s*(clusters:*\n(.+\n)*?)^\s*(name: {{ kafka.name }}\n)'
+#     is_exist: "{{ config | regex_search(regex, multiline=True) }}"
+#   block:
+#     - name: Add bootstrap server entry
+#       delegate_to: localhost
+#       become_user: root
+#       ansible.builtin.replace:
+#         path: "{{ TEMP_CONFIG_FILE }}"
+#         regexp: '^\s*(kafka:*\n(.+\n)*?)^\s*(clusters:\n)'
+#         replace: |8-
+#                 \1  \3  - bootstrapServers: {{ kafka.name }}-kafka-brokers.{{ kafka.namespace }}.svc.cluster.local:9092\n    name: {{ kafka.name }}\n
+
+#     - name: Patch kafka ui configmap
+#       become_user: "{{ kube.user }}"
+#       kubernetes.core.k8s:
+#         kind: ConfigMap
+#         name: kafka-ui-fromvalues
+#         namespace: kafka
+#         apply: yes
+#         force: yes
+#         state: patched
+#         definition:
+#           data:
+#             config.yml: |-
+#               {{ lookup('file', TEMP_CONFIG_FILE) }}
+
+#     - name: Cleanup files
+#       delegate_to: localhost
+#       become_user: root
+#       file:
+#         path: "{{ TEMP_CONFIG_FILE }}"
+#         state: absent
+
+#     - name: Restart kafka ui
+#       shell: kubectl rollout restart deployment -n kafka kafka-ui
+#   when: not is_exist

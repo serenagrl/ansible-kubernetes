@@ -1,8 +1,8 @@
 yamlApplicationConfig:
   kafka:
     clusters:
-      - name: kafka
-        bootstrapServers: kafka-kafka-brokers:9092
+      - name: {{ kafka.name }}
+        bootstrapServers: {{ kafka.name }}-kafka-brokers.{{ kafka.namespace }}.svc.cluster.local:9092
 
   spring:
     security:
