@@ -7,6 +7,7 @@
 #
 - name: Install knative cli to ansible controller
   delegate_to: localhost
+  become_user: root
   vars:
     repo_path: knative/client
   block:
