@@ -59,6 +59,7 @@
 
     - name: Cleanup manifest files
       delegate_to: localhost
+      become_user: root
       ansible.builtin.file:
         path: "{{ MANIFEST_DIR }}"
         state: absent
