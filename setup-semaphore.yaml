@@ -13,3 +13,10 @@
       when: provision_vm
 
     - role: semaphore/vm
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+  post_tasks:
+    - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "Semaphore configured."
+      when: vm_checkpoint
