@@ -1,0 +1,61 @@
+- delegate_to: "{{ item }}"
+  vars:
+    hostname: "{{ hostvars[item].ansible_hostname }}"
+  block:
+    - name: Check for existing Virtual Hard Disks
+      ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
+      vars:
+        # parameter hostname flowing in
+        win_folder: "{{ longhorn.disk.vm_folder }}"
+        disk_name: "{{ longhorn.disk.name }}"
+
+    # IMPORTANT! You need to remove the disks manually if you wish to rerun this.
+    - name: Create Hyper-V virtual disks and attach them to nodes
+      delegate_to: "{{ hostvars[item].winrm_host }}"
+      vars:
+        vhd_disk: "{{ longhorn.disk.vm_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ longhorn.disk.name }}.vhdx"
+      ansible.windows.win_powershell:
+        script: |
+          New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ longhorn.disk.size }} -Dynamic
+          Add-VMHardDiskDrive {{ hostname }} -Path "{{ vhd_disk }}"
+        creates: "{{ vhd_disk }}"
+
+    - name: Prepare external disk
+      become_user: root
+      vars:
+        device: "{{ (disks_result | community.general.json_query('files[*].path')).0 }}"
+      block:
+        - name: Get all devices
+          find:
+            paths: /dev
+            patterns: "sd[a-z]"
+            file_type: any
+          register: disks_result
+
+        - name: Partition and format {{ device }}
+          shell: |
+            (echo n; echo p; echo 1; echo ''; echo ''; echo 'w';) | sudo fdisk {{ device }}
+            mkfs -t ext4 {{ device }}1
+
+        - name: Mount {{ device }} to {{ longhorn.disk.mount_point }}
+          shell: |
+            sudo mkdir -p {{ longhorn.disk.mount_point }}
+            sudo mount {{ device }}1 {{ longhorn.disk.mount_point }}
+
+    - name: Add disk to longhorn node
+      kubernetes.core.k8s:
+        api_version: longhorn.io/v1beta2
+        kind: Node
+        name: "{{ hostname }}"
+        namespace: longhorn-system
+        state: patched
+        definition: |
+          spec:
+            disks:
+              {{ longhorn.disk.name }}:
+                allowScheduling: true
+                diskType: filesystem
+                evictionRequested: false
+                path: {{ longhorn.disk.mount_point }}
+                storageReserved: 0
+                tags: {{ longhorn.disk.tags }}

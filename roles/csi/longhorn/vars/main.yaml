@@ -8,3 +8,14 @@ longhorn:
 
   # Create Prometheus ServiceMonitor to scrap metrics (Requires prometheus to be installed)
   prometheus: no
+
+  disk:
+    create: yes
+    vm_folder: "F:\\Virtual Machines\\Kubernetes"
+    name: cluster-storage-1
+    size: 256GB
+    mount_point: /data-1
+    tags:
+      - ssd
+      - external
+      - virtual-disk

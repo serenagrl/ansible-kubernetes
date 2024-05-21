@@ -47,3 +47,10 @@
   ansible.builtin.shell: |
     for d in $(kubectl -n longhorn-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n longhorn-system deployment/$d; done;
     for d in $(kubectl -n longhorn-system get daemonset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n longhorn-system daemonset/$d; done;
+
+- name: Create external disk storage
+  vars:
+    hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
+  ansible.builtin.include_tasks: create-disk.yaml
+  loop: "{{ q('inventory_hostnames', hostnames) }}"
+  when: longhorn.disk.create
