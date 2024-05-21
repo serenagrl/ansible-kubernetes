@@ -5,11 +5,11 @@
     backslash: '\'
     linux_dir: "{{ is_local | default(true) | ternary('/mnt/' + (win_folder[0] | lower) + (win_folder[2:] | replace( backslash, '/')),
                                                       '/mnt/' + hostvars[winrm_host]['ansible_host'] + '/' + (win_folder[3:] | replace( backslash, '/'))) }}"
-    vhd_disk: "{{ win_folder }}\\{{ host_name }}\\Virtual Hard Disks\\{{ disk_name }}.vhdx"
+    vhd_disk: "{{ win_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ disk_name }}.vhdx"
   block:
     - name: Checking for existing vhdx file on hosts
       ansible.builtin.find:
-        paths: "{{ linux_dir }}/{{ host_name }}/Virtual Hard Disks/"
+        paths: "{{ linux_dir }}/{{ hostname }}/Virtual Hard Disks/"
         patterns: "{{ disk_name }}.vhdx"
       register: file_exist
 

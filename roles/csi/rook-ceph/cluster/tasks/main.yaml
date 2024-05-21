@@ -10,7 +10,7 @@
   ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
   vars:
     win_folder: "{{ rook_ceph.cluster.disk.vm_folder }}"
-    host_name: "{{ hostvars[item].ansible_hostname }}"
+    hostname: "{{ hostvars[item].ansible_hostname }}"
     disk_name: "{{ rook_ceph.cluster.disk.name }}"
     hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
   loop: "{{ q('inventory_hostnames', hostnames) }}"

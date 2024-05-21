@@ -59,7 +59,7 @@
       vars:
         is_local: "{{ vm.local }}"
         win_folder: "{{ vm.vm_folder }}"
-        host_name: "{{ ansible_hostname }}"
+        hostname: "{{ ansible_hostname }}"
         disk_name: "{{ ansible_hostname }}"
 
     - name: Remove previous metadata directory (if any)
