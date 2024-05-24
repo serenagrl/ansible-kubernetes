@@ -1,3 +1,10 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
 - delegate_to: "{{ item }}"
   vars:
     hostname: "{{ hostvars[item].ansible_hostname }}"
@@ -6,17 +13,17 @@
       ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
       vars:
         # parameter hostname flowing in
-        win_folder: "{{ longhorn.disk.vm_folder }}"
-        disk_name: "{{ longhorn.disk.name }}"
+        win_folder: "{{ virtual_disk.vm_folder }}"
+        disk_name: "{{ virtual_disk.name }}"
 
     # IMPORTANT! You need to remove the disks manually if you wish to rerun this.
     - name: Create Hyper-V virtual disks and attach them to nodes
       delegate_to: "{{ hostvars[item].winrm_host }}"
       vars:
-        vhd_disk: "{{ longhorn.disk.vm_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ longhorn.disk.name }}.vhdx"
+        vhd_disk: "{{ virtual_disk.vm_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ virtual_disk.name }}.vhdx"
       ansible.windows.win_powershell:
         script: |
-          New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ longhorn.disk.size }} -Dynamic
+          New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ virtual_disk.size }} -Dynamic
           Add-VMHardDiskDrive {{ hostname }} -Path "{{ vhd_disk }}"
         creates: "{{ vhd_disk }}"
 
@@ -37,10 +44,17 @@
             (echo n; echo p; echo 1; echo ''; echo ''; echo 'w';) | sudo fdisk {{ device }}
             mkfs -t ext4 {{ device }}1
 
-        - name: Mount {{ device }} to {{ longhorn.disk.mount_point }}
-          shell: |
-            sudo mkdir -p {{ longhorn.disk.mount_point }}
-            sudo mount {{ device }}1 {{ longhorn.disk.mount_point }}
+        - name: Create mount point
+          ansible.builtin.file:
+            path: "{{ virtual_disk.mount_point }}"
+            state: directory
+
+        - name: Mount {{ device }} to {{ virtual_disk.mount_point }}
+          ansible.posix.mount:
+            path: "{{ virtual_disk.mount_point }}"
+            src: "{{ device }}1"
+            fstype: ext4
+            state: mounted
 
     - name: Add disk to longhorn node
       kubernetes.core.k8s:
@@ -52,10 +66,10 @@
         definition: |
           spec:
             disks:
-              {{ longhorn.disk.name }}:
+              {{ virtual_disk.name }}:
                 allowScheduling: true
                 diskType: filesystem
                 evictionRequested: false
-                path: {{ longhorn.disk.mount_point }}
+                path: {{ virtual_disk.mount_point }}
                 storageReserved: 0
-                tags: {{ longhorn.disk.tags }}
+                tags: {{ virtual_disk.tags }}
