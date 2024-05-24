@@ -136,6 +136,9 @@ query:
 
 spark:
   enabled: true
+  image:
+    # Default repository jaegertracing/spark-dependencies does not work with ElasticSearch version > 7.x
+    repository: ghcr.io/jaegertracing/spark-dependencies/spark-dependencies:latest
 {% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
