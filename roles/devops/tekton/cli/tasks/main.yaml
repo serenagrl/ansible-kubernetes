@@ -5,24 +5,15 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Install tekton cli to ansible controller host
+- name: Install tekton cli
   delegate_to: localhost
+  delegate_facts: yes
   become_user: root
   block:
-    - name: Get tektoncd cli key
-      ansible.builtin.shell: gpg --no-default-keyring --keyring /etc/apt/keyrings/tektoncd.gpg --keyserver keyserver.ubuntu.com --recv-keys 3EFE0E0A2F2F60AA
+    - name: Gathering facts for ansible controller host
+      ansible.builtin.setup:
+        filter:
+          - ansible_distribution
 
-    - name: Register tektoncd cli repository
-      ansible.builtin.apt_repository:
-        filename: tektoncd-cli
-        repo: "deb [signed-by=/etc/apt/keyrings/tektoncd.gpg] http://ppa.launchpad.net/tektoncd/cli/ubuntu eoan main"
-        update_cache: yes
-
-    - name: Installing tektoncd cli
-      vars:
-        release: "{% if tektoncd.cli.version is defined and tektoncd.cli.version and tektoncd.cli.version != 'latest' %}={{ tektoncd.cli.version }}-2{% endif %}"
-      ansible.builtin.apt:
-        pkg:
-          - tektoncd-cli
-        state: latest
-        update_cache: yes
+    - name: Install tekton cli
+      ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-cli.yaml"
