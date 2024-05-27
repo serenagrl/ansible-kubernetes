@@ -1,0 +1,15 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check if kubectl is installed
+  ansible.builtin.shell: apt list kubectl
+  register: kubectl_result
+
+- name: Install rook-ceph plug-in and pre-requisites
+  ansible.builtin.include_tasks: install-plugin.yaml
+  when: (kubectl_result.stdout_lines | select('search', 'installed') | length > 0) | bool 

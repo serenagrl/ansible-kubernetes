@@ -104,57 +104,16 @@
         definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
   when: HAS_PROMETHEUS
 
-- name: Install kubectl rook-ceph krew plugin on ansible controller host
+- name: Install rook-ceph plugin
   delegate_to: localhost
+  delegate_facts: yes
   become_user: root
-  vars:
-    release: "{{ release_tag.stdout }}"
-    cli_dir: "{{ temp_dir }}/krew"
   block:
-    - name: Check if kubectl is installed
-      ansible.builtin.shell: apt list kubectl
-      register: kubectl_result
+    - name: Gathering facts for ansible controller host
+      ansible.builtin.setup:
+        filter:
+          - ansible_distribution
 
-    - name: Install kubectl krew plugin
-      vars:
-        kubectl_installed: "{{ (kubectl_result.stdout_lines | select('search', 'installed') | length > 0) | bool }}"
-      block:
-        - name: Get latest krew version
-          ansible.builtin.shell: |
-            curl -s https://api.github.com/repos/kubernetes-sigs/krew/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
-          register: release_tag
-
-        - name: Create krew directory
-          file:
-            path: "{{ cli_dir }}"
-            state: directory
-
-        - name: Downloading and extracting krew
-          ansible.builtin.unarchive:
-            src: "https://github.com/kubernetes-sigs/krew/releases/download/v{{ release }}/krew-linux_amd64.tar.gz"
-            dest: "{{ cli_dir }}"
-            remote_src: yes
-
-        - name: Install krew
-          ansible.builtin.shell: |
-              {{ cli_dir }}/krew-linux_amd64 install krew
-
-        - name: Add krew bin folder to PATH
-          ansible.builtin.blockinfile:
-            path: /root/.bashrc
-            marker: "# {mark} krew PATH"
-            block: 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
-
-        - name: Cleanup files
-          ansible.builtin.file:
-            path: "{{ cli_dir }}"
-            state: absent
-          when: auto_cleanup
-
-        - name: Install rook ceph plugin
-          ansible.builtin.shell: |
-            export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
-            kubectl krew install rook-ceph
-
-      when: kubectl_installed
-  when: rook_ceph.install_kubectl_plugin
+    - name: Install rook-ceph plugin
+      ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/check-kubectl.yaml"
+      when: rook_ceph.install_kubectl_plugin

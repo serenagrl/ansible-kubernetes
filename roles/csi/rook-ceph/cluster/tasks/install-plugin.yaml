@@ -1,0 +1,49 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install kubectl rook-ceph krew plugin on ansible controller host
+  vars:
+    release: "{{ release_tag.stdout }}"
+    cli_dir: "{{ temp_dir }}/krew"
+  block:
+    - name: Get latest krew version
+      ansible.builtin.shell: |
+        curl -s https://api.github.com/repos/kubernetes-sigs/krew/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
+      register: release_tag
+
+    - name: Create krew directory
+      file:
+        path: "{{ cli_dir }}"
+        state: directory
+
+    - name: Downloading and extracting krew
+      ansible.builtin.unarchive:
+        src: "https://github.com/kubernetes-sigs/krew/releases/download/v{{ release }}/krew-linux_amd64.tar.gz"
+        dest: "{{ cli_dir }}"
+        remote_src: yes
+
+    - name: Install krew
+      ansible.builtin.shell: |
+          {{ cli_dir }}/krew-linux_amd64 install krew
+
+    - name: Add krew bin folder to PATH
+      ansible.builtin.blockinfile:
+        path: /root/.bashrc
+        marker: "# {mark} krew PATH"
+        block: 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
+
+    - name: Cleanup files
+      ansible.builtin.file:
+        path: "{{ cli_dir }}"
+        state: absent
+      when: auto_cleanup
+
+    - name: Install rook ceph plugin
+      ansible.builtin.shell: |
+        export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+        kubectl krew install rook-ceph
