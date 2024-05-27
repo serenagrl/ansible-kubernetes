@@ -77,18 +77,19 @@
 
 - name: Install strimzi kafka cli and pre-requisites on Ansible host
   delegate_to: localhost
+  delegate_facts: yes
   become_user: root
   block:
-    - name: Installing dependency packages (may take a while)
-      ansible.builtin.apt:
-        pkg:
-          - python3-pip
-        state: latest
-        update_cache: yes
+    - name: Gathering facts for ansible controller host
+      ansible.builtin.setup:
+        filter:
+          - ansible_distribution
+
+    - name: Install strimzi kafka cli and pre-requisites on Ansible host
+      ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-cli.yaml"
+      when: strimzi.cli.install
 
     - name: Installing strimzi kafka cli on Ansible host
       ansible.builtin.pip:
         name: strimzi-kafka-cli
         version: "{{ strimzi.cli.version }}"
-
-  when: strimzi.cli.install
