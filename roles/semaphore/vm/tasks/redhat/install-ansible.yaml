@@ -9,5 +9,44 @@
   ansible.builtin.dnf:
     pkg:
       - ansible-core
+      - python3-pip
     state: latest
     update_cache: yes
+
+- name: Installing pywinrm on Ansible host
+  ansible.builtin.pip:
+    name: pywinrm
+
+- name: Installing jmespath on Ansible host
+  ansible.builtin.pip:
+    name: jmespath
+
+- name: Install ansible.windows Ansible galaxy collection
+  community.general.ansible_galaxy_install:
+    type: collection
+    name: ansible.windows
+    dest: /usr/share/ansible/collections
+
+- name: Install kubernetes.core Ansible galaxy collection
+  community.general.ansible_galaxy_install:
+    type: collection
+    name: kubernetes.core
+    dest: /usr/share/ansible/collections
+
+- name: Install ansible.posix Ansible galaxy collection
+  community.general.ansible_galaxy_install:
+    type: collection
+    name: ansible.posix
+    dest: /usr/share/ansible/collections
+
+- name: Install community.general Ansible galaxy collection
+  community.general.ansible_galaxy_install:
+    type: collection
+    name: community.general
+    dest: /usr/share/ansible/collections
+
+- name: Install community.grafana Ansible galaxy collection
+  community.general.ansible_galaxy_install:
+    type: collection
+    name: community.grafana
+    dest: /usr/share/ansible/collections

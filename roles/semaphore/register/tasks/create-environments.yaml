@@ -2,20 +2,44 @@
   vars:
     environment_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/environment"
   block:
+    - name: Search default empty environment
+      ansible.builtin.uri:
+        url: "{{ environment_url }}?sort=db-deploy&order=desc" # Default value from https://www.semui.co/api-docs
+        method: GET
+        return_content: true
+        headers: 
+          Content-Type: application/json
+          Accept: application/json
+          Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
+        status_code: 200
+      register: existing_environment
+
+    - name: Delete default empty environment
+      ansible.builtin.uri:
+        url: "{{ environment_url }}/{{ item.id }}"
+        method: DELETE
+        headers: 
+          Content-Type: application/json
+          Accept: application/json
+          Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
+        status_code: 204 # Environment Removed 
+      loop: "{{ existing_environment.json }}"
+    
     - name: Read role variable files
       ansible.builtin.slurp:
         src: "{{ item }}"
       register: var_files
       loop:
-        - "{{ local_repo_dir }}/group_vars/all.yaml"
-        - "{{ local_repo_dir }}/roles/vm-ubuntu/setup-vm/vars/main.yaml"
+        - "{{ local_repo_dir }}/setup-add-ons.yaml"
+        - "{{ local_repo_dir }}/roles/vm-linux/setup-vm/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/infrastructure/haproxy/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/nfs/server/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/metallb/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/cert-manager/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/ingress/nginx/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/csi/nfs/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/csi/rook-ceph/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/csi/rook-ceph/operator/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/csi/rook-ceph/cluster/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/rabbitmq/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/rabbitmq/operator/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/rabbitmq/topology/vars/main.yaml"
@@ -33,8 +57,12 @@
         - "{{ local_repo_dir }}/roles/velero/storage-location/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/database/mssql/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/semaphore/register/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/awx/operator/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/awx/register/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/kafka/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/bridge/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/cluster/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kafka/connect/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/kafka/common/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/kafka/strimzi/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/kafka/ui/vars/main.yaml"
@@ -44,33 +72,44 @@
         - "{{ local_repo_dir }}/roles/knative/eventing/controller/rabbitmq/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/knative/eventing/controller/kafka/vars/main.yaml"
         - "{{ local_repo_dir }}/roles/knative/cli/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/logging/elastic-operator/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/logging/elasticsearch/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/logging/kibana/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/logging/fluentd/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/goldilocks/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/keycloak/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/tracing/jaeger/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/tracing/open-telemetry/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/logging/loki/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/tekton/cli/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/tekton/dashboard/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/tekton/pipelines/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/devops/tekton/triggers/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/csi/longhorn/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kubernetes/cluster-node/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kubernetes/control-plane/vars/main.yaml"
+        - "{{ local_repo_dir }}/roles/kubernetes/worker-node/vars/main.yaml"
 
     - name: Create default environments
       vars:
         name_prefix: "{{ semaphore.project.hostname_prefix | default('k8s') }}"
 
-        settings:
-          kube:
-            add_ons: []
-
         add_on_vars:
-          kube:
             add_ons: "{{ item.content }}"
 
-        all_vars: "{{ var_files | community.general.json_query('results[?contains(source, `group_vars/all`)].content') | b64decode |
-                      regex_replace('(?<=name: )(.*)(?=-cluster)', name_prefix, multiline=true) | from_yaml }}"
+        all_vars:
 
         vm_ubuntu_presets:
           vm:
             local: no
 
         # infrastructure
-        vm_ubuntu_vars: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(vm_ubuntu_presets, recursive=true) | combine(settings, recursive=true) }}"
+        vm_ubuntu_vars: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(vm_ubuntu_presets, recursive=true) }}"
         haproxy_vars: "{{ var_files | community.general.json_query('results[?contains(source, `haproxy/vars`)].content') | b64decode | from_yaml }}"
         nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `nfs/server/vars`)].content') | b64decode | from_yaml }}"
         infra_vars: "{{ vm_ubuntu_vars | combine(haproxy_vars, recursive=true) | combine(nfs_vars, recursive=true) }}"
 
-        k8s_cluster_vars:
+        k8s_default_add_ons_vars:
           - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }
           - { name: cert-manager, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/cert-manager/vars`)].content') | b64decode | from_yaml }}" }
           - { name: ingress, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/ingress/nginx/vars`)].content') | b64decode | from_yaml }}" }
@@ -79,6 +118,11 @@
           - { name: metrics-server }
           - { name: csi/nfs, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}" }
 
+        k8s_cluster_node_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/cluster-node/vars`)].content') | b64decode | from_yaml }}"
+        k8s_control_plane_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/control-plane/vars`)].content') | b64decode | from_yaml }}"
+        k8s_worker_node_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/worker-node/vars`)].content') | b64decode | from_yaml }}"
+        k8s_cluster_vars: "{{ k8s_cluster_node_vars | combine(k8s_control_plane_vars, recursive=true)
+                                                    | combine(k8s_worker_node_vars, recursive=true) }}"
 
         rabbitmq_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
         rabbitmq_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/operator/vars`)].content') | b64decode | from_yaml }}"
@@ -93,7 +137,6 @@
           - { name: redis, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/redis/vars`)].content') | b64decode | from_yaml }}" }
 
         gitlab_vars:
-          - { name: devops/minio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/minio/vars`)].content') | b64decode | from_yaml }}" }
           - { name: devops/gitlab, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab/vars`)].content') | b64decode | from_yaml }}" }
           - { name: devops/gitlab-runner, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab-runner/vars`)].content') | b64decode | from_yaml }}" }
 
@@ -114,24 +157,35 @@
 
         semaphore_reg_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml }}"
 
-        logging_vars:
-          - { name: logging/elastic-stack }
-          - { name: logging/fluentd }
+        elastic_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/elastic-operator/vars`)].content') | b64decode | from_yaml }}"
+        elasticsearch_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/elasticsearch/vars`)].content') | b64decode | from_yaml }}"
+        kibana_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/kibana/vars`)].content') | b64decode | from_yaml }}"
+        elastic_stack_vars:
+          - { name: logging/elastic-stack, vars: "{{ elastic_operator_vars | combine(elasticsearch_vars, recursive=true)
+                                                                           | combine(kibana_vars, recursive=true) }}" }
+
+        fluentd_vars:
+          - { name: logging/fluentd, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/fluentd/vars`)].content') | b64decode | from_yaml }}" }
 
         istio_vars:
           - { name: istio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/istio/vars`)].content') | b64decode | from_yaml }}" }
 
+        rook_ceph_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/operator/vars`)].content') | b64decode | from_yaml }}"
+        rook_ceph_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/cluster/vars`)].content') | b64decode | from_yaml }}"
         rook_ceph_vars:
-          - { name: csi/rook-ceph, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: csi/rook-ceph, vars: "{{ rook_ceph_operator_vars | combine(rook_ceph_cluster_vars, recursive=true) }}" }
 
         mssql_vars:
           - { name: database/mssql, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/mssql/vars`)].content') | b64decode | from_yaml }}" }
 
         awx_reg_vars:
-          - { name: awx/operator }
+          - { name: awx/operator, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/operator/vars`)].content') | b64decode | from_yaml }}" }
           - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }
 
         kafka_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/vars`)].content') | b64decode | from_yaml }}"
+        kafka_bridge_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/bridge/vars`)].content') | b64decode | from_yaml }}"
+        kafka_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/cluster/vars`)].content') | b64decode | from_yaml }}"
+        kafka_connect_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/connect/vars`)].content') | b64decode | from_yaml }}"
         kafka_common_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/common/vars`)].content') | b64decode | from_yaml }}"
         kafka_strimzi_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/strimzi/vars`)].content') | b64decode | from_yaml }}"
         kafka_ui_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/ui/vars`)].content') | b64decode | from_yaml }}"
@@ -153,6 +207,34 @@
                                                              | combine(knative_eventing_kafka_vars, recursive=true)
                                                              | combine(knative_cli_vars, recursive=true) }}" }
 
+        goldilocks_vars:
+          - { name: goldilocks, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/goldilocks/vars`)].content') | b64decode | from_yaml }}" }
+
+        keycloak_vars:
+          - { name: keycloak, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/keycloak/vars`)].content') | b64decode | from_yaml }}" }
+
+        tracing_vars:
+          - { name: tracing/jaeger, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tracing/jaeger/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: tracing/open-telemetry, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tracing/open-telemetry/vars`)].content') | b64decode | from_yaml }}" }
+
+        loki_vars:
+          - { name: logging/loki, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/loki/vars`)].content') | b64decode | from_yaml }}" }
+
+        tekton_pipelines_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/pipelines/vars`)].content') | b64decode | from_yaml }}"
+        tekton_triggers_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/triggers/vars`)].content') | b64decode | from_yaml }}"
+        tekton_dashboard_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/dashboard/vars`)].content') | b64decode | from_yaml }}"
+        tekton_cli_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/cli/vars`)].content') | b64decode | from_yaml }}"
+        tekton_vars:
+          - { name: devops/tekton, vars: "{{ tekton_pipelines_vars | combine(tekton_triggers_vars, recursive=true)
+                                                             | combine(tekton_dashboard_vars, recursive=true)
+                                                             | combine(tekton_cli_vars, recursive=true) }}" }
+
+        minio_vars:
+          - { name: devops/minio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/minio/vars`)].content') | b64decode | from_yaml }}" }
+
+        longhorn_vars:
+          - { name: csi/longhorn, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/longhorn/vars`)].content') | b64decode | from_yaml }}" }
+
       ansible.builtin.uri:
         url: "{{ environment_url }}"
         method: POST
@@ -172,7 +254,8 @@
       when: item.create
       loop:
         - { name: "Default Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no, need_all: yes }
-        - { name: "Default Setup Kubernetes", create: yes, content: "{{ k8s_cluster_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Setup Kubernetes Cluster", create: yes, content: "{{ k8s_cluster_vars }}", is_add_on: no, need_all: yes }
+        - { name: "Default Setup Kubernetes Default Add-Ons", create: yes, content: "{{ k8s_default_add_ons_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", content: "{{ semaphore_reg_vars }}", is_add_on: no, need_all: no }
         - { name: "Default Component - Gitlab", create: "{{ semaphore.project.create.component_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - Sonarqube", create: "{{ semaphore.project.create.component_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes, need_all: yes }
@@ -181,13 +264,21 @@
         - { name: "Default Component - RabbitMQ", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rabbitmq_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - Redis", create: "{{ semaphore.project.create.component_environments }}", content: "{{ redis_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - Velero", create: "{{ semaphore.project.create.component_environments }}", content: "{{ velero_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Logging", create: "{{ semaphore.project.create.component_environments }}", content: "{{ logging_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Elastic Stack", create: "{{ semaphore.project.create.component_environments }}", content: "{{ elastic_stack_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Logging (Fluentd)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ fluentd_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - Istio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ istio_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - Rook-Ceph", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - Kafka", create: "{{ semaphore.project.create.component_environments }}", content: "{{ kafka_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - Knative", create: "{{ semaphore.project.create.component_environments }}", content: "{{ knative_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Goldilocks", create: "{{ semaphore.project.create.component_environments }}", content: "{{ goldilocks_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Keycloak", create: "{{ semaphore.project.create.component_environments }}", content: "{{ keycloak_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Tracing", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tracing_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Logging (Loki)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ loki_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Tekton", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tekton_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Minio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ minio_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Component - Longhorn", create: "{{ semaphore.project.create.component_environments }}", content: "{{ longhorn_vars }}", is_add_on: yes, need_all: yes }
 
     - name: Query all environment records
       ansible.builtin.uri:
