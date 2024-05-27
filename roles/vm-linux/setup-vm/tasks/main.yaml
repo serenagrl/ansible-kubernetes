@@ -4,23 +4,26 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
 - name: Create Hyper-V Virtual Machines
   delegate_to: localhost
+  delegate_facts: yes
+  become_user: root
   run_once: yes
   block:
+    - name: Gathering facts for ansible controller host
+      ansible.builtin.setup:
+        filter:
+          - ansible_distribution
+
     - name: Create working directory
       ansible.builtin.file:
         path: "{{ temp_dir }}"
         state: directory
 
-    - name: Installing iso and image tools
-      ansible.builtin.apt:
-        pkg:
-          - cifs-utils
-          - qemu-utils
-          - genisoimage
-        state: latest
-        update_cache: yes
+    # Installing dependencies on ansible controller host.
+    - name: Installing dependencies
+      ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-dependencies.yaml"
 
     - name: Get base VMs for {{ vm.os }}
       ansible.builtin.include_tasks: "{{ vm.os }}/get-image.yaml"

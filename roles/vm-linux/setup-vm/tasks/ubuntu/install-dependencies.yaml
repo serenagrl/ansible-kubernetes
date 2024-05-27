@@ -1,0 +1,15 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Installing iso and image tools
+  ansible.builtin.apt:
+    pkg:
+      - cifs-utils
+      - qemu-utils
+      - genisoimage
+    state: latest
+    update_cache: yes
