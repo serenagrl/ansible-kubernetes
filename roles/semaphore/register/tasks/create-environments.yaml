@@ -255,7 +255,7 @@
       loop:
         - { name: "Default Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no, need_all: yes }
         - { name: "Default Setup Kubernetes Cluster", create: yes, content: "{{ k8s_cluster_vars }}", is_add_on: no, need_all: yes }
-        - { name: "Default Setup Kubernetes Default Add-Ons", create: yes, content: "{{ k8s_default_add_ons_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Default Setup Kubernetes Add-Ons", create: yes, content: "{{ k8s_default_add_ons_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", content: "{{ semaphore_reg_vars }}", is_add_on: no, need_all: no }
         - { name: "Default Component - Gitlab", create: "{{ semaphore.project.create.component_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Default Component - Sonarqube", create: "{{ semaphore.project.create.component_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes, need_all: yes }

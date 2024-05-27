@@ -44,7 +44,7 @@
         playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Join worker nodes into the kubernetes cluster." }
     - { name: "8. Setup NFS Server", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
-    - { name: "9. Setup Basic Components", env_name: "Default Setup Kubernetes Default Add-Ons", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "9. Setup Basic Components", env_name: "Default Setup Kubernetes Add-Ons", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs basic kubernetes components." }
     - { name: "Setup Infrastructure", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_INFRASTRUCTURE }}", desc: "Setup an infrastructure containing both BIND DNS and HAProxy." }

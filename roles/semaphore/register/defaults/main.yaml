@@ -1,4 +1,4 @@
-SEMAPHORE_URL: http://localhost:3000/api
+SEMAPHORE_URL: http://localhost/api
 SEMAPHORE_ACCESS_TOKEN: "{{ token_response.json.id }}"
 SEMAPHORE_PROJECT_ID: "{{ project_response.json.id }}"
 SEMAPHORE_KEY_ID: "{{ key_response.json.0.id }}"
