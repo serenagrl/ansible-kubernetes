@@ -1,5 +1,19 @@
+global:
 {% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
 defaultSettings:
+{% if longhorn.minio.enabled %}
+  backupTarget: s3://{{ longhorn.minio.bucket_name }}@us-east-1/
+  backupTargetCredentialSecret: minio-secret
+{% endif %}
+{% if not kube.allow_scheduling %}
   taintToleration: node-role.kubernetes.io/control-plane=:NoSchedule
 {% endif %}
 

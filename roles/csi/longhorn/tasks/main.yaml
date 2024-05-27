@@ -48,6 +48,11 @@
     for d in $(kubectl -n longhorn-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n longhorn-system deployment/$d; done;
     for d in $(kubectl -n longhorn-system get daemonset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n longhorn-system daemonset/$d; done;
 
+- name: Configure local minio backupstore
+  kubernetes.core.k8s:
+    definition: "{{ SECRET_TEMPLATE }}"
+  when: longhorn.minio.enabled
+
 - name: Create external virtual disk storage
   vars:
     virtual_disk: "{{ longhorn.disk }}"

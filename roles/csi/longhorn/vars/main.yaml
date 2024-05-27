@@ -9,6 +9,7 @@ longhorn:
   # Create Prometheus ServiceMonitor to scrap metrics (Requires prometheus to be installed)
   prometheus: no
 
+  # External Virtual Hardisk mounted to the nodes.
   disk:
     create: yes
     vm_folder: "F:\\Virtual Machines\\Kubernetes"
@@ -19,3 +20,11 @@ longhorn:
       - ssd
       - external
       - virtual-disk
+
+  # External minio for storing backups (and testing).
+  minio:
+    enabled: yes
+    endpoint: http://<minio-server-url>:9000
+    access_key_id: <minio-access-key-id>
+    secret_access_key: <minio-secret-access-key>
+    bucket_name: backupbucket
