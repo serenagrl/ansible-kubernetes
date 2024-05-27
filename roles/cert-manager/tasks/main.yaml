@@ -93,6 +93,20 @@
 
     - name: Configure kubernetes nodes to trust ca certificate
       ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/trust-cert.yaml"
-      loop: "{{ fact_active_hosts + ['localhost'] }}"
+      loop: "{{ fact_active_hosts }}"
+
+    - name: Configure ansible controller host to trust ca certificate
+      delegate_to: localhost
+      delegate_facts: yes
+      become_user: root
+      block:
+        - name: Gathering facts for ansible controller host
+          ansible.builtin.setup:
+            filter:
+              - ansible_distribution
+
+        - name: Configure ansible controller host to trust ca certificate
+          ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/trust-cert.yaml"
+          loop: "{{ ['localhost'] }}"
 
   when: cert_mgr.self_signed_ca
