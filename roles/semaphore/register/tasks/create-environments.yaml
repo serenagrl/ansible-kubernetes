@@ -107,7 +107,14 @@
         vm_ubuntu_vars: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(vm_ubuntu_presets, recursive=true) }}"
         haproxy_vars: "{{ var_files | community.general.json_query('results[?contains(source, `haproxy/vars`)].content') | b64decode | from_yaml }}"
         nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `nfs/server/vars`)].content') | b64decode | from_yaml }}"
-        infra_vars: "{{ vm_ubuntu_vars | combine(haproxy_vars, recursive=true) | combine(nfs_vars, recursive=true) }}"
+        k8s_cluster_node_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/cluster-node/vars`)].content') | b64decode | from_yaml }}"
+        k8s_control_plane_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/control-plane/vars`)].content') | b64decode | from_yaml }}"
+        k8s_worker_node_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/worker-node/vars`)].content') | b64decode | from_yaml }}"
+        infra_vars: "{{ vm_ubuntu_vars | combine(haproxy_vars, recursive=true) 
+                                       | combine(nfs_vars, recursive=true)
+                                       | combine(k8s_cluster_node_vars, recursive=true)
+                                       | combine(k8s_control_plane_vars, recursive=true)
+                                       | combine(k8s_worker_node_vars, recursive=true) }}"
 
         k8s_default_add_ons_vars:
           - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }
@@ -117,12 +124,6 @@
           - { name: monitoring }
           - { name: metrics-server }
           - { name: csi/nfs, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}" }
-
-        k8s_cluster_node_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/cluster-node/vars`)].content') | b64decode | from_yaml }}"
-        k8s_control_plane_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/control-plane/vars`)].content') | b64decode | from_yaml }}"
-        k8s_worker_node_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/worker-node/vars`)].content') | b64decode | from_yaml }}"
-        k8s_cluster_vars: "{{ k8s_cluster_node_vars | combine(k8s_control_plane_vars, recursive=true)
-                                                    | combine(k8s_worker_node_vars, recursive=true) }}"
 
         rabbitmq_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
         rabbitmq_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/operator/vars`)].content') | b64decode | from_yaml }}"
@@ -253,32 +254,31 @@
         status_code: 204 # Created
       when: item.create
       loop:
-        - { name: "Default Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no, need_all: yes }
-        - { name: "Default Setup Kubernetes Cluster", create: yes, content: "{{ k8s_cluster_vars }}", is_add_on: no, need_all: yes }
-        - { name: "Default Setup Kubernetes Add-Ons", create: yes, content: "{{ k8s_default_add_ons_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", content: "{{ semaphore_reg_vars }}", is_add_on: no, need_all: no }
-        - { name: "Default Component - Gitlab", create: "{{ semaphore.project.create.component_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Sonarqube", create: "{{ semaphore.project.create.component_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Harbor", create: "{{ semaphore.project.create.component_environments }}", content: "{{ harbor_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - ArgoCD", create: "{{ semaphore.project.create.component_environments }}", content: "{{ argocd_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - RabbitMQ", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rabbitmq_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Redis", create: "{{ semaphore.project.create.component_environments }}", content: "{{ redis_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Velero", create: "{{ semaphore.project.create.component_environments }}", content: "{{ velero_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Elastic Stack", create: "{{ semaphore.project.create.component_environments }}", content: "{{ elastic_stack_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Logging (Fluentd)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ fluentd_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Istio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ istio_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Rook-Ceph", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Kafka", create: "{{ semaphore.project.create.component_environments }}", content: "{{ kafka_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Knative", create: "{{ semaphore.project.create.component_environments }}", content: "{{ knative_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Goldilocks", create: "{{ semaphore.project.create.component_environments }}", content: "{{ goldilocks_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Keycloak", create: "{{ semaphore.project.create.component_environments }}", content: "{{ keycloak_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Tracing", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tracing_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Logging (Loki)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ loki_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Tekton", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tekton_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Minio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ minio_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Default Component - Longhorn", create: "{{ semaphore.project.create.component_environments }}", content: "{{ longhorn_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no, need_all: yes }
+        - { name: "Setup Add-Ons", create: yes, content: "{{ k8s_default_add_ons_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", content: "{{ semaphore_reg_vars }}", is_add_on: no, need_all: no }
+        - { name: "Setup Add-Ons - Gitlab", create: "{{ semaphore.project.create.component_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Sonarqube", create: "{{ semaphore.project.create.component_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Harbor", create: "{{ semaphore.project.create.component_environments }}", content: "{{ harbor_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - ArgoCD", create: "{{ semaphore.project.create.component_environments }}", content: "{{ argocd_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - RabbitMQ", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rabbitmq_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Redis", create: "{{ semaphore.project.create.component_environments }}", content: "{{ redis_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Velero", create: "{{ semaphore.project.create.component_environments }}", content: "{{ velero_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Elastic Stack", create: "{{ semaphore.project.create.component_environments }}", content: "{{ elastic_stack_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Logging (Fluentd)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ fluentd_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Istio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ istio_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Rook-Ceph", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Kafka", create: "{{ semaphore.project.create.component_environments }}", content: "{{ kafka_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Knative", create: "{{ semaphore.project.create.component_environments }}", content: "{{ knative_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Goldilocks", create: "{{ semaphore.project.create.component_environments }}", content: "{{ goldilocks_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Keycloak", create: "{{ semaphore.project.create.component_environments }}", content: "{{ keycloak_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Tracing", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tracing_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Logging (Loki)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ loki_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Tekton", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tekton_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Minio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ minio_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-Ons - Longhorn", create: "{{ semaphore.project.create.component_environments }}", content: "{{ longhorn_vars }}", is_add_on: yes, need_all: yes }
 
     - name: Query all environment records
       ansible.builtin.uri:
