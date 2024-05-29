@@ -25,70 +25,22 @@
         status_code: 204 # Environment Removed 
       loop: "{{ existing_environment.json }}"
     
+    - name: Find variable files
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.find:
+        paths: ./roles
+        file_type: directory
+        recurse: yes
+        use_regex: yes
+        patterns: ['.*vars']
+      register: file_result
+
     - name: Read role variable files
       ansible.builtin.slurp:
-        src: "{{ item }}"
+        src: "{{ local_repo_dir + '/' + item + '/main.yaml' }}"
       register: var_files
-      loop:
-        - "{{ local_repo_dir }}/setup-add-ons.yaml"
-        - "{{ local_repo_dir }}/roles/vm-linux/setup-vm/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/infrastructure/haproxy/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/nfs/server/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/metallb/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/cert-manager/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/ingress/nginx/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/csi/nfs/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/csi/rook-ceph/operator/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/csi/rook-ceph/cluster/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/rabbitmq/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/rabbitmq/operator/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/rabbitmq/topology/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/rabbitmq/cluster/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/redis/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/minio/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/gitlab/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/gitlab-runner/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/sonarqube/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/harbor/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/argocd/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/istio/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/velero/cli/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/velero/server/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/velero/storage-location/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/database/mssql/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/semaphore/register/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/awx/operator/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/awx/register/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kafka/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kafka/bridge/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kafka/cluster/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kafka/connect/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kafka/common/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kafka/strimzi/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kafka/ui/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/knative/operator/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/knative/serving/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/knative/eventing/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/knative/eventing/controller/rabbitmq/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/knative/eventing/controller/kafka/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/knative/cli/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/logging/elastic-operator/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/logging/elasticsearch/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/logging/kibana/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/logging/fluentd/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/goldilocks/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/keycloak/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/tracing/jaeger/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/tracing/open-telemetry/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/logging/loki/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/tekton/cli/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/tekton/dashboard/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/tekton/pipelines/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/devops/tekton/triggers/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/csi/longhorn/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kubernetes/cluster-node/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kubernetes/control-plane/vars/main.yaml"
-        - "{{ local_repo_dir }}/roles/kubernetes/worker-node/vars/main.yaml"
+      loop: "{{ file_result.files | map(attribute='path') | list}}"
 
     - name: Create default environments
       vars:
@@ -182,15 +134,18 @@
           - { name: awx/operator, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/operator/vars`)].content') | b64decode | from_yaml }}" }
           - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }
 
-        kafka_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/vars`)].content') | b64decode | from_yaml }}"
-        kafka_bridge_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/bridge/vars`)].content') | b64decode | from_yaml }}"
-        kafka_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/cluster/vars`)].content') | b64decode | from_yaml }}"
-        kafka_connect_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/connect/vars`)].content') | b64decode | from_yaml }}"
-        kafka_common_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/common/vars`)].content') | b64decode | from_yaml }}"
-        kafka_strimzi_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/strimzi/vars`)].content') | b64decode | from_yaml }}"
-        kafka_ui_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kafka/ui/vars`)].content') | b64decode | from_yaml }}"
+        kafka_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/vars`)].content') | b64decode | from_yaml }}"
+        kafka_bridge_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/bridge/vars`)].content') | b64decode | from_yaml }}"
+        kafka_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/cluster/vars`)].content') | b64decode | from_yaml }}"
+        kafka_connect_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/connect/vars`)].content') | b64decode | from_yaml }}"
+        kafka_common_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/common/vars`)].content') | b64decode | from_yaml }}"
+        kafka_strimzi_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/strimzi/vars`)].content') | b64decode | from_yaml }}"
+        kafka_ui_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/ui/vars`)].content') | b64decode | from_yaml }}"
         kafka_vars:
           - { name: kafka, vars: "{{ kafka_strimzi_vars | combine(kafka_root_vars, recursive=true)
+                                                        | combine(kafka_bridge_vars, recursive=true)
+                                                        | combine(kafka_cluster_vars, recursive=true)
+                                                        | combine(kafka_connect_vars, recursive=true)
                                                         | combine(kafka_common_vars, recursive=true)
                                                         | combine(kafka_ui_vars, recursive=true) }}" }
 
