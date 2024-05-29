@@ -61,8 +61,7 @@
       {% endif %}"
 
   shell: |
-    sleep 5;
-    kubectl run --rm -i mc -n {{ minio_tenant.namespace }} --restart=Never --image=minio/mc {{ overrides }} --command -- bash -c "mc alias set {{ minio_tenant.tenant_name }} {{ tenant_endpoint }} minio minio123 && mc admin user svcacct add {{ minio_tenant.tenant_name }} minio"
+    kubectl run --rm -i mc -n {{ minio_tenant.namespace }} --restart=Never --image=minio/mc {{ overrides }} --command -- bash -c "sleep 5 && mc alias set {{ minio_tenant.tenant_name }} {{ tenant_endpoint }} minio minio123 && mc admin user svcacct add {{ minio_tenant.tenant_name }} minio"
   register: minio_credentials
 
 - name: Get minio access and secret keys
