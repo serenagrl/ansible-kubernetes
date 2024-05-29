@@ -6,10 +6,14 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Check if kubectl is installed
-  ansible.builtin.shell: dnf list installed kubectl
-  register: kubectl_result
-
 - name: Install rook-ceph plug-in and pre-requisites
-  ansible.builtin.include_tasks: install-plugin.yaml
-  when: kubectl_result.stdout
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Check if kubectl is installed
+      ansible.builtin.shell: dnf list installed kubectl
+      register: kubectl_result
+
+    - name: Install rook-ceph plug-in and pre-requisites
+      ansible.builtin.include_tasks: install-plugin.yaml
+      when: kubectl_result.stdout

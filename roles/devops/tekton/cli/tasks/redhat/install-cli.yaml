@@ -7,6 +7,8 @@
 #
 
 - name: Install tektoncd cli to ansible controller host
+  delegate_to: localhost
+  become_user: root
   vars:
     has_version_specified: "{{ (tekton.cli.version is defined and tekton.cli.version and tekton.cli.version != 'latest') | bool }}"
     release: "{{ has_version_specified | ternary(tekton.cli.version, release_tag.stdout) }}"

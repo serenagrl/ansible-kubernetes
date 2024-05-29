@@ -5,5 +5,10 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Install tekton cli
-  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-cli.yaml"
+- name: Gathering facts for ansible controller host
+  delegate_to: localhost
+  delegate_facts: yes
+  become_user: root
+  ansible.builtin.setup:
+    filter:
+      - ansible_distribution

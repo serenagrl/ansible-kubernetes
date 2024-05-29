@@ -5,27 +5,31 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing gnupg
-  ansible.builtin.apt:
-    pkg:
-      - gnupg
-    state: latest
-    update_cache: yes
+- name: Install tektoncd cli to ansible controller host
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Installing gnupg
+      ansible.builtin.apt:
+        pkg:
+          - gnupg
+        state: latest
+        update_cache: yes
 
-- name: Get tektoncd cli key
-  ansible.builtin.shell: gpg --no-default-keyring --keyring /etc/apt/keyrings/tektoncd.gpg --keyserver keyserver.ubuntu.com --recv-keys 3EFE0E0A2F2F60AA
+    - name: Get tektoncd cli key
+      ansible.builtin.shell: gpg --no-default-keyring --keyring /etc/apt/keyrings/tektoncd.gpg --keyserver keyserver.ubuntu.com --recv-keys 3EFE0E0A2F2F60AA
 
-- name: Register tektoncd cli repository
-  ansible.builtin.apt_repository:
-    filename: tektoncd-cli
-    repo: "deb [signed-by=/etc/apt/keyrings/tektoncd.gpg] http://ppa.launchpad.net/tektoncd/cli/ubuntu eoan main"
-    update_cache: yes
+    - name: Register tektoncd cli repository
+      ansible.builtin.apt_repository:
+        filename: tektoncd-cli
+        repo: "deb [signed-by=/etc/apt/keyrings/tektoncd.gpg] http://ppa.launchpad.net/tektoncd/cli/ubuntu eoan main"
+        update_cache: yes
 
-- name: Installing tektoncd cli
-  vars:
-    release: "{% if tektoncd.cli.version is defined and tektoncd.cli.version and tektoncd.cli.version != 'latest' %}={{ tekton.cli.version }}-2{% endif %}"
-  ansible.builtin.apt:
-    pkg:
-      - tektoncd-cli
-    state: latest
-    update_cache: yes
+    - name: Installing tektoncd cli
+      vars:
+        release: "{% if tektoncd.cli.version is defined and tektoncd.cli.version and tektoncd.cli.version != 'latest' %}={{ tekton.cli.version }}-2{% endif %}"
+      ansible.builtin.apt:
+        pkg:
+          - tektoncd-cli
+        state: latest
+        update_cache: yes

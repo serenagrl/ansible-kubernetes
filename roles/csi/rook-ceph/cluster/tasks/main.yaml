@@ -105,15 +105,5 @@
   when: HAS_PROMETHEUS
 
 - name: Install rook-ceph plugin
-  delegate_to: localhost
-  delegate_facts: yes
-  become_user: root
-  block:
-    - name: Gathering facts for ansible controller host
-      ansible.builtin.setup:
-        filter:
-          - ansible_distribution
-
-    - name: Install rook-ceph plugin
-      ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/check-kubectl.yaml"
-      when: rook_ceph.install_kubectl_plugin
+  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/check-kubectl.yaml"
+  when: rook_ceph.install_kubectl_plugin

@@ -6,18 +6,8 @@
 #
 
 - name: Install kubectl
-  delegate_to: localhost
-  delegate_facts: yes
-  become_user: root
-  block:
-    - name: Gathering facts for ansible controller host
-      ansible.builtin.setup:
-        filter:
-          - ansible_distribution
-
-    - name: Install kubectl
-      ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-kubectl.yaml"
-      when: remote_admin.install_kubectl
+  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-kubectl.yaml"
+  when: remote_admin.install_kubectl
 
 - delegate_to: localhost
   become_user: root

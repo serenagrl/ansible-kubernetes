@@ -76,14 +76,8 @@
 
 - name: Install AWX cli and pre-requisites on Ansible host
   delegate_to: localhost
-  delegate_facts: yes
   become_user: root
   block:
-    - name: Gathering facts for ansible controller host
-      ansible.builtin.setup:
-        filter:
-          - ansible_distribution
-
     - name: Install AWX cli and pre-requisites on Ansible host
       ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-cli.yaml"
 

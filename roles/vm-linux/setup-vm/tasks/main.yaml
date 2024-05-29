@@ -7,15 +7,9 @@
 
 - name: Create Hyper-V Virtual Machines
   delegate_to: localhost
-  delegate_facts: yes
   become_user: root
   run_once: yes
   block:
-    - name: Gathering facts for ansible controller host
-      ansible.builtin.setup:
-        filter:
-          - ansible_distribution
-
     - name: Create working directory
       ansible.builtin.file:
         path: "{{ temp_dir }}"
