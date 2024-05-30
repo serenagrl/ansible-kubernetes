@@ -9,6 +9,10 @@
   ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-kubectl.yaml"
   when: remote_admin.install_kubectl
 
+- name: Install k9s
+  ansible.builtin.include_tasks: "install-k9s.yaml"
+  when: remote_admin.install_k9s
+
 - delegate_to: localhost
   become_user: root
   vars:

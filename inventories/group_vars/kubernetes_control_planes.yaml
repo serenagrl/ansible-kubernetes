@@ -14,3 +14,6 @@ remote_admin:
 
   # Specify whether to install the latest kubectl on the Ansible controller host.
   install_kubectl: yes
+
+  # Specify whether to install k9s on the Ansible controller host.
+  install_k9s: yes

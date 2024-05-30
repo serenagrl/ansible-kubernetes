@@ -1,0 +1,31 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check if k9s is installed
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.stat:
+    path: /root/.local/bin/k9s
+  register: file_stats
+
+- name: Install k9s
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Install k9s
+      ansible.builtin.shell: |
+        export HOME=/root
+        curl -sS https://webinstall.dev/k9s | bash
+      register: test
+
+    # Cleanup webi residue file.
+    - name: Cleanup file
+      ansible.builtin.file:
+        path: /root/Downloads
+        state: absent
+  when: not file_stats.stat.exists

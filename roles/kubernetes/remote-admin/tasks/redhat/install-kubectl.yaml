@@ -6,6 +6,12 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Check if kubectl is installed
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.shell: dnf list installed kubectl
+  register: kubectl_result
+
 - name: Install kubectl
   delegate_to: localhost
   become_user: root
@@ -41,3 +47,4 @@
         state: latest
         disable_excludes: kubernetes
         update_cache: yes
+  when: not kubectl_result.stdout
