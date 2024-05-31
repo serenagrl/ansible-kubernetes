@@ -1,6 +1,17 @@
 - name: Create Default Setup tasks
   vars:
     setup_common_task: "{{ semaphore.project.create.component_environments and semaphore.project.create.component_playbooks }}"
+    setup_kubernetes_cluster_surveys:
+      - name: "provision_vm"
+        title: "Provision Virtual Machines"
+        description: "Provisions the Virtual Machines for the Kubernetes Cluster."
+        type: "enum"
+        required: false
+        values:
+          - name: "No"
+            value: "0"
+          - name: "Yes"
+            value: "1"
   ansible.builtin.uri:
     url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/templates"
     method: POST
@@ -23,7 +34,7 @@
         "allow_override_args_in_task": false,
         "limit": "",
         "suppress_success_alerts": true,
-        "survey_vars": []
+        "survey_vars": {{ item.surveys | default([]) }}
       }
     status_code: 201 # Created
   when: item.create
@@ -50,7 +61,7 @@
         playbook: "{{ PLAYBOOKS.SETUP_INFRASTRUCTURE }}", desc: "Setup an infrastructure containing both BIND DNS and HAProxy." }
     - { name: "Provision Kubernetes VMs", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES_SERVERS }}", desc: "Provisions all the virtual machines for the kubernetes cluster." }
-    - { name: "Setup Kubernetes Cluster", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "Setup Kubernetes", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ setup_kubernetes_cluster_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes." }
     - { name: "Setup Semaphore Project", env_name: "Setup Semaphore Project", inv_id: "{{ SEMAPHORE_PROJECT_INVENTORY_ID }}", create: "{{ semaphore.project.create.setup_semaphore_project }}",
         playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
