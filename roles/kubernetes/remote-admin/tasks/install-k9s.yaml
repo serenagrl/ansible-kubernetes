@@ -21,7 +21,6 @@
       ansible.builtin.shell: |
         export HOME=/root
         curl -sS https://webinstall.dev/k9s | bash
-      register: test
 
     # Cleanup webi residue file.
     - name: Cleanup file
