@@ -72,7 +72,7 @@
   when: register_to_load_balancer
 
 - name: Check if cert-manager is installed
-  delegate_to: control-plane-01
+  delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   become_user: "{{ kube.user }}"
   ansible.builtin.shell: kubectl get ns cert-manager -o json | jq .status.phase -r
   register: cert_manager_status
@@ -82,7 +82,7 @@
   become_user: root
   block:
     - name: Get ca certificate
-      delegate_to: control-plane-01
+      delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
       become_user: "{{ kube.user }}"
       kubernetes.core.k8s_info:
         kind: secret
@@ -115,7 +115,7 @@
   when: cert_manager_status.stdout == 'Active'
 
 - name: Check if harbor is installed
-  delegate_to: control-plane-01
+  delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   become_user: "{{ kube.user }}"
   ansible.builtin.shell: kubectl get ns harbor-system -o json | jq .status.phase -r
   register: harbor_status
@@ -125,7 +125,7 @@
   become_user: root
   block:
     - name: Get Ingress details
-      delegate_to: control-plane-01
+      delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
       become_user: "{{ kube.user }}"
       vars:
         services:
