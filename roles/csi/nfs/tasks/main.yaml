@@ -4,28 +4,6 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-
-- name: Setup the NFS Server
-  delegate_to: nfs_server
-  block:
-    - name: Provision NFS Server (if required)
-      ansible.builtin.include_role:
-        name: vm-linux
-        apply:
-          delegate_to: nfs_server
-      when: provision_vm is defined and provision_vm
-
-    - name: Install and configure NFS Server
-      ansible.builtin.include_role:
-        name: nfs/server
-        apply:
-          delegate_to: nfs_server
-
-    - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
-      vars:
-        checkpoint_name: "NFS configured."
-      when: vm_checkpoint
-
 - name: Install and configure nfs clients
   vars:
     nfs_client: "{{ item }}"

@@ -7,20 +7,18 @@
 - name: Gather facts
   ansible.builtin.setup:
 
-- become_user: root
-  block:
-    - name: Install NFS server
-      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-nfs.yaml"
+- name: Install NFS server
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-nfs.yaml"
 
-    - name: Create shared directory
-      ansible.builtin.file:
-        path: "{{ nfs.shared }}"
-        state: directory
-        mode: '0777'
+- name: Create shared directory
+  ansible.builtin.file:
+    path: "{{ nfs.shared }}"
+    state: directory
+    mode: '0777'
 
-    - name: Enable nfs
-      ansible.builtin.shell: |
-        sudo systemctl enable --now nfs-server
-        sudo systemctl start nfs-server
-        sudo exportfs -ar
+- name: Enable nfs
+  ansible.builtin.shell: |
+    sudo systemctl enable --now nfs-server
+    sudo systemctl start nfs-server
+    sudo exportfs -ar
 
