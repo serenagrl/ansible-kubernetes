@@ -4,6 +4,7 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
 - name: Get join command
   delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   ansible.builtin.shell: echo $(kubeadm token create --print-join-command)
@@ -69,3 +70,124 @@
           loop: "{{ groups['load_balancers'] }}"
       when: ingress_status.stdout == 'Active'
   when: register_to_load_balancer
+
+- name: Check if cert-manager is installed
+  delegate_to: control-plane-01
+  become_user: "{{ kube.user }}"
+  ansible.builtin.shell: kubectl get ns cert-manager -o json | jq .status.phase -r
+  register: cert_manager_status
+  ignore_errors: yes
+
+- name: Trust ca certificate
+  become_user: root
+  block:
+    - name: Get ca certificate
+      delegate_to: control-plane-01
+      become_user: "{{ kube.user }}"
+      kubernetes.core.k8s_info:
+        kind: secret
+        name: self-signed-ca
+        namespace: cert-manager
+      register: result
+
+    - name: Save ca certificate to temporary folder
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.copy:
+        content: "{{ result.resources[0].data['tls.crt'] | b64decode }}"
+        dest: "{{ CA_CERT_FILE }}"
+
+    - name: Configure kubernetes nodes to trust ca certificate
+      vars:
+        in_cert_name: "{{ kube.cluster.name }}"
+        in_cert_file: "{{ CA_CERT_FILE }}"
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/trust-cert.yaml"
+
+    - name: Cleanup files
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ CA_CERT_FILE }}"
+      when: auto_cleanup
+  when: cert_manager_status.stdout == 'Active'
+
+- name: Check if harbor is installed
+  delegate_to: control-plane-01
+  become_user: "{{ kube.user }}"
+  ansible.builtin.shell: kubectl get ns harbor-system -o json | jq .status.phase -r
+  register: harbor_status
+  ignore_errors: yes
+
+- name: Trust harbor certificate
+  become_user: root
+  block:
+    - name: Get Ingress details
+      delegate_to: control-plane-01
+      become_user: "{{ kube.user }}"
+      vars:
+        services:
+          contour:
+            name: envoy
+            namespace: projectcontour
+          nginx:
+            name: ingress-nginx-controller
+            namespace: ingress-nginx
+        ingress: "{{ services[kube.ingress_type] }}"
+      block:
+        - name: Get ingress loadbalancer ip (if any)
+          shell: kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+          register: ingress_ip_result
+              
+        - name: Add harbor hostname to client /etc/hosts
+          vars:
+            in_host_entry: "{{ (ingress_ip_result.stdout == '') | ternary(kube.cluster.address, ingress_ip_result.stdout) }} core.harbor.{{ kube.cluster.domain }}"
+            servers:
+              - "{{ inventory_hostname }}"
+          ansible.builtin.include_role:
+            name: common/dns-host-file
+
+    - name: Get harbor registry certificate
+      ansible.builtin.uri:
+        url: "https://core.harbor.{{ kube.cluster.domain }}/api/v2.0/systeminfo/getcert"
+        validate_certs: no
+        return_content: true
+      register: result
+          
+    - name: Store harbor registry certificate
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.copy:
+        content: "{{ result.content }}"
+        dest: "{{ HARBOR_CERT_FILE }}"
+
+    - name: Create a containerd certificate directory (if not exist)
+      ansible.builtin.file:
+        path: "{{ CR_CERT_DIR }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy registry certificate to containerd certificate directory
+      ansible.builtin.copy:
+        src: "{{ HARBOR_CERT_FILE }}"
+        dest: "{{ CR_CERT_DIR }}/harbor-ca.crt"
+        mode: 0777
+
+    - name: Configure kubernetes nodes to trust registry certificate
+      vars:
+        in_cert_name: harbor
+        in_cert_file: "{{ HARBOR_CERT_FILE }}"
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/trust-cert.yaml"
+
+    - name: Cleanup files
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ HARBOR_CERT_FILE }}"
+      when: auto_cleanup
+  when: harbor_status.stdout == 'Active'

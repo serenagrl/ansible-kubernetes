@@ -1,0 +1,20 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Trust certificate
+  vars:
+    cert_store: "/etc/pki/ca-trust/source/anchors"
+  block:
+    - name: Copy registry certificate to shared certificate directory
+      ansible.builtin.copy:
+        src: "{{ in_cert_file }}"
+        dest: "{{ cert_store }}/{{ in_cert_name }}-ca.crt"
+        mode: 0777
+
+    - name: Update certificates
+      ansible.builtin.shell: update-ca-trust

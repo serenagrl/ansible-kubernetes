@@ -1,0 +1,3 @@
+CA_CERT_FILE: "{{ temp_dir }}/{{ kube.cluster.name }}-ca.crt"
+HARBOR_CERT_FILE: "{{ temp_dir }}/harbor-ca.crt"
+CR_CERT_DIR: "/etc/containerd/certs.d/core.harbor.{{ kube.cluster.domain }}"
