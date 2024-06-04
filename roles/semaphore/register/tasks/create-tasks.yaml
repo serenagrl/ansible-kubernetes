@@ -39,32 +39,36 @@
     status_code: 201 # Created
   when: item.create
   loop:
-    - { name: "1. Setup DNS Server", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_DNS }}", desc: "Configures a basic BIND DNS server. Optionally, can provision a virtual machine for it." }
-    - { name: "2. Setup Load-Balancers", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_LOAD_BALANCERS }}", desc: "Provisions Load Balancer VMs, install/configure HAProxy and Keepalived." }
-    - { name: "3. Provision Control-Planes VMs", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_SERVERS }}", desc: "Provisions control-plane virtual machines." }
-    - { name: "4. Setup Control-Plane (Primary)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_PRIMARY }}", desc: "Creates primary control-plane in kubernetes cluster." }
-    - { name: "5. Setup Control-Planes (Secondary)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_OTHER }}", desc: "Join secondary control-planes into kubernetes cluster." }
-    - { name: "6. Provision Worker Nodes VMs", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Provisions worker node virtual machines." }
-    - { name: "7. Setup Worker Nodes", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Join worker nodes into the kubernetes cluster." }
-    - { name: "8. Setup NFS Server", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
-    - { name: "9. Setup Basic Components", env_name: "Setup Basic Add-Ons", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "1. Setup Infrastructure (includes all subtasks)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_INFRASTRUCTURE }}", desc: "Setup and configure BIND DNS and Load Balancer servers." }
+    - { name: "1.a. Setup DNS Server", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_DNS }}", desc: "Individually configures a basic BIND DNS server. Optionally, can provision a virtual machine for it." }
+    - { name: "1.b. Setup Load-Balancers", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_LOAD_BALANCERS }}", desc: "Individually provisions Load Balancer VMs, install/configure HAProxy and Keepalived." }
+    - { name: "2. Setup Kubernetes (includes all subtasks)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ setup_kubernetes_cluster_surveys }}",
+        playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes. Optionally, provisions VM for them." }
+    - { name: "2.a. Provision Control-Planes VMs", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_SERVERS }}", desc: "Individually provisions control-plane virtual machines." }
+    - { name: "2.b. Setup Control-Plane (Primary)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_PRIMARY }}", desc: "Individually creates the primary control-plane in the kubernetes cluster." }
+    - { name: "2.c. Setup Control-Planes (Secondary)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_OTHER }}", desc: "Individually creates and joins secondary control-planes into the kubernetes cluster." }
+    - { name: "2.d. Provision Worker Nodes VMs", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Individually provisions worker node virtual machines." }
+    - { name: "2.e. Setup Worker Nodes", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Individually creates and join worker nodes into the kubernetes cluster." }
+    - { name: "3. Setup Basic Components", env_name: "Setup Basic Add-Ons", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs basic kubernetes components." }
-    - { name: "Setup Infrastructure", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_INFRASTRUCTURE }}", desc: "Setup an infrastructure containing both BIND DNS and HAProxy." }
-    - { name: "Provision Kubernetes VMs", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES_SERVERS }}", desc: "Provisions all the virtual machines for the kubernetes cluster." }
-    - { name: "Setup Kubernetes", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ setup_kubernetes_cluster_surveys }}",
-        playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes." }
+    - { name: "4. Select 1 Only - CSI Longhorn", env_name: "Setup Add-On - CSI (Longhorn)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the longhorn CSI. WARNING! Do not choose other CSI if you chose this." }
+    - { name: "4. Select 1 Only - CSI NFS", env_name: "Setup Add-On - CSI (NFS)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the NFS CSI. WARNING! Do not choose other CSI if you chose this." }
+    - { name: "4. Select 1 Only - CSI Rook-Ceph", env_name: "Setup Add-On - CSI (Rook-Ceph)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the Rook-Ceph CSI. WARNING! Do not choose other CSI if you chose this." }
     - { name: "Setup Semaphore Project", env_name: "Setup Semaphore Project", inv_id: "{{ SEMAPHORE_PROJECT_INVENTORY_ID }}", create: "{{ semaphore.project.create.setup_semaphore_project }}",
         playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
+    - { name: "Setup NFS Server", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
       # Miscellaneous
     - { name: "Setup Add-On - DevOps (Gitlab)", env_name: "Setup Add-On - DevOps (Gitlab)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task}}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Gitlab and Gitlab Runner. (Also installs Minio)." }
@@ -86,8 +90,6 @@
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
     - { name: "Setup Add-On - Istio", env_name: "Setup Add-On - Istio", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Istio" }
-    - { name: "Setup Add-On - CSI (Rook-Ceph)", env_name: "Setup Add-On - CSI (Rook-Ceph)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the Rook-Ceph CSI." }
     - { name: "Setup Add-On - MSSQL Server", env_name: "Setup Add-On - MSSQL Server", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Microsoft SQL Server." }
     - { name: "Setup Add-On - AWX", env_name: "Setup Add-On - AWX", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
@@ -108,7 +110,3 @@
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs tekton." }
     - { name: "Setup Add-On - DevOps (Minio)", env_name: "Setup Add-On - DevOps (Minio)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs minio." }
-    - { name: "Setup Add-On - CSI (Longhorn)", env_name: "Setup Add-On - CSI (Longhorn)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs longhorn." }
-    - { name: "Setup Add-On - CSI (NFS)", env_name: "Setup Add-On - CSI (NFS)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs nfs." }

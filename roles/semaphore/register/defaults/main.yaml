@@ -10,7 +10,6 @@ PLAYBOOKS:
   SETUP_CONTROL_PLANE_OTHER: setup-control-plane-other.yaml
   SETUP_CONTROL_PLANE_PRIMARY: setup-control-plane-primary.yaml
   SETUP_CONTROL_PLANE_SERVERS: setup-control-plane-servers.yaml
-  SETUP_KUBERNETES_SERVERS: setup-kubernetes-servers.yaml
   SETUP_KUBERNETES: setup-kubernetes.yaml
   SETUP_LOAD_BALANCERS: setup-load-balancers.yaml
   SETUP_DNS: setup-dns.yaml
