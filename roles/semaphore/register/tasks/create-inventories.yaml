@@ -72,34 +72,31 @@
                                         | combine(inv_winrm, recursive=true) }}"
 
     inventory_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/inventory"
+
+    inventory_all_file_names: "{{ file_result.files | map(attribute='path') | list }}"
+    inventory_var_file_names: "{{ inventory_all_file_names | select('search', '_vars/') }}"
+    inventory_file_names: "{{ inventory_all_file_names | difference(inventory_var_file_names) }}"
   block:
+    - name: Find inventory files
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.find:
+        paths: ./inventories
+        file_type: file
+        recurse: yes
+      register: file_result
+
     - name: Read inventory files
       ansible.builtin.slurp:
-        src: "{{ item }}"
+        src: "{{ local_repo_dir + '/' + item }}"
       register: inventory_files
-      loop:
-        - "{{ local_repo_dir }}/inventories/kubernetes_control_planes.yaml"
-        - "{{ local_repo_dir }}/inventories/kubernetes_worker_nodes.yaml"
-        - "{{ local_repo_dir }}/inventories/kubernetes_cluster.yaml"
-        - "{{ local_repo_dir }}/inventories/load_balancers.yaml"
-        - "{{ local_repo_dir }}/inventories/dns_server.yaml"
-        - "{{ local_repo_dir }}/inventories/nfs_server.yaml"
-        - "{{ local_repo_dir }}/inventories/semaphore_server.yaml"
-        - "{{ local_repo_dir }}/inventories/winrm.yaml"
+      loop: "{{ inventory_file_names }}"
 
     - name: Read inventory variable files
       ansible.builtin.slurp:
-        src: "{{ item }}"
+        src: "{{ local_repo_dir + '/' + item }}"
       register: inventory_var_files
-      loop:
-        - "{{ local_repo_dir }}/inventories/group_vars/all.yaml"
-        - "{{ local_repo_dir }}/inventories/group_vars/kubernetes_cluster.yaml"
-        - "{{ local_repo_dir }}/inventories/group_vars/kubernetes_control_planes.yaml"
-        - "{{ local_repo_dir }}/inventories/group_vars/kubernetes_worker_nodes.yaml"
-        - "{{ local_repo_dir }}/inventories/group_vars/load_balancers.yaml"
-        - "{{ local_repo_dir }}/inventories/host_vars/dns_server.yaml"
-        - "{{ local_repo_dir }}/inventories/host_vars/nfs_server.yaml"
-        - "{{ local_repo_dir }}/inventories/host_vars/semaphore_server.yaml"
+      loop: "{{ inventory_var_file_names }}"
 
     - name: Create inventories
       ansible.builtin.uri:
