@@ -12,6 +12,30 @@
             value: "0"
           - name: "Yes"
             value: "1"
+    setup_csi_surveys:
+      - name: "csi_name"
+        title: "CSI Name"
+        description: "Install the selected CSI."
+        type: "enum"
+        required: true
+        values:
+          - name: "Longhorn (Recommended)"
+            value: "longhorn"
+          - name: "Rook Ceph (High resource consumption)"
+            value: "rook-ceph"
+          - name: "NFS (Less resource consumption)"
+            value: "nfs"
+    provision_vm_surveys:
+      - name: "redhat_username"
+        title: "Red Hat Username (for Red Hat VMs only)"
+        description: "The Red Hat subscription Username when provisioning Red Hat VMs."
+        type: "string"
+        required: false
+      - name: "redhat_password"
+        title: "Red Hat Password (for Red Hat VMs only)"
+        description: "The Red Hat subscription Password when provisioning Red Hat VMs."
+        type: "string"
+        required: false
   ansible.builtin.uri:
     url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/templates"
     method: POST
@@ -39,36 +63,32 @@
     status_code: 201 # Created
   when: item.create
   loop:
-    - { name: "1. Setup Infrastructure (DNS & LB)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "1. Setup Infrastructure (DNS & LB)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_INFRASTRUCTURE }}", desc: "Setup and configure BIND DNS and Load Balancer servers." }
-    - { name: "1.a. Setup DNS Server only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "1.a. Setup DNS Server only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_DNS }}", desc: "Individually configures a basic BIND DNS server. Optionally, can provision a virtual machine for it." }
-    - { name: "1.b. Setup Load-Balancers only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "1.b. Setup Load-Balancers only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_LOAD_BALANCERS }}", desc: "Individually provisions Load Balancer VMs, install/configure HAProxy and Keepalived." }
-    - { name: "2. Setup Kubernetes (CP & Worker Nodes)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ setup_kubernetes_cluster_surveys }}",
+    - { name: "1.c. Setup NFS Server (For CSI NFS only)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+        playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
+    - { name: "2. Setup Kubernetes (CP & Worker Nodes)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ setup_kubernetes_cluster_surveys + provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes. Optionally, provisions VM for them." }
-    - { name: "2.a. Provision Control-Planes VMs only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "2.a. Provision Control-Planes VMs only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_SERVERS }}", desc: "Individually provisions control-plane virtual machines." }
     - { name: "2.b. Setup Primary Control-Plane only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_PRIMARY }}", desc: "Individually creates the primary control-plane in the kubernetes cluster." }
     - { name: "2.c. Setup Secondary Control-Planes only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_OTHER }}", desc: "Individually creates and joins secondary control-planes into the kubernetes cluster." }
-    - { name: "2.d. Provision Worker Nodes VMs only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "2.d. Provision Worker Nodes VMs only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Individually provisions worker node virtual machines." }
     - { name: "2.e. Setup Worker Nodes only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Individually creates and join worker nodes into the kubernetes cluster." }
     - { name: "3. Setup Basic Components", env_name: "Setup Basic Add-Ons", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs basic kubernetes components." }
-    - { name: "4. Select 1 Only - CSI Longhorn", env_name: "Setup Add-On - CSI (Longhorn)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the longhorn CSI. WARNING! Do not choose other CSI if you chose this." }
-    - { name: "4. Select 1 Only - CSI NFS", env_name: "Setup Add-On - CSI (NFS)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the NFS CSI. WARNING! Do not choose other CSI if you chose this." }
-    - { name: "4. Select 1 Only - CSI Rook-Ceph", env_name: "Setup Add-On - CSI (Rook-Ceph)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the Rook-Ceph CSI. WARNING! Do not choose other CSI if you chose this." }
+    - { name: "4. Setup CSI", env_name: "Setup Add-On - CSI", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}", surveys: "{{ setup_csi_surveys }}",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the CSI." }
     - { name: "Setup Semaphore Project", env_name: "Setup Semaphore Project", inv_id: "{{ SEMAPHORE_PROJECT_INVENTORY_ID }}", create: "{{ semaphore.project.create.setup_semaphore_project }}",
         playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
-    - { name: "Setup NFS Server", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
       # Miscellaneous
     - { name: "Setup Add-On - DevOps (Gitlab)", env_name: "Setup Add-On - DevOps (Gitlab)", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task}}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Gitlab and Gitlab Runner. (Also installs Minio)." }

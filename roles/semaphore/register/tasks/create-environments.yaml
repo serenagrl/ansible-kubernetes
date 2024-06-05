@@ -54,6 +54,13 @@
         vm_ubuntu_presets:
           vm:
             local: no
+            redhat:
+              username: "{% raw %}{{ redhat_username | default('')}}{% endraw %}"
+              password: "{% raw %}{{ redhat_password | default('')}}{% endraw %}"
+
+        csi_presets:
+          csi:
+            name: "{% raw %}{{ csi_name }}{% endraw %}"
 
         # infrastructure
         vm_ubuntu_vars: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(vm_ubuntu_presets, recursive=true) }}"
@@ -127,6 +134,12 @@
         rook_ceph_vars:
           - { name: csi/rook-ceph, vars: "{{ rook_ceph_operator_vars | combine(rook_ceph_cluster_vars, recursive=true) }}" }
 
+        csi_vars:
+          - { name: csi, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/vars`)].content') | b64decode | from_yaml | combine(csi_presets, recursive=true) }}" }
+          - { name: csi/rook-ceph, vars: "{{ rook_ceph_operator_vars | combine(rook_ceph_cluster_vars, recursive=true) }}" }
+          - { name: csi/longhorn, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/longhorn/vars`)].content') | b64decode | from_yaml }}" }
+          - { name: csi/nfs, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}" }
+
         mssql_vars:
           - { name: database/mssql, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/mssql/vars`)].content') | b64decode | from_yaml }}" }
 
@@ -187,12 +200,6 @@
         minio_vars:
           - { name: devops/minio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/minio/vars`)].content') | b64decode | from_yaml }}" }
 
-        longhorn_vars:
-          - { name: csi/longhorn, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/longhorn/vars`)].content') | b64decode | from_yaml }}" }
-
-        nfs_vars:
-          - { name: csi/nfs, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}" }
-
       ansible.builtin.uri:
         url: "{{ environment_url }}"
         method: POST
@@ -224,7 +231,6 @@
         - { name: "Setup Add-On - Logging (Elastic Stack)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ elastic_stack_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - Logging (Fluentd)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ fluentd_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - Istio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ istio_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Setup Add-On - CSI (Rook-Ceph)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rook_ceph_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - Kafka", create: "{{ semaphore.project.create.component_environments }}", content: "{{ kafka_vars }}", is_add_on: yes, need_all: yes }
@@ -235,8 +241,7 @@
         - { name: "Setup Add-On - Logging (Loki)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ loki_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - DevOps (Tekton)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tekton_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - DevOps (Minio)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ minio_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Setup Add-On - CSI (Longhorn)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ longhorn_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Setup Add-On - CSI (NFS)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ nfs_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-On - CSI", create: "{{ semaphore.project.create.component_environments }}", content: "{{ csi_vars }}", is_add_on: yes, need_all: yes }
 
     - name: Query all environment records
       ansible.builtin.uri:

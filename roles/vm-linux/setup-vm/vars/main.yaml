@@ -23,10 +23,10 @@ vm:
     auto_register: yes
 
     # Your redhat login id
-    username: <username>
+    username:
 
     # Your redhat login password
-    password: <password>
+    password:
 
   ubuntu:
     # The url to download the ubuntu cloud image file. You may need to change this when new release is available.
