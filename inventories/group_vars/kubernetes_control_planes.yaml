@@ -7,14 +7,3 @@ vm:
     min_ram_size: 8GB
     disk_size: 127GB
     v_cpu: 6
-
-remote_admin:
-  # Enable this to allow remote administration from the Ansible controller host.
-  # Use 'kubectl config' to change the context to the cluster that you want to manage.
-  enabled: yes
-
-  # Specify whether to install the latest kubectl on the Ansible controller host.
-  install_kubectl: yes
-
-  # Specify whether to install k9s on the Ansible controller host.
-  install_k9s: yes
