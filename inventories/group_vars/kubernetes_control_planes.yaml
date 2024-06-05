@@ -3,7 +3,7 @@
 #       Hyper-V manager later.
 vm:
   specs:
-    ram_size: 12GB
-    min_ram_size: 8GB
-    disk_size: 127GB
+    ram_size: 16GB
+    min_ram_size: 12GB
+    disk_size: 256GB
     v_cpu: 6
