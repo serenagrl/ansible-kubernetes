@@ -1,0 +1,24 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Add aqua chart repo
+  kubernetes.core.helm_repository:
+    name: aqua
+    repo_url: "https://aquasecurity.github.io/helm-charts/"
+
+- name: Deploy trivy operator
+  vars:
+    version: "{% if trivy.version is defined and trivy.version and trivy.version != 'latest' %}{{ trivy.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: trivy-operator
+    atomic: yes
+    chart_ref: aqua/trivy-operator
+    chart_version: "{{ version }}"
+    namespace: trivy-system
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    wait: yes

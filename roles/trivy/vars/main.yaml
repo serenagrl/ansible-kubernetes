@@ -1,0 +1,13 @@
+trivy:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  version: latest
+
+  # Namespaces excluded from scanning
+  excludeNamespaces: ""
+
+  # The kubernetes resources to target
+  targetWorkloads: "pod,replicaset,replicationcontroller,statefulset,daemonset,cronjob,job"
+
+  # Create Prometheus ServiceMonitor to scrap metrics (Requires prometheus to be installed)
+  prometheus: no
