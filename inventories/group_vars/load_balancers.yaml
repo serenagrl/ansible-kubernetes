@@ -6,11 +6,12 @@ ansible_become: yes
 winrm_host: local_machine
 
 # The VM settings for each host.
-host_specs:
-  ram_size: 1GB
-  min_ram_size: 1GB
-  disk_size: 127GB
-  v_cpu: 2
+vm:
+  specs:
+    ram_size: 1GB
+    min_ram_size: 1GB
+    disk_size: 127GB
+    v_cpu: 2
 
 # Specify whether to provision the VMs.
 provision_vm: yes

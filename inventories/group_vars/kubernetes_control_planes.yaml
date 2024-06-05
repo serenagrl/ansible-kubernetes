@@ -1,11 +1,12 @@
 # The VM settings for each host.
 # Note: Adjust accordingly to the number of add-ons you plan to install. You can manually adjust it in
 #       Hyper-V manager later.
-host_specs:
-  ram_size: 12GB
-  min_ram_size: 8GB
-  disk_size: 127GB
-  v_cpu: 6
+vm:
+  specs:
+    ram_size: 12GB
+    min_ram_size: 8GB
+    disk_size: 127GB
+    v_cpu: 6
 
 remote_admin:
   # Enable this to allow remote administration from the Ansible controller host.
