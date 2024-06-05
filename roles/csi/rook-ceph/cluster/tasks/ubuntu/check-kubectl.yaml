@@ -11,7 +11,7 @@
   become_user: root
   block:
     - name: Check if kubectl is installed
-      ansible.builtin.shell: apt list kubectl
+      ansible.builtin.shell: apt list kubectl --installed
       register: kubectl_result
 
     - name: Install rook-ceph plug-in and pre-requisites
