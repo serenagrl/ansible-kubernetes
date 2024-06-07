@@ -4,6 +4,10 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Create {{ redis.namespace }} namespace
   kubernetes.core.k8s:
     kind: Namespace
@@ -76,16 +80,7 @@
     name: "Redis {{ redis.ha_mode }} ({{ redis.namespace }}) password"
     command: "kubectl get -n {{ redis.namespace }} secret {{ SERVICE_NAMES[redis.ha_mode] }} -o jsonpath='{.data.redis-password}'"
 
-- name: Enable metrics
-  block:
-    - name: Check if Prometheus is installed
-      ansible.builtin.shell: |
-          kubectl get prometheus monitoring-prometheus -n monitoring -o json | jq .status.conditions[0].type -r
-      register: prometheus_status
-      ignore_errors: yes
-
-    - name: Create ServiceMonitor
-      kubernetes.core.k8s:
-        definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
-      when: HAS_PROMETHEUS
+- name: Create ServiceMonitor
+  kubernetes.core.k8s:
+    definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
   when: redis.enable_metrics

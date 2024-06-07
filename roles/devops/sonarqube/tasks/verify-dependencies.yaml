@@ -1,0 +1,19 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check if cert manager is installed
+  ansible.builtin.fail:
+    msg: Cert manager is required.
+  failed_when: not fact_has_cert_manager | bool
+  changed_when: false
+  
+- name: Check if ingress is installed
+  ansible.builtin.fail:
+    msg: Ingress is required.
+  failed_when: not fact_has_ingress | bool
+  changed_when: false

@@ -1,2 +1,3 @@
 dependencies:
   - role: common/gather-localhost-fact
+  - role: common/check-dependencies

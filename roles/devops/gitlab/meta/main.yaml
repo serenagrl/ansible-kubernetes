@@ -1,2 +1,3 @@
 dependencies:
   - role: common/get-active-nodes
+  - role: common/check-dependencies

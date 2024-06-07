@@ -4,7 +4,6 @@ VALUES_FILE: "{{ lookup('template', 'values-' + redis.ha_mode + '.j2') | from_ya
 CERT_DIR: "{{ temp_dir }}/{{ kube.cluster.name }}/{{ redis.namespace }}"
 
 SERVICE_MONITOR_TEMPLATE: "{{ lookup('template', 'service-monitor.j2') | from_yaml }}"
-HAS_PROMETHEUS: "{{ prometheus_status.stdout == 'Available' }}"
 
 REPO_URLS:
   cluster: oci://registry-1.docker.io/bitnamicharts/redis-cluster

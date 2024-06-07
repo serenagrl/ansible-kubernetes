@@ -5,6 +5,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Install and configure pre-requisites
   ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-packages.yaml"
   loop: "{{ fact_active_hosts }}"

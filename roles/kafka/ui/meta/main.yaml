@@ -1,3 +1,4 @@
 dependencies:
   - role: common/get-active-nodes
   - role: kafka/common
+  - role: common/check-dependencies

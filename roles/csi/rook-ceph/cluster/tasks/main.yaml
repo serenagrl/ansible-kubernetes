@@ -6,6 +6,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Check for existing Virtual Hard Disks
   ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
   vars:
@@ -69,12 +72,6 @@
     name: "Ceph dashboard password"
     command: "kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath='{.data.password}'"
 
-- name: Check if Prometheus is installed
-  ansible.builtin.shell: |
-      kubectl get prometheus monitoring-prometheus -n monitoring -o json | jq .status.conditions[0].type -r
-  register: prometheus_status
-  ignore_errors: yes
-
 - name: Configure prometheus to scrape ceph metrics endpoint
   block:
     - name: Get ceph toolbox pod information
@@ -102,7 +99,7 @@
     - name: Create ServiceMonitor
       kubernetes.core.k8s:
         definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
-  when: HAS_PROMETHEUS
+  when: fact_has_prometheus | bool
 
 - name: Install rook-ceph plugin
   ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/check-kubectl.yaml"

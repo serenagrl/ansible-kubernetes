@@ -1,0 +1,17 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Get grafana deployment
+  kubernetes.core.k8s_info:
+    kind: Deployment
+    name: monitoring-grafana
+    namespace: monitoring
+  register: grafana_result
+
+- ansible.builtin.set_fact:
+    fact_has_grafana: "{{ grafana_result.resources | length > 0 }}"
