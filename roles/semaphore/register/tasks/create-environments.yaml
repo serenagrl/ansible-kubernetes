@@ -79,12 +79,14 @@
                                        | combine(k8s_remote_admin_vars, recursive=true) }}"
 
         k8s_default_add_ons_vars:
-          - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }
           - { name: cert-manager, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/cert-manager/vars`)].content') | b64decode | from_yaml }}" }
           - { name: ingress, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/ingress/nginx/vars`)].content') | b64decode | from_yaml }}" }
           - { name: dashboard }
           - { name: monitoring }
           - { name: metrics-server }
+
+        metallb_vars:
+          - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }
 
         rabbitmq_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
         rabbitmq_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/operator/vars`)].content') | b64decode | from_yaml }}"
@@ -248,6 +250,7 @@
         - { name: "Setup Add-On - DevOps (Tekton)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tekton_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - DevOps (Minio)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ minio_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - CSI", create: "{{ semaphore.project.create.component_environments }}", content: "{{ csi_vars }}", is_add_on: no, need_all: yes }
+        - { name: "Setup Add-On - MetalLB", create: "{{ semaphore.project.create.component_environments }}", content: "{{ metallb_vars }}", is_add_on: yes, need_all: yes }
 
     - name: Query all environment records
       ansible.builtin.uri:
