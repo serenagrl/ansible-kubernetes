@@ -68,7 +68,6 @@
     namespace: projectcontour
     name: envoy
   register: ingress_service
-  notify: "ingress/contour : Update installed status"
 
 - name: Configure Ingress
   ansible.builtin.include_tasks: "{{ contour.metallb.enabled | ternary('../tasks/configure-for-metallb.yaml', '../tasks/configure-for-haproxy.yaml') }}"
@@ -76,6 +75,3 @@
     name: envoy
     namespace: projectcontour
     in_ingress: "{{ contour }}"
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers

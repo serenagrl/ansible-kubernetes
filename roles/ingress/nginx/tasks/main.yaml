@@ -88,7 +88,6 @@
 
 - name: Waiting for ingress-nginx-controller to be ready
   ansible.builtin.shell: kubectl rollout status -n ingress-nginx deployment/ingress-nginx-controller
-  notify: "ingress/nginx : Update installed status"
 
 - name: Configure Ingress
   ansible.builtin.include_tasks: "{{ ingress_nginx.metallb.enabled | ternary('../tasks/configure-for-metallb.yaml', '../tasks/configure-for-haproxy.yaml') }}"
@@ -96,6 +95,3 @@
     name: ingress-nginx-controller
     namespace: ingress-nginx
     in_ingress: "{{ ingress_nginx }}"
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers

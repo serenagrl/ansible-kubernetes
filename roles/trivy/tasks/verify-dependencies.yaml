@@ -9,5 +9,5 @@
 - name: Check if prometheus is installed
   ansible.builtin.fail:
     msg: Prometheus is required.
-  failed_when: trivy.prometheus|bool and not fact_has_addons_prometheus|bool
+  failed_when: trivy.prometheus|bool and not fact_has_addon_prometheus|bool
   changed_when: false

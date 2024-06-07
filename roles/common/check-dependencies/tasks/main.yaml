@@ -6,7 +6,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Find check dependencies files
+- name: Load check dependency task files
   delegate_to: localhost
   become_user: root
   ansible.builtin.find:
@@ -15,6 +15,9 @@
     recurse: no
     patterns: 'check-*'
   register: file_result
-  
-- ansible.builtin.include_tasks: "{{ item | basename }}"
-  loop: "{{ file_result.files | map(attribute='path') | list }}"
+
+- name: Run dependency checks
+  vars:
+    check_list: "{{ file_result.files | map(attribute='path') | map('basename') | select('search', depends_on | join('|')) }}"
+  ansible.builtin.include_tasks: "{{ item }}"
+  loop: "{{ check_list }}"

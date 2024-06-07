@@ -15,6 +15,6 @@
         kind: ClusterIssuer
       register: cluster_issuer_result
 
-    - name: Cert manager is {{ is_installed | ternary('', 'not') }} installed
+    - name: Cert manager is{{ is_installed | ternary(' ', ' not ') }}installed
       ansible.builtin.set_fact:
-        fact_has_addons_cert_manager: "{{ is_installed }}"
+        fact_has_addon_cert_manager: "{{ is_installed }}"

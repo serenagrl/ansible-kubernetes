@@ -17,6 +17,6 @@
         namespace: logging
       register: elasticsearch_result
 
-    - name: Elasticsearch is {{ is_installed | ternary('', 'not') }} installed
+    - name: Elasticsearch is{{ is_installed | ternary(' ', ' not ') }}installed
       ansible.builtin.set_fact:
-        fact_has_addons_elasticsearch: "{{ is_installed }}"
+        fact_has_addon_elasticsearch: "{{ is_installed }}"

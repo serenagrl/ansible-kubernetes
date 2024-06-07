@@ -17,6 +17,6 @@
         name: virtualservices.networking.istio.io
       register: istio_result
 
-    - name: Istio is {{ is_installed | ternary('', 'not') }} installed
+    - name: Istio is{{ is_installed | ternary(' ', ' not ') }}installed
       ansible.builtin.set_fact:
-        fact_has_addons_istio: "{{ is_installed }}"
+        fact_has_addon_istio: "{{ is_installed }}"

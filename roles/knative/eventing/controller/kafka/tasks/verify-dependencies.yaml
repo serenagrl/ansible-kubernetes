@@ -8,5 +8,5 @@
 - name: Check if kafka is installed
   ansible.builtin.fail:
     msg: Kafka is required.
-  failed_when: not fact_has_addons_kafka|bool
+  failed_when: not fact_has_addon_kafka|bool
   changed_when: false

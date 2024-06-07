@@ -9,17 +9,17 @@
 - name: Check if cert manager is installed
   ansible.builtin.fail:
     msg: Cert manager is required.
-  failed_when: not fact_has_addons_cert_manager|bool
+  failed_when: not fact_has_addon_cert_manager|bool
   changed_when: false
 
 - name: Check if ingress is installed
   ansible.builtin.fail:
     msg: Ingress is required.
-  failed_when: not fact_has_addons_ingress|bool
+  failed_when: not fact_has_addon_ingress|bool
   changed_when: false
 
 - name: Check if minio is installed
   ansible.builtin.fail:
     msg: Minio is required.
-  failed_when: not fact_has_addons_minio|bool
+  failed_when: not fact_has_addon_minio|bool
   changed_when: false

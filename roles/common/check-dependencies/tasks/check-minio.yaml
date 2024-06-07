@@ -17,6 +17,6 @@
         name: tenants.minio.min.io
       register: minio_result
 
-    - name: Minio is {{ is_installed | ternary('', 'not') }} installed
+    - name: Minio is{{ is_installed | ternary(' ', ' not ') }}installed
       ansible.builtin.set_fact:
-        fact_has_addons_minio: "{{ is_installed }}"
+        fact_has_addon_minio: "{{ is_installed }}"

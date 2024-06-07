@@ -17,6 +17,6 @@
         namespace: monitoring
       register: grafana_result
 
-    - name: Grafana is {{ is_installed | ternary('', 'not') }} installed
+    - name: Grafana is{{ is_installed | ternary(' ', ' not ') }}installed
       ansible.builtin.set_fact:
-        fact_has_addons_grafana: "{{ is_installed }}"
+        fact_has_addon_grafana: "{{ is_installed }}"

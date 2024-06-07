@@ -18,6 +18,6 @@
         ingress: "{{ services[kube.ingress_type] }}"
       ansible.builtin.include_tasks: "{{ services[kube.ingress_type] }}"
 
-    - name: Ingress ({{ kube.ingress_type }}) is {{ is_installed | ternary('', 'not') }} installed
+    - name: Ingress ({{ kube.ingress_type }}) is{{ is_installed | ternary(' ', ' not ') }}installed
       ansible.builtin.set_fact:
-        fact_has_addons_ingress: "{{ is_installed }}"
+        fact_has_addon_ingress: "{{ is_installed }}"

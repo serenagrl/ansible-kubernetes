@@ -99,7 +99,7 @@
     - name: Create ServiceMonitor
       kubernetes.core.k8s:
         definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
-  when: fact_has_addons_prometheus|bool
+  when: fact_has_addon_prometheus|bool
 
 - name: Install rook-ceph plugin
   ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/check-kubectl.yaml"

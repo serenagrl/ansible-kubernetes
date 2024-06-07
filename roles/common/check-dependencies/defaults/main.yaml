@@ -1,5 +1,0 @@
-DEPENDENCIES:
-  cert-mgr: check-cert-mgr.yaml
-  istio: check-istio.yaml
-  ingress: check-ingress.yaml
-  elastic-stack: check-elastic-stack.yaml

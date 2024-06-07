@@ -17,6 +17,6 @@
         name: servicemonitors.monitoring.coreos.com
       register: prometheus_result
 
-    - name: Prometheus is {{ is_installed | ternary('', 'not') }} installed
+    - name: Prometheus is{{ is_installed | ternary(' ', ' not ') }}installed
       ansible.builtin.set_fact:
-        fact_has_addons_prometheus: "{{ is_installed }}"
+        fact_has_addon_prometheus: "{{ is_installed }}"

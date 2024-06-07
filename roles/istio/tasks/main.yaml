@@ -43,7 +43,6 @@
   ansible.builtin.shell: |
     istioctl install --set profile={{ istio.profile }} -y -f {{ MANIFEST_FILE }}
     kubectl rollout status -n istio-system deployment/istiod
-  notify: "istio : Update installed status"
 
 - name: Labeling namespaces for istio injection (if any)
   kubernetes.core.k8s:
@@ -71,7 +70,7 @@
         apply: yes
         force: yes
         definition: "{{ lookup('file', SERVICE_MONITOR_FILE) | from_yaml_all }}"
-  when: fact_has_addons_prometheus|bool
+  when: fact_has_addon_prometheus|bool
 
 - name: Install Jaeger and Kiali
   block:
@@ -144,6 +143,3 @@
         path: "{{ ISTIO_DIR }}"
         state: absent
   when: auto_cleanup
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers

@@ -84,7 +84,3 @@
   ansible.builtin.shell: |
     kubectl wait --for=condition=Ready kafkas {{ kafka.name }} -n {{ kafka.namespace }} --timeout=300s
     for d in $(kubectl -n {{ kafka.namespace }} get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n {{ kafka.namespace }} deployment/$d; done;
-  notify: "kafka/cluster : Update installed status"
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers

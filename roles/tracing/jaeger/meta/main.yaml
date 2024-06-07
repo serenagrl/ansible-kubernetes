@@ -1,2 +1,8 @@
 dependencies:
   - role: common/check-dependencies
+    vars:
+      depends_on:
+        - ingress
+        - prometheus
+        - elasticsearch
+        - kafka

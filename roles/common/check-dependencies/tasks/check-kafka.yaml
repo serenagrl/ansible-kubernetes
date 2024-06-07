@@ -18,6 +18,6 @@
         namespace: kafka
       register: kafka_result
 
-    - name: Kafka is {{ is_installed | ternary('', 'not') }} installed
+    - name: Kafka is{{ is_installed | ternary(' ', ' not ') }}installed
       ansible.builtin.set_fact:
-        fact_has_addons_kafka: "{{ is_installed }}"
+        fact_has_addon_kafka: "{{ is_installed }}"

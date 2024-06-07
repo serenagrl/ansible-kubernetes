@@ -96,7 +96,3 @@
       loop: "{{ fact_active_hosts + ['localhost'] }}"
 
   when: cert_mgr.self_signed_ca
-  notify: "cert-manager : Update installed status"
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers

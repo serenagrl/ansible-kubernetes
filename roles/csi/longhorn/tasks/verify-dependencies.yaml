@@ -8,11 +8,11 @@
 - name: Check if ingress is installed
   ansible.builtin.fail:
     msg: Ingress is required.
-  failed_when: not fact_has_addons_ingress|bool
+  failed_when: not fact_has_addon_ingress|bool
   changed_when: false
 
 - name: Check if prometheus is installed
   ansible.builtin.fail:
     msg: Prometheus is required.
-  failed_when: longhorn.prometheus|bool and not fact_has_addons_prometheus|bool
+  failed_when: longhorn.prometheus|bool and not fact_has_addon_prometheus|bool
   changed_when: false

@@ -9,7 +9,7 @@
   kubernetes.core.k8s:
     kind: Namespace
     name: logging
-    
+
 - name: Configure vm.max_map_count (elasticsearch pre-requisite)
   ansible.builtin.include_tasks: update-sysctl.yaml
   loop: "{{ fact_active_hosts }}"
@@ -32,12 +32,8 @@
 
 - name: Waiting for elasticsearch to be ready
   shell: kubectl wait --for=jsonpath='{.status.health}'=green elasticsearch elasticsearch -n logging --timeout=300s && kubectl wait --for=condition=ready pods -n logging -l common.k8s.elastic.co/type=elasticsearch --timeout=300s
-  notify: "logging/elasticsearch : Update installed status"
 
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "Elastic password"
     command: kubectl get secret elasticsearch-es-elastic-user -n logging -o=jsonpath='{.data.elastic}'
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
