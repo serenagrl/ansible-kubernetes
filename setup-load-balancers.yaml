@@ -10,7 +10,7 @@
 
   roles:
     - role: vm-linux
-      when: provision_vm
+      when: provision_vm is defined and provision_vm|bool
     - role: infrastructure/haproxy
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
@@ -18,4 +18,4 @@
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Load-Balancer configured."
-      when: vm_checkpoint
+      when: vm_checkpoint|bool

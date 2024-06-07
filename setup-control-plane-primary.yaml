@@ -19,4 +19,4 @@
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Kubernetes Cluster Created."
-      when: vm_checkpoint
+      when: vm_checkpoint|bool

@@ -8,7 +8,7 @@
 # Configure secondary control planes
 - name: Join secondary control planes
   hosts: kubernetes_control_planes[1:]
-  serial: 1 # Prevents etcd timeout
+  #serial: 1 # Prevents etcd timeout
   gather_facts: yes
 
   roles:
@@ -22,4 +22,4 @@
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Control-Planes configured."
-      when: vm_checkpoint
+      when: vm_checkpoint|bool

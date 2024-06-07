@@ -7,7 +7,7 @@
 
 # Setup control-plane servers
 - ansible.builtin.import_playbook: setup-kubernetes-servers.yaml
-  when: provision_vm is defined and provision_vm
+  when: provision_vm is defined and provision_vm|bool
 
 # Setup primary control plane
 - ansible.builtin.import_playbook: setup-control-plane-primary.yaml
