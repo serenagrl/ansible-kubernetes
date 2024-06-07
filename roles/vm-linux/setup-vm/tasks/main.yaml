@@ -177,4 +177,4 @@
   ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
   vars:
     checkpoint_name: "OS configured."
-  when: vm_checkpoint
+  when: vm_checkpoint|bool
