@@ -133,14 +133,17 @@
 
         rook_ceph_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/operator/vars`)].content') | b64decode | from_yaml }}"
         rook_ceph_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/cluster/vars`)].content') | b64decode | from_yaml }}"
-        rook_ceph_vars:
-          - { name: csi/rook-ceph, vars: "{{ rook_ceph_operator_vars | combine(rook_ceph_cluster_vars, recursive=true) }}" }
+        longhorn_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/longhorn/vars`)].content') | b64decode | from_yaml }}"
+        nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}"
+        csi_root_vars: 
+          add_ons:
+            - { name: csi, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/vars`)].content') | b64decode | from_yaml | combine(csi_presets, recursive=true) }}" }
 
-        csi_vars:
-          - { name: csi, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/vars`)].content') | b64decode | from_yaml | combine(csi_presets, recursive=true) }}" }
-          - { name: csi/rook-ceph, vars: "{{ rook_ceph_operator_vars | combine(rook_ceph_cluster_vars, recursive=true) }}" }
-          - { name: csi/longhorn, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/longhorn/vars`)].content') | b64decode | from_yaml }}" }
-          - { name: csi/nfs, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}" }
+        
+        csi_vars: "{{ csi_root_vars | combine(longhorn_vars, recursive=true)
+                                    | combine(rook_ceph_operator_vars, recursive=true)
+                                    | combine(rook_ceph_cluster_vars, recursive=true)
+                                    | combine(nfs_vars, recursive=true) }}"
 
         mssql_vars:
           - { name: database/mssql, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/mssql/vars`)].content') | b64decode | from_yaml }}" }
@@ -243,7 +246,7 @@
         - { name: "Setup Add-On - Logging (Loki)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ loki_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - DevOps (Tekton)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tekton_vars }}", is_add_on: yes, need_all: yes }
         - { name: "Setup Add-On - DevOps (Minio)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ minio_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Setup Add-On - CSI", create: "{{ semaphore.project.create.component_environments }}", content: "{{ csi_vars }}", is_add_on: yes, need_all: yes }
+        - { name: "Setup Add-On - CSI", create: "{{ semaphore.project.create.component_environments }}", content: "{{ csi_vars }}", is_add_on: no, need_all: yes }
 
     - name: Query all environment records
       ansible.builtin.uri:
