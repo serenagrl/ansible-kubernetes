@@ -42,8 +42,12 @@
     create_namespace: yes
     values: "{{ VALUES_FILE }}"
     wait: yes
+  notify: "monitoring : Update installed status"
 
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "Grafana Admin Login"
     command: "kubectl -n monitoring get secret monitoring-grafana -o jsonpath='{.data.admin-password}'"
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

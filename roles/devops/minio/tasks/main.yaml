@@ -59,8 +59,12 @@
     - name: Waiting for minio deployments to be ready
       ansible.builtin.shell: |
           for d in $(kubectl -n minio-operator get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n minio-operator deployment/$d; done;
+      notify: "devops/minio : Update installed status"
 
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "minio console account token"
     command: "kubectl -n minio-operator get secret console-sa-secret -o jsonpath='{.data.token}'"
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

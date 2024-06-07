@@ -37,6 +37,7 @@
 
 - name: Waiting for rabbitmq cluster to be ready
   ansible.builtin.shell: "kubectl rollout status -n {{ rabbitmq.namespace }} statefulset/{{ rabbitmq.name }}-server"
+  notify: "rabbitmq/cluster : Update installed status"
 
 - name: Extract certificates for applications
   block:
@@ -116,3 +117,6 @@
   vars:
     name: "RabbitMQ cluster ({{ rabbitmq.namespace }}) login"
     command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-default-user -o jsonpath='{.data.default_user\\.conf}'"
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

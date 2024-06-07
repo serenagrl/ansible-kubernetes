@@ -43,6 +43,7 @@
   ansible.builtin.shell: |
     istioctl install --set profile={{ istio.profile }} -y -f {{ MANIFEST_FILE }}
     kubectl rollout status -n istio-system deployment/istiod
+  notify: "istio : Update installed status"
 
 - name: Labeling namespaces for istio injection (if any)
   kubernetes.core.k8s:
@@ -54,12 +55,6 @@
         labels:
           istio-injection: enabled
   loop: "{{ istio.inject if istio.inject is iterable else [] }}"
-
-- name: Check if Prometheus is installed
-  ansible.builtin.shell: |
-    kubectl get prometheus monitoring-prometheus -n monitoring -o json | jq .status.conditions[0].type -r
-  register: prometheus_status
-  ignore_errors: yes
 
 - name: Configure integration with Prometheus
   block:
@@ -76,7 +71,7 @@
         apply: yes
         force: yes
         definition: "{{ lookup('file', SERVICE_MONITOR_FILE) | from_yaml_all }}"
-  when: HAS_PROMETHEUS
+  when: fact_has_addons_prometheus|bool
 
 - name: Install Jaeger and Kiali
   block:
@@ -149,3 +144,6 @@
         path: "{{ ISTIO_DIR }}"
         state: absent
   when: auto_cleanup
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

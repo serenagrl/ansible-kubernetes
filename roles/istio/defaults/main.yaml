@@ -2,7 +2,6 @@ RELEASE: "{{ (istio.version is defined and istio.version and istio.version != 'l
 ISTIO_DIR: "{{ temp_dir }}/istio-{{ RELEASE }}"
 SERVICE_MONITOR_FILE: "{{ temp_dir }}/istio-{{ RELEASE }}/samples/addons/extras/prometheus-operator.yaml"
 ADDONS_DIR: "{{ ISTIO_DIR }}/samples/addons"
-HAS_PROMETHEUS: "{{ prometheus_status.stdout == 'Available' }}"
 OPERATOR_MANIFEST_TEMPLATE: "{{ lookup('template', 'operator-manifest.j2') }}"
 MANIFEST_DIR: "~/istio"
 MANIFEST_FILE: "{{ MANIFEST_DIR }}/operator.yaml"
