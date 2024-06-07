@@ -12,7 +12,7 @@ longhorn:
   # External Virtual Hardisk mounted to the nodes.
   disk:
     create: yes
-    vm_folder: "F:\\Virtual Machines\\Kubernetes"
+    vm_folder: "D:\\Virtual Machines\\Kubernetes"
     name: cluster-storage-1
     size: 256GB
     mount_point: /data-1
@@ -23,7 +23,7 @@ longhorn:
 
   # External minio for storing backups (and testing).
   minio:
-    enabled: yes
+    enabled: no
     endpoint: http://<minio-server-url>:9000
     access_key_id: <minio-access-key-id>
     secret_access_key: <minio-secret-access-key>
