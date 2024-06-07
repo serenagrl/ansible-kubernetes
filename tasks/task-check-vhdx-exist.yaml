@@ -13,7 +13,8 @@
         patterns: "{{ disk_name }}.vhdx"
       register: file_exist
 
-    - name: File Check (Skipped when passed)
+    - name: File Check
       ansible.builtin.fail:
         msg: "{{ vhd_disk }} already exist. Please detach it from Hyper-V and perform the necessary backup/deletion before proceeding."
       when: file_exist.matched > 0
+      changed_when: false
