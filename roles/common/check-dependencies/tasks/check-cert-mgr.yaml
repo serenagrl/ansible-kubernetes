@@ -6,10 +6,15 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Get cert manager cluster issuer
-  kubernetes.core.k8s_info:
-    kind: ClusterIssuer
-  register: cluster_issuer_result
+- name: Check for cert manager installation
+  vars:
+    is_installed: "{{ cluster_issuer_result.resources | length > 0 }}"
+  block:
+    - name: Check cert manager availability
+      kubernetes.core.k8s_info:
+        kind: ClusterIssuer
+      register: cluster_issuer_result
 
-- ansible.builtin.set_fact:
-    fact_has_addons_cert_manager: "{{ cluster_issuer_result.resources | length > 0 }}"
+    - name: Cert manager is {{ is_installed | ternary('', 'not') }} installed
+      ansible.builtin.set_fact:
+        fact_has_addons_cert_manager: "{{ is_installed }}"

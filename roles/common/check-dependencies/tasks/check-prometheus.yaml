@@ -6,12 +6,17 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Get servicemonitor crd 
-  kubernetes.core.k8s_info:
-    api_version: apiextensions.k8s.io/v1
-    kind: CustomResourceDefinition
-    name: servicemonitors.monitoring.coreos.com
-  register: prometheus_result
+- name: Check for prometheus installation
+  vars:
+    is_installed: "{{ prometheus_result.resources | length > 0 }}"
+  block:
+    - name: Check prometheus availability
+      kubernetes.core.k8s_info:
+        api_version: apiextensions.k8s.io/v1
+        kind: CustomResourceDefinition
+        name: servicemonitors.monitoring.coreos.com
+      register: prometheus_result
 
-- ansible.builtin.set_fact:
-    fact_has_addons_prometheus: "{{ prometheus_result.resources | length > 0 }}"
+    - name: Prometheus is {{ is_installed | ternary('', 'not') }} installed
+      ansible.builtin.set_fact:
+        fact_has_addons_prometheus: "{{ is_installed }}"

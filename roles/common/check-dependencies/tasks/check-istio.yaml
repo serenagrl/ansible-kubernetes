@@ -6,12 +6,17 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Get virtualservice crd 
-  kubernetes.core.k8s_info:
-    api_version: apiextensions.k8s.io/v1
-    kind: CustomResourceDefinition
-    name: virtualservices.networking.istio.io
-  register: istio_result
+- name: Check for istio installation
+  vars:
+    is_installed: "{{ istio_result.resources | length > 0 }}"
+  block:
+    - name: Check istio availability
+      kubernetes.core.k8s_info:
+        api_version: apiextensions.k8s.io/v1
+        kind: CustomResourceDefinition
+        name: virtualservices.networking.istio.io
+      register: istio_result
 
-- ansible.builtin.set_fact:
-    fact_has_addons_istio: "{{ istio_result.resources | length > 0 }}"
+    - name: Istio is {{ is_installed | ternary('', 'not') }} installed
+      ansible.builtin.set_fact:
+        fact_has_addons_istio: "{{ is_installed }}"
