@@ -14,4 +14,4 @@
   register: elasticsearch_result
 
 - ansible.builtin.set_fact:
-    fact_has_elasticsearch: "{{ elasticsearch_result.resources | length > 0 }}"
+    fact_has_addons_elasticsearch: "{{ elasticsearch_result.resources | length > 0 }}"

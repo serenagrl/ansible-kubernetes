@@ -15,4 +15,4 @@
   register: rabbitmq_result
 
 - ansible.builtin.set_fact:
-    fact_has_rabbitmq: "{{ rabbitmq_result.resources | length > 0 }}"
+    fact_has_addons_rabbitmq: "{{ rabbitmq_result.resources | length > 0 }}"

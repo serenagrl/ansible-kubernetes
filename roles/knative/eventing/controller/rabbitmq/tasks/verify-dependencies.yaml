@@ -8,5 +8,5 @@
 - name: Check if rabbitmq is installed
   ansible.builtin.fail:
     msg: Rabbitmq is required.
-  failed_when: not fact_has_rabbitmq | bool
+  failed_when: not fact_has_addons_rabbitmq|bool
   changed_when: false

@@ -17,4 +17,4 @@
       ansible.builtin.include_tasks: "{{ services[kube.ingress_type] }}"
 
     - ansible.builtin.set_fact:
-        fact_has_ingress: "{{ ingress_result.resources | length > 0 }}"
+        fact_has_addons_ingress: "{{ ingress_result.resources | length > 0 }}"

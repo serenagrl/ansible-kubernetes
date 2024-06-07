@@ -14,4 +14,4 @@
   register: grafana_result
 
 - ansible.builtin.set_fact:
-    fact_has_grafana: "{{ grafana_result.resources | length > 0 }}"
+    fact_has_addons_grafana: "{{ grafana_result.resources | length > 0 }}"

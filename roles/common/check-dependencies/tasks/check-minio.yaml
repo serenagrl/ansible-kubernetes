@@ -14,4 +14,4 @@
   register: minio_result
 
 - ansible.builtin.set_fact:
-    fact_has_minio: "{{ minio_result.resources | length > 0 }}"
+    fact_has_addons_minio: "{{ minio_result.resources | length > 0 }}"

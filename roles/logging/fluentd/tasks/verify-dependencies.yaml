@@ -9,5 +9,5 @@
 - name: Check if elasticsearch is installed
   ansible.builtin.fail:
     msg: Elasticsearch is required.
-  failed_when: not fact_has_elasticsearch | bool
+  failed_when: not fact_has_addons_elasticsearch|bool
   changed_when: false

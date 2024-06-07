@@ -15,4 +15,4 @@
   register: kafka_result
 
 - ansible.builtin.set_fact:
-    fact_has_kafka: "{{ kafka_result.resources | length > 0 }}"
+    fact_has_addons_kafka: "{{ kafka_result.resources | length > 0 }}"

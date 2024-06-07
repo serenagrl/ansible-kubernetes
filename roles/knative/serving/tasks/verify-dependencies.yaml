@@ -9,5 +9,5 @@
 - name: Check if istio is installed
   ansible.builtin.fail:
     msg: Istio is required.
-  failed_when: not fact_has_istio | bool
+  failed_when: not fact_has_addons_istio|bool
   changed_when: false

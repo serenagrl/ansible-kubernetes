@@ -14,4 +14,4 @@
   register: istio_result
 
 - ansible.builtin.set_fact:
-    fact_has_istio: "{{ istio_result.resources | length > 0 }}"
+    fact_has_addons_istio: "{{ istio_result.resources | length > 0 }}"
