@@ -54,6 +54,7 @@
         vm_ubuntu_presets:
           vm:
             local: no
+            os: "{% raw %}{{ vm_os | default('')}}{% endraw %}"
             redhat:
               username: "{% raw %}{{ redhat_username | default('')}}{% endraw %}"
               password: "{% raw %}{{ redhat_password | default('')}}{% endraw %}"
