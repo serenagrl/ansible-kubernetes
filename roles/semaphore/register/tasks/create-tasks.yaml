@@ -26,17 +26,6 @@
           - name: "NFS (Less resource consumption)"
             value: "nfs"
     provision_vm_surveys:
-      - name: "redhat_username"
-        title: "Red Hat Username (for Red Hat VMs only)"
-        description: "The Red Hat subscription Username when provisioning Red Hat VMs."
-        type: "string"
-        required: false
-      - name: "redhat_password"
-        title: "Red Hat Password (for Red Hat VMs only)"
-        description: "The Red Hat subscription Password when provisioning Red Hat VMs."
-        type: "string"
-        required: false
-    os_surveys:
       - name: "vm_os"
         title: "Virtual Machine Operating System"
         description: "The operating system to install for the VMs."
@@ -47,6 +36,16 @@
             value: "redhat"
           - name: "Ubuntu"
             value: "ubuntu"
+      - name: "redhat_username"
+        title: "Red Hat Username (for Red Hat VMs only)"
+        description: "The Red Hat subscription Username when provisioning Red Hat VMs."
+        type: "string"
+        required: false
+      - name: "redhat_password"
+        title: "Red Hat Password (for Red Hat VMs only)"
+        description: "The Red Hat subscription Password when provisioning Red Hat VMs."
+        type: "string"
+        required: false
   ansible.builtin.uri:
     url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/templates"
     method: POST
@@ -74,23 +73,23 @@
     status_code: 201 # Created
   when: item.create
   loop:
-    - { name: "1. Setup Infrastructure (DNS & LB)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys + os_surveys }}",
+    - { name: "1. Setup Infrastructure (DNS & LB)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_INFRASTRUCTURE }}", desc: "Setup and configure BIND DNS and Load Balancer servers." }
-    - { name: "1.a. Setup DNS Server only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys + os_surveys }}",
+    - { name: "1.a. Setup DNS Server only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_DNS }}", desc: "Individually configures a basic BIND DNS server. Optionally, can provision a virtual machine for it." }
-    - { name: "1.b. Setup Load-Balancers only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys + os_surveys }}",
+    - { name: "1.b. Setup Load-Balancers only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_LOAD_BALANCERS }}", desc: "Individually provisions Load Balancer VMs, install/configure HAProxy and Keepalived." }
     - { name: "1.c. Setup NFS Server (For CSI NFS only)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
-    - { name: "2. Setup Kubernetes (CP & Worker Nodes)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ setup_kubernetes_cluster_surveys + provision_vm_surveys + os_surveys }}",
+    - { name: "2. Setup Kubernetes (CP & Worker Nodes)", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ setup_kubernetes_cluster_surveys + provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes. Optionally, provisions VM for them." }
-    - { name: "2.a. Provision Control-Planes VMs only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys + os_surveys }}",
+    - { name: "2.a. Provision Control-Planes VMs only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_SERVERS }}", desc: "Individually provisions control-plane virtual machines." }
     - { name: "2.b. Setup Primary Control-Plane only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_PRIMARY }}", desc: "Individually creates the primary control-plane in the kubernetes cluster." }
     - { name: "2.c. Setup Secondary Control-Planes only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_OTHER }}", desc: "Individually creates and joins secondary control-planes into the kubernetes cluster." }
-    - { name: "2.d. Provision Worker Nodes VMs only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys + os_surveys }}",
+    - { name: "2.d. Provision Worker Nodes VMs only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes, surveys: "{{ provision_vm_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Individually provisions worker node virtual machines." }
     - { name: "2.e. Setup Worker Nodes only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Individually creates and join worker nodes into the kubernetes cluster." }
