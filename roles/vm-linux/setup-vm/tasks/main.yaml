@@ -59,7 +59,6 @@
     - name: Check for existing Virtual Hard Disks
       ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
       vars:
-        is_local: "{{ vm.local }}"
         win_folder: "{{ vm.vm_folder }}"
         hostname: "{{ ansible_hostname }}"
         disk_name: "{{ ansible_hostname }}"
