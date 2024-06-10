@@ -1,12 +1,42 @@
 # Ansible Kubernetes Lab on Hyper-V
-A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster on Hyper-V for testing/learning purposes. The playbooks and add-ons were tailored to my lab environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
+A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster on Hyper-V for testing/learning purposes. These playbooks and add-ons were tailored to my working environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
 
 ### Pre-requisites / Setup
-1. A Windows machine with lots of processing power, RAM and disk space (i7 CPU, 64GB RAM, SSD recommended) with [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed. These playbooks were tested on a Windows host with Ubuntu 22.04 running in WSL.
+1. A Windows machine with sufficient processing power, RAM and disk space (i7 CPU, 128GB RAM, SSD recommended) with [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed. These playbooks have been tested on a Windows host with Ubuntu 22.04 running in WSL.
 
-2. [Install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu) on the Ubuntu OS in your WSL.
+2. Install Ansible on the Ubuntu OS in your WSL.
+   ```
+   sudo apt update
+   sudo apt install software-properties-common
+   sudo add-apt-repository --yes --update ppa:ansible/ansible
+   sudo apt install ansible
+   ```
 
-3. [Configure Windows Remote Management (WinRM)](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html) on your Windows host that has Hyper-V feature enabled. You can run on Windows 11 or Windows Server 2022 with Hyper-V enabled. You may pool multiple Windows Hyper-V servers together to host the virtual machines but each of them will need to be configured with WinRM properly.
+   You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu).
+
+3. Configure Windows Remote Management (WinRM) on your Windows host that has Hyper-V feature enabled. You can run on Windows 11 or Windows Server 2022 with Hyper-V enabled. You may pool multiple Windows Hyper-V servers together to host the virtual machines but each of them will need to be configured with WinRM properly.
+
+   3.1. Open an Ubuntu terminal in your WSL and run the following:
+   ```
+   sudo apt install python3-pip
+   pip install ansible pywinrm kubernetes jsonpatch
+   ```
+
+   3.2. Open a Powershell command prompt with Administrator access in your Windows host and run the following:
+   ```
+   $username = "ansible"
+   $password = ConvertTo-SecureString "Ans1bl3h" -AsPlainText -Force
+
+   New-LocalUser -Name $username -Password $password -FullName $username -Description "Ansible Controller Host Account" -AccountNeverExpires -PasswordNeverExpires -UserMayNotChangePassword
+
+   Add-LocalGroupMember -Group Administrators -Member $username
+
+   $setupscript = "https://raw.githubusercontent.com/ansible/ansible-documentation/ae8772176a5c645655c91328e93196bcf741732d/examples/scripts/ConfigureRemotingForAnsible.ps1"
+   Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
+   .\winrm-setup.ps1
+   ```
+
+   You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html).
 
    **Important!**: Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
 
@@ -26,50 +56,113 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
    git clone https://github.com/serenagrl/ansible-kubernetes.git
    ```
 
+6. Optional: Follow the below steps, if you wish to connect to WinRM using certificates.
+
+   6.1 Create a `certs` folder inside the `ansible-kubernetes` project repository which you have cloned earlier i.e. `/root/ansible-kubernetes/certs`.
+
+   Open an Ubuntu terminal in WSL to create the certificates:
+   ```
+   USERNAME="ansible"
+
+   cat > openssl.conf << EOL
+   distinguished_name = req_distinguished_name
+   [req_distinguished_name]
+   [v3_req_client]
+   extendedKeyUsage = clientAuth
+   subjectAltName = otherName:1.3.6.1.4.1.311.20.2.3;UTF8:$USERNAME@localhost
+   EOL
+
+   export OPENSSL_CONF=openssl.conf
+   openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -out cert.pem -outform PEM -keyout cert_key.pem -subj "/CN=$USERNAME" -extensions v3_req_client
+   rm openssl.conf
+   ```
+
+   6.2 Register the certificates to the Windows certificate store and configure WinRM to use it for the ansible user.
+
+   You can manually add the certificates using the Certificate Manager UI (`certmgr.msc`) or execute the following script in a Powershell command prompt with Administrator access:
+   ```
+   $cert = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 "\\wsl.localhost\Ubuntu-22.04\root\ansible-kubernetes\certs\cert.pem"
+
+   $store_name = [System.Security.Cryptography.X509Certificates.StoreName]::Root
+   $store_location = [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine
+   $store = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $store_name, $store_location
+   $store.Open("MaxAllowed")
+   $store.Add($cert)
+   $store.Close()
+
+   $cert = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 "\\wsl.localhost\Ubuntu-22.04\root\ansible-kubernetes\certs\cert.pem"
+
+   $store_name = [System.Security.Cryptography.X509Certificates.StoreName]::TrustedPeople
+   $store_location = [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine
+   $store = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $store_name, $store_location
+   $store.Open("MaxAllowed")
+   $store.Add($cert)
+   $store.Close()
+   ```
+
+   Finally, configure WinRM to use the certificate for the ansible user.
+   ```
+   $username = "ansible"
+   $password = ConvertTo-SecureString -String "Ans1bl3h" -AsPlainText -Force
+   $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $username, $password
+
+   $thumbprint = (Get-ChildItem -Path cert:\LocalMachine\root | Where-Object { $_.Subject -eq "CN=$username" }).Thumbprint
+
+   New-Item -Path WSMan:\localhost\ClientCertificate `
+       -Subject "$username@localhost" `
+       -URI * `
+       -Issuer $thumbprint `
+       -Credential $credential `
+       -Force
+
+   Set-Item -Path WSMan:\localhost\Service\Auth\Certificate -Value $true
+   ```
+
 ### Requirements for Kubernetes VMs
 1. The specifications for each Kubernetes VM is depending on how much add-ons you wish to install on the Kubernetes Cluster. The following specifications will give you a rough guide on what to set but you are free to adjust them accordingly to your needs:
 
-    Recommended specifications for learning the basics of kubernetes with minimal add-ons installed:
+    Recommended specifications for learning the basics of kubernetes with basic add-ons installed:
 
     | Hosts           | vCPU | Min. RAM  | Recommended RAM |
     | --------------- |:----:|  :----:   |     :----:      |
-    | Control plane 1 | 4    | 6GB       | 8GB             |
-    | Control plane 2 | 4    | 6GB       | 8GB             |
-    | Control plane 3 | 4    | 6GB       | 8GB             |
+    | Control plane 1 | 4    | 8GB       | 12GB             |
+    | Control plane 2 | 4    | 8GB       | 12GB             |
+    | Control plane 3 | 4    | 8GB       | 12GB             |
 
     Recommended specifications for a test-lab with majority of the add-ons installed:
 
     | Hosts           | vCPU | Min. RAM  | Recommended RAM |
     | --------------- |:----:|  :----:   |     :----:      |
-    | Control plane 1 | 6    | 8GB       | 12GB            |
-    | Control plane 2 | 6    | 8GB       | 12GB            |
-    | Control plane 3 | 6    | 8GB       | 12GB            |
+    | Control plane 1 | 6    | 12GB       | 16GB            |
+    | Control plane 2 | 6    | 12GB       | 16GB            |
+    | Control plane 3 | 6    | 12GB       | 16GB            |
 
     Recommended specifications for an SIT environment with nearly all of the add-ons installed and with worker nodes:
 
     | Hosts           | vCPU | Min. RAM  | Recommended RAM |
     | --------------- |:----:|  :----:   |     :----:      |
-    | DNS Server      | 2    | 1GB       | 2GB             |
+    | Infra Service   | 2    | 1GB       | 2GB             |
     | Load Balancer 1 | 2    | 1GB       | 2GB             |
     | Load Balancer 2 | 2    | 1GB       | 2GB             |
-    | Control plane 1 | 6    | 12GB      | 16GB            |
-    | Control plane 2 | 6    | 12GB      | 16GB            |
-    | Control plane 3 | 6    | 12GB      | 16GB            |
+    | Control plane 1 | 6    | 12GB      | 32GB            |
+    | Control plane 2 | 6    | 12GB      | 32GB            |
+    | Control plane 3 | 6    | 12GB      | 32GB            |
     | Worker Node 1   | 4    | 4GB       | 8GB             |
     | *Worker Node 2  | 4    | 4GB       | 8GB             |
 
-    **Note**: You may need to increase the specifications of the worker nodes depending on what you plan to host on them. The number of worker nodes is depending on your requirements and machine resources. If you have enough RAM, it is recommended to allocate 24GBs of RAM to the control planes.
+    **Note**: You may need to increase the specifications of the worker nodes depending on what you plan to host on them. The number of worker nodes is depending on your requirements and machine resources.
+
+    **Warning**: Both Longhorn and Rook-Ceph CSIs can consume a lot of resources but offers a good learning path and discipline for managing clustered storage. You may need to utilize more than 1 Hyper-V hosts with more RAM if you ran out of resources.
 
 ### About These Playbooks
 * The Kubernetes cluster is currently setup to use Calico and Containerd.
-* Both control-planes only or control-planes with worker nodes configuration are supported.
 * Playbooks are defaulted to setup a DNS server, 2 HAProxy load balancers and 3 control-planes.
 * Configure the IP addresses, host names and domain to your environment in the host files located in `\inventories`
-* The nfs server is configured to not provision currently. You need to manually enable it.
+* Both DNS and NFS are configured to share a single host to conserve resources. The NFS server is configured to not provision a new server by default.
 * Some roles are deploying sample/example configurations only (although some may deploy production environments)
 * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
 * Version incompatibility may occur i.e. new Kubernetes version may break everything or some add-ons version may not be compatible with each other. Configure the desired versions in the `vars\main.yaml` of the role.
-* If a component fail to install, try using an older release of the component since the playbooks may not be compatible with the latest releases.
+* If an add-on fails to install, try using an older release of the add-on since the playbooks may not be compatible with the latest releases.
 * Be patient if you are running on a slow internet connection. Installation may take some time. Increase the timeout of tasks if your environment needs more time to complete certain tasks.
 * VM Checkpoints will be created to provide safety just in case your installation breaks. These checkpoints may consume a lot of disk space. You may remove the checkpoints when you feel everything is stable to recover the disk space.
 
