@@ -1,59 +1,17 @@
 - name: Check for existing virtual hard disk
-  delegate_to: localhost
-  become_user: root
+  delegate_to: "{{ winrm_host }}"
   vars:
-    backslash: '\'
-    mount_path: "/mnt/{{ hostvars[winrm_host]['ansible_host'] }}"
-    linux_dir: "{{ vm.local | default(true) | ternary('/mnt/' + (win_folder[0] | lower) + (win_folder[2:] | replace( backslash, '/')),
-                                                      mount_path + '/' + (win_folder[3:] | replace( backslash, '/'))) }}"
     vhd_disk: "{{ win_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ disk_name }}.vhdx"
-    folder: "{{ win_folder.split(backslash).1 }}"
   block:
-    - name: Create mounts to share folders on Hyper-v host
-      become_user: root
-      vars:
-        share_host: "{{ hostvars[winrm_host]['ansible_host'] }}"
-        mount_folder: "{{ mount_path }}/{{ folder }}"
-      block:
-        - name: Create "{{ mount_folder }}"
-          ansible.builtin.file:
-            path: "{{ mount_folder }}"
-            state: directory
-
-        - name: Mount "{{ mount_folder }}"
-          ansible.builtin.shell: |
-            (
-                flock -x 9
-
-                mount | grep "{{ mount_folder }}"
-                if [ $? -eq "1" ]
-                then
-                  sudo mount -t cifs "//{{ share_host }}/{{ folder }}" "{{ mount_folder }}" -o user={{ vm.mount.username }},password={{ vm.mount.password }}
-                fi
-            ) 9>/tmp/mount.lock
-      when: not vm.local and mount_before_check | default(false)
-
     - name: Checking for existing vhdx file on hosts
-      ansible.builtin.find:
-        paths: "{{ linux_dir }}/{{ hostname }}/Virtual Hard Disks/"
-        patterns: "{{ disk_name }}.vhdx"
+      ansible.windows.win_powershell:
+        script: |
+          Test-Path "{{ vhd_disk }}"
+        error_action: stop
       register: file_exist
 
     - name: File Check
       ansible.builtin.fail:
         msg: "{{ vhd_disk }} already exist. Please detach it from Hyper-V and perform the necessary backup/deletion before proceeding."
-      when: file_exist.matched > 0
+      when: file_exist.output.0|bool
       changed_when: false
-
-  always:
-    - name: Unmount winrm_host (Hyper-V Host) shared folders
-      ansible.builtin.shell: |
-        (
-            flock -x 9
-            mount | grep "{{ mount_path }}/{{ folder }}" > /dev/null
-            if [ $? -eq "0" ]
-            then
-              umount "{{ mount_path }}/{{ folder }}"
-            fi
-        ) 9>/tmp/mount.lock
-      when: not vm.local and mount_before_check | default(false)

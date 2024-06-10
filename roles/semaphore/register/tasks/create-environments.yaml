@@ -57,6 +57,7 @@
 
         vm_ubuntu_presets:
           vm:
+            local: no
             os: "{{'{{'}} vm_os | default('') {{'}}'}}"
             redhat:
               username: "{{'{{'}} redhat_username | default('') {{'}}'}}"

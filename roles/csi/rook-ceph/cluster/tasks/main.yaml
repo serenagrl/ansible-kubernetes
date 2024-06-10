@@ -12,7 +12,6 @@
 - name: Check for existing Virtual Hard Disks
   ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
   vars:
-    mount_before_check: yes
     win_folder: "{{ rook_ceph.cluster.disk.vm_folder }}"
     hostname: "{{ hostvars[item].ansible_hostname }}"
     disk_name: "{{ rook_ceph.cluster.disk.name }}"

@@ -13,7 +13,6 @@
       ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
       vars:
         # parameter hostname flowing in
-        mount_before_check: yes
         win_folder: "{{ virtual_disk.vm_folder }}"
         disk_name: "{{ virtual_disk.name }}"
 
