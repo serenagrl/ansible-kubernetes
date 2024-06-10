@@ -11,4 +11,9 @@ rook_ceph:
       vm_folder: "D:\\Virtual Machines\\Kubernetes"
       size: 40GB
 
+      # Indicates whether the winrm host (Hyper-V host) is the same as the Ansible Controller Host (i.e. WSL).
+      # Set this to 'yes' if you are provisioning on just one machine with WSL and Hyper-V to build your lab.
+      # When set to 'no'. All the winrm hosts will need to have the same shared folders name and user credentials configured.
+      local: yes
+
   install_kubectl_plugin: yes
