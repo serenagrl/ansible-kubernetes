@@ -8,18 +8,18 @@
 
 - name: Check if cert manager is installed
   ansible.builtin.fail:
-    msg: Cert manager is required.
+    msg: Dependency check failed. Please make sure cert manager is installed.
   failed_when: not fact_has_addon_cert_manager|bool
   changed_when: false
 
 - name: Check if ingress is installed
   ansible.builtin.fail:
-    msg: Ingress is required.
+    msg: Dependency check failed. Please make sure ingress is installed.
   failed_when: not fact_has_addon_ingress|bool
   changed_when: false
 
 - name: Check if minio is installed
   ansible.builtin.fail:
-    msg: Minio is required.
+    msg: Dependency check failed. Please make sure minio is installed.
   failed_when: not fact_has_addon_minio|bool
   changed_when: false

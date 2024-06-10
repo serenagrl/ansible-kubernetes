@@ -7,6 +7,6 @@
 
 - name: Check if ingress is installed
   ansible.builtin.fail:
-    msg: Ingress is required.
+    msg: Dependency check failed. Please make sure ingress is installed.
   failed_when: not fact_has_addon_ingress|bool
   changed_when: false

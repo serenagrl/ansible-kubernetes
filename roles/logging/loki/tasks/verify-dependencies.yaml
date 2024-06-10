@@ -8,6 +8,6 @@
 
 - name: Check if grafana is installed
   ansible.builtin.fail:
-    msg: Grafana is required.
+    msg: Dependency check failed. Please make sure grafana is installed.
   failed_when: not fact_has_addon_grafana|bool
   changed_when: false

@@ -8,6 +8,6 @@
 
 - name: Check if elasticsearch is installed
   ansible.builtin.fail:
-    msg: Elasticsearch is required.
+    msg: Dependency check failed. Please make sure elasticsearch is installed.
   failed_when: not fact_has_addon_elasticsearch|bool
   changed_when: false

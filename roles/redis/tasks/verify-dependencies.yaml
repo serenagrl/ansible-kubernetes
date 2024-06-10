@@ -8,12 +8,12 @@
 
 - name: Check if cert manager is installed
   ansible.builtin.fail:
-    msg: Cert manager is required.
+    msg: Dependency check failed. Please make sure cert manager is installed.
   failed_when: not fact_has_addon_cert_manager|bool
   changed_when: false
 
 - name: Check if prometheus is installed
   ansible.builtin.fail:
-    msg: Prometheus is required.
+    msg: Dependency check failed. Please make sure prometheus is installed.
   failed_when: redis.enable_metrics|bool and not fact_has_addon_prometheus|bool
   changed_when: false
