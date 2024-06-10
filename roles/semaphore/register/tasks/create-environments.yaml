@@ -53,8 +53,6 @@
           add_ons: "{{ item.content }}"
           checkpoint_name: "{{ item.checkpoint_name }}"
 
-        all_vars:
-
         vm_ubuntu_presets:
           vm:
             local: no
@@ -212,6 +210,9 @@
         minio_vars:
           - { name: devops/minio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/minio/vars`)].content') | b64decode | from_yaml }}" }
 
+        trivy_vars:
+          - { name: trivy, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/trivy/vars`)].content') | b64decode | from_yaml }}" }
+
         add_on_vars_to_use: "{{ item.checkpoint_name is defined | ternary(add_on_vars_with_checkpoint, add_on_vars) }}"
       ansible.builtin.uri:
         url: "{{ environment_url }}"
@@ -225,37 +226,38 @@
           {
             "name": "{{ item.name }}",
             "project_id": {{ SEMAPHORE_PROJECT_ID }},
-            "json": {{ item.need_all | ternary(all_vars, []) | combine(item.is_add_on | ternary(add_on_vars_to_use, item.content), recursive=true) | to_nice_json(sort_keys=false, indent=2) | to_json }},
+            "json": {{ item.is_add_on | ternary(add_on_vars_to_use, item.content) | to_nice_json(sort_keys=false, indent=2) | to_json }},
             "env": "{}"
           }
         status_code: 204 # Created
       when: item.create
       loop:
-        - { name: "Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no, need_all: yes }
-        - { name: "Setup Basic Add-Ons", create: yes, content: "{{ k8s_default_add_ons_vars }}", is_add_on: yes, need_all: yes }
-        - { name: "Setup Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", content: "{{ semaphore_reg_vars }}", is_add_on: no, need_all: no }
-        - { name: "Setup Add-On - DevOps (Gitlab)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Gitlab Installed." }
-        - { name: "Setup Add-On - DevOps (Sonarqube)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Sonarqube Installed." }
-        - { name: "Setup Add-On - DevOps (Harbor)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ harbor_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Harbor Installed." }
-        - { name: "Setup Add-On - DevOps (ArgoCD)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ argocd_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "ArgoCD Installed." }
-        - { name: "Setup Add-On - RabbitMQ", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rabbitmq_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "RabbitMQ Installed." }
-        - { name: "Setup Add-On - Redis", create: "{{ semaphore.project.create.component_environments }}", content: "{{ redis_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Redis Installed." }
-        - { name: "Setup Add-On - Velero", create: "{{ semaphore.project.create.component_environments }}", content: "{{ velero_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Velero Installed." }
-        - { name: "Setup Add-On - Logging (Elastic Stack)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ elastic_stack_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Elastic Stack Installed." }
-        - { name: "Setup Add-On - Logging (Fluentd)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ fluentd_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Fluentd Installed." }
-        - { name: "Setup Add-On - Istio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ istio_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Istio Installed." }
-        - { name: "Setup Add-On - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "MSSQL Server Installed." }
-        - { name: "Setup Add-On - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "AWX Installed." }
-        - { name: "Setup Add-On - Kafka", create: "{{ semaphore.project.create.component_environments }}", content: "{{ kafka_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Kafka Installed." }
-        - { name: "Setup Add-On - Knative", create: "{{ semaphore.project.create.component_environments }}", content: "{{ knative_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Knative Installed." }
-        - { name: "Setup Add-On - Goldilocks", create: "{{ semaphore.project.create.component_environments }}", content: "{{ goldilocks_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Goldilocks Installed." }
-        - { name: "Setup Add-On - Keycloak", create: "{{ semaphore.project.create.component_environments }}", content: "{{ keycloak_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Keycloak Installed." }
-        - { name: "Setup Add-On - Tracing", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tracing_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Tracing Installed." }
-        - { name: "Setup Add-On - Logging (Loki)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ loki_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Loki Installed." }
-        - { name: "Setup Add-On - DevOps (Tekton)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tekton_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Tekton Installed." }
-        - { name: "Setup Add-On - DevOps (Minio)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ minio_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Minio Installed." }
-        - { name: "Setup Add-On - CSI", create: "{{ semaphore.project.create.component_environments }}", content: "{{ csi_vars }}", is_add_on: no, need_all: yes }
-        - { name: "Setup Add-On - MetalLB", create: "{{ semaphore.project.create.component_environments }}", content: "{{ metallb_vars }}", is_add_on: yes, need_all: yes, checkpoint_name: "Metallb installed." }
+        - { name: "Setup Infrastructure", create: yes, content: "{{ infra_vars }}", is_add_on: no }
+        - { name: "Setup Basic Add-Ons", create: yes, content: "{{ k8s_default_add_ons_vars }}", is_add_on: yes }
+        - { name: "Setup Semaphore Project", create: "{{ semaphore.project.create.setup_semaphore_project }}", content: "{{ semaphore_reg_vars }}", is_add_on: no }
+        - { name: "Setup Add-On - DevOps (Gitlab)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ gitlab_vars }}", is_add_on: yes, checkpoint_name: "Gitlab Installed." }
+        - { name: "Setup Add-On - DevOps (Sonarqube)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ sonarqube_vars }}", is_add_on: yes, checkpoint_name: "Sonarqube Installed." }
+        - { name: "Setup Add-On - DevOps (Harbor)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ harbor_vars }}", is_add_on: yes, checkpoint_name: "Harbor Installed." }
+        - { name: "Setup Add-On - DevOps (ArgoCD)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ argocd_vars }}", is_add_on: yes, checkpoint_name: "ArgoCD Installed." }
+        - { name: "Setup Add-On - RabbitMQ", create: "{{ semaphore.project.create.component_environments }}", content: "{{ rabbitmq_vars }}", is_add_on: yes, checkpoint_name: "RabbitMQ Installed." }
+        - { name: "Setup Add-On - Redis", create: "{{ semaphore.project.create.component_environments }}", content: "{{ redis_vars }}", is_add_on: yes, checkpoint_name: "Redis Installed." }
+        - { name: "Setup Add-On - Velero", create: "{{ semaphore.project.create.component_environments }}", content: "{{ velero_vars }}", is_add_on: yes, checkpoint_name: "Velero Installed." }
+        - { name: "Setup Add-On - Logging (Elastic Stack)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ elastic_stack_vars }}", is_add_on: yes, checkpoint_name: "Elastic Stack Installed." }
+        - { name: "Setup Add-On - Logging (Fluentd)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ fluentd_vars }}", is_add_on: yes, checkpoint_name: "Fluentd Installed." }
+        - { name: "Setup Add-On - Istio", create: "{{ semaphore.project.create.component_environments }}", content: "{{ istio_vars }}", is_add_on: yes, checkpoint_name: "Istio Installed." }
+        - { name: "Setup Add-On - MSSQL Server", create: "{{ semaphore.project.create.component_environments }}", content: "{{ mssql_vars }}", is_add_on: yes, checkpoint_name: "MSSQL Server Installed." }
+        - { name: "Setup Add-On - AWX", create: "{{ semaphore.project.create.component_environments }}", content: "{{ awx_reg_vars }}", is_add_on: yes, checkpoint_name: "AWX Installed." }
+        - { name: "Setup Add-On - Kafka", create: "{{ semaphore.project.create.component_environments }}", content: "{{ kafka_vars }}", is_add_on: yes, checkpoint_name: "Kafka Installed." }
+        - { name: "Setup Add-On - Knative", create: "{{ semaphore.project.create.component_environments }}", content: "{{ knative_vars }}", is_add_on: yes, checkpoint_name: "Knative Installed." }
+        - { name: "Setup Add-On - Goldilocks", create: "{{ semaphore.project.create.component_environments }}", content: "{{ goldilocks_vars }}", is_add_on: yes, checkpoint_name: "Goldilocks Installed." }
+        - { name: "Setup Add-On - Keycloak", create: "{{ semaphore.project.create.component_environments }}", content: "{{ keycloak_vars }}", is_add_on: yes, checkpoint_name: "Keycloak Installed." }
+        - { name: "Setup Add-On - Tracing", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tracing_vars }}", is_add_on: yes, checkpoint_name: "Tracing Installed." }
+        - { name: "Setup Add-On - Logging (Loki)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ loki_vars }}", is_add_on: yes, checkpoint_name: "Loki Installed." }
+        - { name: "Setup Add-On - DevOps (Tekton)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ tekton_vars }}", is_add_on: yes, checkpoint_name: "Tekton Installed." }
+        - { name: "Setup Add-On - DevOps (Minio)", create: "{{ semaphore.project.create.component_environments }}", content: "{{ minio_vars }}", is_add_on: yes, checkpoint_name: "Minio Installed." }
+        - { name: "Setup Add-On - CSI", create: "{{ semaphore.project.create.component_environments }}", content: "{{ csi_vars }}", is_add_on: no }
+        - { name: "Setup Add-On - MetalLB", create: "{{ semaphore.project.create.component_environments }}", content: "{{ metallb_vars }}", is_add_on: yes, checkpoint_name: "Metallb installed." }
+        - { name: "Setup Add-On - Trivy", create: "{{ semaphore.project.create.component_environments }}", content: "{{ trivy_vars }}", is_add_on: yes, checkpoint_name: "Trivy installed." }
 
     - name: Query all environment records
       ansible.builtin.uri:
