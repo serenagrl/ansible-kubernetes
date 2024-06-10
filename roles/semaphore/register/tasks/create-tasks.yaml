@@ -93,7 +93,7 @@
         playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Individually provisions worker node virtual machines." }
     - { name: "2.e. Setup Worker Nodes only", env_name: "Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Individually creates and join worker nodes into the kubernetes cluster." }
-    - { name: "3. Setup Basic Components", env_name: "Setup Basic Add-Ons", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
+    - { name: "3. Setup Basic Add-Ons", env_name: "Setup Basic Add-Ons", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs basic kubernetes components. (Cert-Manager, Ingress, Dashboard, Monitoring, Metrics Server)" }
     - { name: "4. Setup CSI", env_name: "Setup Add-On - CSI", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}", surveys: "{{ setup_csi_surveys }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the CSI." }
