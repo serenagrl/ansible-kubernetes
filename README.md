@@ -25,7 +25,7 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
    3.2. Open a Powershell command prompt with Administrator access in your Windows host and run the following:
    ```
    $username = "ansible"
-   $password = ConvertTo-SecureString "Ans1bl3h" -AsPlainText -Force
+   $password = ConvertTo-SecureString "p@ssw0rd" -AsPlainText -Force
 
    New-LocalUser -Name $username -Password $password -FullName $username -Description "Ansible Controller Host Account" -AccountNeverExpires -PasswordNeverExpires -UserMayNotChangePassword
 
@@ -103,7 +103,7 @@ A collection of Ansible playbooks to provision a bare-metal Kubernetes cluster o
    Finally, configure WinRM to use the certificate for the ansible user.
    ```
    $username = "ansible"
-   $password = ConvertTo-SecureString -String "Ans1bl3h" -AsPlainText -Force
+   $password = ConvertTo-SecureString -String "p@ssw0rd" -AsPlainText -Force
    $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $username, $password
 
    $thumbprint = (Get-ChildItem -Path cert:\LocalMachine\root | Where-Object { $_.Subject -eq "CN=$username" }).Thumbprint
