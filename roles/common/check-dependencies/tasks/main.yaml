@@ -6,18 +6,25 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Load check dependency task files
-  delegate_to: localhost
-  become_user: root
-  ansible.builtin.find:
-    paths: ./roles/common/check-dependencies/tasks
-    file_type: file
-    recurse: no
-    patterns: 'check-*'
-  register: file_result
+- block:
+    - name: Load check dependency task files
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.find:
+        paths: ./roles/common/check-dependencies/tasks
+        file_type: file
+        recurse: no
+        patterns: 'check-*'
+      register: file_result
+
+    - name: Register check dependency file names as fact
+      ansible.builtin.set_fact:
+        fact_check_dependency_file_names: "{{ file_result.files }}"
+
+  when: fact_check_dependency_file_names is not defined
 
 - name: Run dependency checks
   vars:
-    check_list: "{{ file_result.files | map(attribute='path') | map('basename') | select('search', depends_on | join('|')) }}"
+    check_list: "{{ fact_check_dependency_file_names | map(attribute='path') | map('basename') | select('search', depends_on | join('|')) }}"
   ansible.builtin.include_tasks: "{{ item }}"
   loop: "{{ check_list }}"
