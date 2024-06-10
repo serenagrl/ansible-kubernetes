@@ -19,10 +19,14 @@
       kubernetes_worker_nodes:
         vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `kubernetes_worker_nodes`)].content') | b64decode | from_yaml) }}"
 
+    inv_k8s_presets:
+      vm:
+        local: no
+
     inv_k8s: "{{ (inventory_files | community.general.json_query('results[?contains(source, `kubernetes_cluster`)].content') | b64decode | from_yaml) }}"
     inv_k8s_vars:
       kubernetes_cluster:
-        vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `kubernetes_cluster`)].content') | b64decode | from_yaml) }}"
+        vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `kubernetes_cluster`)].content') | b64decode | from_yaml | combine(inv_k8s_presets, recursive=true)) }}"
 
     inv_lb: "{{ (inventory_files | community.general.json_query('results[?contains(source, `load_balancers`)].content') | b64decode |
                  regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
