@@ -1,0 +1,24 @@
+SEMAPHORE_PROJECT_SURVEYS:
+  - name: "project_name"
+    title: "Semaphore Project Name"
+    description: "The name of the semaphore project."
+    type: "string"
+    required: false
+
+  - name: "project_hostname_prefix"
+    title: "Hostname Prefix"
+    description: "The prefix for all the server names."
+    type: "string"
+    required: false
+
+  - name: "api_username"
+    title: "API Username"
+    description: "The username credentials to connect to the API."
+    type: "string"
+    required: true
+
+  - name: "api_password"
+    title: "API password"
+    description: "The password for the user."
+    type: "secret"
+    required: true
