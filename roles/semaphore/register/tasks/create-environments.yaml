@@ -92,10 +92,10 @@
         metallb_vars:
           - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }
 
-        rabbitmq_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
-        rabbitmq_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/operator/vars`)].content') | b64decode | from_yaml }}"
-        rabbitmq_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/cluster/vars`)].content') | b64decode | from_yaml }}"
-        rabbitmq_topology_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rabbitmq/topology/vars`)].content') | b64decode | from_yaml }}"
+        rabbitmq_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
+        rabbitmq_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/operator/vars`)].content') | b64decode | from_yaml }}"
+        rabbitmq_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/cluster/vars`)].content') | b64decode | from_yaml }}"
+        rabbitmq_topology_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/topology/vars`)].content') | b64decode | from_yaml }}"
         rabbitmq_vars:
           - { name: rabbitmq, vars: "{{ rabbitmq_root_vars | combine(rabbitmq_operator_vars, recursive=true)
                                                            | combine(rabbitmq_cluster_vars, recursive=true)
