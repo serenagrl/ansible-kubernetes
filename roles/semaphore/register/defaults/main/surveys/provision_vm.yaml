@@ -1,0 +1,23 @@
+PROVISION_VM_SURVEYS:
+  - name: "vm_os"
+    title: "Virtual Machine Operating System"
+    description: "The operating system to install for the VMs."
+    type: "enum"
+    required: true
+    values:
+      - name: "Red Hat"
+        value: "redhat"
+      - name: "Ubuntu"
+        value: "ubuntu"
+
+  - name: "redhat_username"
+    title: "Red Hat Username (for Red Hat VMs only)"
+    description: "The Red Hat subscription Username when provisioning Red Hat VMs."
+    type: "string"
+    required: false
+
+  - name: "redhat_password"
+    title: "Red Hat Password (for Red Hat VMs only)"
+    description: "The Red Hat subscription Password when provisioning Red Hat VMs."
+    type: "string"
+    required: false

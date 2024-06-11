@@ -1,0 +1,15 @@
+# Kafka environment variables.
+kafka_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/vars`)].content') | b64decode | from_yaml }}"
+kafka_bridge_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/bridge/vars`)].content') | b64decode | from_yaml }}"
+kafka_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/cluster/vars`)].content') | b64decode | from_yaml }}"
+kafka_connect_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/connect/vars`)].content') | b64decode | from_yaml }}"
+kafka_common_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/common/vars`)].content') | b64decode | from_yaml }}"
+kafka_strimzi_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/strimzi/vars`)].content') | b64decode | from_yaml }}"
+kafka_ui_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/ui/vars`)].content') | b64decode | from_yaml }}"
+kafka_vars:
+  - { name: kafka, vars: "{{ kafka_strimzi_vars | combine(kafka_root_vars, recursive=true)
+                                                | combine(kafka_bridge_vars, recursive=true)
+                                                | combine(kafka_cluster_vars, recursive=true)
+                                                | combine(kafka_connect_vars, recursive=true)
+                                                | combine(kafka_common_vars, recursive=true)
+                                                | combine(kafka_ui_vars, recursive=true) }}" }

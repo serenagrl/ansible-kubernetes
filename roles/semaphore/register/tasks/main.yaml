@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Automatically register project in Semaphore
-  vars: 
+  vars:
     # local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ '%Y-%m-%d' | strftime }}"
     local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ semaphore.project.hostname_prefix }}-cluster"
   block:
@@ -14,15 +14,16 @@
         path: "{{ local_repo_dir }}"
       register: repo_dir_stat
 
-    - name: Check if directory exist (Skipped when passed)
+    - name: Check if directory exist
       ansible.builtin.fail:
         msg: "{{ local_repo_dir }} already exist. Please perform the necessary backup/deletion before proceeding."
-      when: repo_dir_stat.stat.exists
+      failed_when: repo_dir_stat.stat.exists
+      changed_when: false
 
     - name: Authenticate with Semaphore API
       ansible.builtin.include_tasks: authenticate.yaml
 
-    - name: Create Default project 
+    - name: Create Default project
       ansible.builtin.include_tasks: create-projects.yaml
 
     - name: Create semaphore keys
@@ -41,11 +42,11 @@
       ansible.builtin.include_tasks: create-tasks.yaml
 
   always:
-    - name: Delete access token 
+    - name: Delete access token
       ansible.builtin.uri:
         url: "{{ SEMAPHORE_URL }}/user/tokens/{{ SEMAPHORE_ACCESS_TOKEN }}"
         method: DELETE
-        headers: 
+        headers:
           Content-Type: application/json
           Accept: application/json
           Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"

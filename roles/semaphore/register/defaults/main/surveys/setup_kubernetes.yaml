@@ -1,0 +1,35 @@
+type_definition:
+  enum_bool: &enum_bool
+    type: "enum"
+    required: false
+    values:
+      - name: "Yes"
+        value: "1"
+      - name: "No"
+        value: "0"
+
+SETUP_KUBERNETES_SURVEYS:
+  - name: provision_cp
+    title: "Provision Control Plane VMs (Default: No)"
+    description: "Provisions VMs for the control planes."
+    <<: *enum_bool
+
+  - name: setup_cp_primary
+    title: "Setup Primary Control Plane (Default: Yes)"
+    description: "Setup and configure the primary control plane."
+    <<: *enum_bool
+
+  - name: setup_cp_other
+    title: "Setup Secondary Control Planes (Default: Yes)"
+    description: "Setup and join secondary control planes into the cluster."
+    <<: *enum_bool
+
+  - name: provision_wk
+    title: "Provision Worker Node VMs (Default: No)"
+    description: "Provisions VMs for the worker nodes."
+    <<: *enum_bool
+
+  - name: setup_worker
+    title: "Setup Worker Nodes (Default: Yes)"
+    description: "Setup and join worker nodes into the cluster."
+    <<: *enum_bool

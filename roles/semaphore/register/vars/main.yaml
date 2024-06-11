@@ -7,14 +7,7 @@ semaphore:
     # The root folder for the playbooks.
     local_repo_dir: /ansible-playbooks/ansible-kubernetes
 
-    # Specify whether miscellaneous environments and playbooks are automatically created.
-    # You may want to disable this to remove clutter if you are already familiar with Semaphore.
-    create:
-      component_environments: yes
-      component_playbooks: yes # requires component_environments to be yes
-      setup_semaphore_project: yes
-
   # The login credentials to use to login to the Semaphore API.
   api_login:
-      username: admin
-      password: p@ssw0rd
+    username: admin
+    password: p@ssw0rd

@@ -4,7 +4,8 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Provision Virtual Machines
+
+- name: Setup Load Balancers
   hosts: load_balancers
   gather_facts: no
 

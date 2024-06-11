@@ -5,15 +5,22 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# Setup control-plane servers
-- ansible.builtin.import_playbook: setup-kubernetes-servers.yaml
-  when: provision_vm is defined and provision_vm|bool
+- name: Setup Kubernetes Control Plane servers
+  ansible.builtin.import_playbook: setup-control-plane-servers.yaml
+  when: (provision_cp is defined and provision_cp|bool)
 
-# Setup primary control plane
-- ansible.builtin.import_playbook: setup-control-plane-primary.yaml
+- name: Setup primary control plane
+  ansible.builtin.import_playbook: setup-control-plane-primary.yaml
+  when: setup_cp_primary is not defined or setup_cp_primary|bool
 
-# Setup sencondary control planes
-- ansible.builtin.import_playbook: setup-control-plane-other.yaml
+- name: Setup sencondary control planes
+  ansible.builtin.import_playbook: setup-control-plane-other.yaml
+  when: setup_cp_other is not defined or setup_cp_other|bool
 
-# Setup worker nodes.
-- ansible.builtin.import_playbook: setup-worker-nodes.yaml
+- name: Setup Kubernetes Worker node servers
+  ansible.builtin.import_playbook: setup-worker-node-servers.yaml
+  when: (provision_wk is defined and provision_wk|bool)
+
+- name: Setup worker nodes.
+  ansible.builtin.import_playbook: setup-worker-nodes.yaml
+  when: setup_worker is not defined or setup_worker|bool

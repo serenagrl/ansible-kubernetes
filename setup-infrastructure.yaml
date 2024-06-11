@@ -5,8 +5,14 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# Setup Load-balancers
-- ansible.builtin.import_playbook: setup-load-balancers.yaml
+- name: Setup DNS Server
+  ansible.builtin.import_playbook: setup-dns.yaml
+  when: (setup_dns is not defined) or (setup_dns|bool)
 
-# Setup DNS Server
-- ansible.builtin.import_playbook: setup-dns.yaml
+- name: Setup Load-balancers
+  ansible.builtin.import_playbook: setup-load-balancers.yaml
+  when: (setup_lb is not defined) or (setup_lb|bool)
+
+- name: Setup NFS Server
+  ansible.builtin.import_playbook: setup-nfs.yaml
+  when: (setup_lb is defined and setup_nfs|bool)
