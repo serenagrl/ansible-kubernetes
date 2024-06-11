@@ -19,5 +19,5 @@ PROVISION_VM_SURVEYS:
   - name: "redhat_password"
     title: "Red Hat Password (for Red Hat VMs only)"
     description: "The Red Hat subscription Password when provisioning Red Hat VMs."
-    type: "string"
+    type: "secret"
     required: false
