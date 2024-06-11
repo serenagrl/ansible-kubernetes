@@ -1,0 +1,18 @@
+# CSI environment variables.
+CSI_ADD_ON_PRESETS:
+  csi:
+    name: "{{'{{'}} csi_name {{'}}'}}"
+
+ROOK_CEPH_OPERATOR_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/operator/vars`)].content') | b64decode | from_yaml }}"
+ROOK_CEPH_CLUSTER_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/cluster/vars`)].content') | b64decode | from_yaml }}"
+LONGHORN_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/longhorn/vars`)].content') | b64decode | from_yaml }}"
+NFS_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}"
+CSI_ROOT_VARS:
+  add_ons:
+    - { name: csi, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/vars`)].content') | b64decode | from_yaml | combine(CSI_ADD_ON_PRESETS, recursive=true) }}" }
+  checkpoint_name: "{{'{{'}} csi_name | capitalize {{'}}'}} installed."
+
+CSI_VARS: "{{ CSI_ROOT_VARS | combine(LONGHORN_VARS, recursive=true)
+                            | combine(ROOK_CEPH_OPERATOR_VARS, recursive=true)
+                            | combine(ROOK_CEPH_CLUSTER_VARS, recursive=true)
+                            | combine(NFS_VARS, recursive=true) }}"

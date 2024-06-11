@@ -1,0 +1,2 @@
+# Semaphore register environment variables.
+SEMAPHORE_REG_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml }}"

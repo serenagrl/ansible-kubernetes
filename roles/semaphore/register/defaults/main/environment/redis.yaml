@@ -1,0 +1,3 @@
+# Redis environment variables.
+REDIS_VARS:
+  - { name: redis, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/redis/vars`)].content') | b64decode | from_yaml }}" }

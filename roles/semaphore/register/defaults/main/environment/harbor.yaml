@@ -1,0 +1,3 @@
+# Harbor environment variables.
+HARBOR_VARS:
+  - { name: devops/harbor, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/harbor/vars`)].content') | b64decode | from_yaml }}" }

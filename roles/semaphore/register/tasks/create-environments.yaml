@@ -54,169 +54,7 @@
           add_ons: "{{ item.content }}"
           checkpoint_name: "{{ item.checkpoint_name }}"
 
-        vm_ubuntu_presets:
-          vm:
-            local: no
-            os: "{{'{{'}} vm_os | default('') {{'}}'}}"
-            redhat:
-              username: "{{'{{'}} redhat_username | default('') {{'}}'}}"
-              password: "{{'{{'}} redhat_password | default('') {{'}}'}}"
-
-        csi_add_on_presets:
-          csi:
-            name: "{{'{{'}} csi_name {{'}}'}}"
-
-        # infrastructure
-        vm_ubuntu_vars: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(vm_ubuntu_presets, recursive=true) }}"
-        haproxy_vars: "{{ var_files | community.general.json_query('results[?contains(source, `haproxy/vars`)].content') | b64decode | from_yaml }}"
-        nfs_server_vars: "{{ var_files | community.general.json_query('results[?contains(source, `nfs/server/vars`)].content') | b64decode | from_yaml }}"
-        k8s_cluster_node_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/cluster-node/vars`)].content') | b64decode | from_yaml }}"
-        k8s_control_plane_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/control-plane/vars`)].content') | b64decode | from_yaml }}"
-        k8s_worker_node_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/worker-node/vars`)].content') | b64decode | from_yaml }}"
-        k8s_remote_admin_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/remote-admin/vars`)].content') | b64decode | from_yaml }}"
-
-        infra_vars: "{{ vm_ubuntu_vars | combine(haproxy_vars, recursive=true)
-                                       | combine(nfs_server_vars, recursive=true)
-                                       | combine(k8s_cluster_node_vars, recursive=true)
-                                       | combine(k8s_control_plane_vars, recursive=true)
-                                       | combine(k8s_worker_node_vars, recursive=true)
-                                       | combine(k8s_remote_admin_vars, recursive=true) }}"
-
-        k8s_default_add_ons_vars:
-          - { name: cert-manager, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/cert-manager/vars`)].content') | b64decode | from_yaml }}" }
-          - { name: ingress, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/ingress/nginx/vars`)].content') | b64decode | from_yaml }}" }
-          - { name: dashboard }
-          - { name: monitoring }
-          - { name: metrics-server }
-
-        metallb_vars:
-          - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }
-
-        rabbitmq_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
-        rabbitmq_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/operator/vars`)].content') | b64decode | from_yaml }}"
-        rabbitmq_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/cluster/vars`)].content') | b64decode | from_yaml }}"
-        rabbitmq_topology_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/topology/vars`)].content') | b64decode | from_yaml }}"
-        rabbitmq_vars:
-          - { name: rabbitmq, vars: "{{ rabbitmq_root_vars | combine(rabbitmq_operator_vars, recursive=true)
-                                                           | combine(rabbitmq_cluster_vars, recursive=true)
-                                                           | combine(rabbitmq_topology_vars, recursive=true) }}" }
-
-        redis_vars:
-          - { name: redis, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/redis/vars`)].content') | b64decode | from_yaml }}" }
-
-        gitlab_vars:
-          - { name: devops/gitlab, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab/vars`)].content') | b64decode | from_yaml }}" }
-          - { name: devops/gitlab-runner, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab-runner/vars`)].content') | b64decode | from_yaml }}" }
-
-        sonarqube_vars:
-          - { name: devops/sonarqube, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/sonarqube/vars`)].content') | b64decode | from_yaml }}" }
-
-        harbor_vars:
-          - { name: devops/harbor, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/harbor/vars`)].content') | b64decode | from_yaml }}" }
-
-        argocd_vars:
-          - { name: devops/argocd, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/argocd/vars`)].content') | b64decode | from_yaml }}" }
-
-        velero_cli_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/cli/vars`)].content') | b64decode | from_yaml }}"
-        velero_svr_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/server/vars`)].content') | b64decode | from_yaml }}"
-        velero_bsl_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/storage-location/vars`)].content') | b64decode | from_yaml }}"
-        velero_vars:
-          - { name: velero, vars: "{{ velero_cli_vars | combine(velero_svr_vars, recursive=true) | combine(velero_bsl_vars, recursive=true) }}" }
-
-        semaphore_reg_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml }}"
-
-        elastic_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/elastic-operator/vars`)].content') | b64decode | from_yaml }}"
-        elasticsearch_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/elasticsearch/vars`)].content') | b64decode | from_yaml }}"
-        kibana_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/kibana/vars`)].content') | b64decode | from_yaml }}"
-        elastic_stack_vars:
-          - { name: logging/elastic-stack, vars: "{{ elastic_operator_vars | combine(elasticsearch_vars, recursive=true)
-                                                                           | combine(kibana_vars, recursive=true) }}" }
-
-        fluentd_vars:
-          - { name: logging/fluentd, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/fluentd/vars`)].content') | b64decode | from_yaml }}" }
-
-        istio_vars:
-          - { name: istio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/istio/vars`)].content') | b64decode | from_yaml }}" }
-
-        rook_ceph_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/operator/vars`)].content') | b64decode | from_yaml }}"
-        rook_ceph_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/rook-ceph/cluster/vars`)].content') | b64decode | from_yaml }}"
-        longhorn_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/longhorn/vars`)].content') | b64decode | from_yaml }}"
-        nfs_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/nfs/vars`)].content') | b64decode | from_yaml }}"
-        csi_root_vars:
-          add_ons:
-            - { name: csi, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/csi/vars`)].content') | b64decode | from_yaml | combine(csi_add_on_presets, recursive=true) }}" }
-          checkpoint_name: "{{'{{'}} csi_name | capitalize {{'}}'}} installed."
-
-        csi_vars: "{{ csi_root_vars | combine(longhorn_vars, recursive=true)
-                                    | combine(rook_ceph_operator_vars, recursive=true)
-                                    | combine(rook_ceph_cluster_vars, recursive=true)
-                                    | combine(nfs_vars, recursive=true) }}"
-
-        mssql_vars:
-          - { name: database/mssql, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/mssql/vars`)].content') | b64decode | from_yaml }}" }
-
-        awx_reg_vars:
-          - { name: awx/operator, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/operator/vars`)].content') | b64decode | from_yaml }}" }
-          - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }
-
-        # kafka_root_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/vars`)].content') | b64decode | from_yaml }}"
-        # kafka_bridge_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/bridge/vars`)].content') | b64decode | from_yaml }}"
-        # kafka_cluster_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/cluster/vars`)].content') | b64decode | from_yaml }}"
-        # kafka_connect_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/connect/vars`)].content') | b64decode | from_yaml }}"
-        # kafka_common_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/common/vars`)].content') | b64decode | from_yaml }}"
-        # kafka_strimzi_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/strimzi/vars`)].content') | b64decode | from_yaml }}"
-        # kafka_ui_vars: "{{ var_files | community.general.json_query('results[?contains(source, `roles/kafka/ui/vars`)].content') | b64decode | from_yaml }}"
-        # kafka_vars:
-        #   - { name: kafka, vars: "{{ kafka_strimzi_vars | combine(kafka_root_vars, recursive=true)
-        #                                                 | combine(kafka_bridge_vars, recursive=true)
-        #                                                 | combine(kafka_cluster_vars, recursive=true)
-        #                                                 | combine(kafka_connect_vars, recursive=true)
-        #                                                 | combine(kafka_common_vars, recursive=true)
-        #                                                 | combine(kafka_ui_vars, recursive=true) }}" }
-
-        knative_operator_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/operator/vars`)].content') | b64decode | from_yaml }}"
-        knative_serving_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/serving/vars`)].content') | b64decode | from_yaml }}"
-        knative_eventing_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/eventing/vars`)].content') | b64decode | from_yaml }}"
-        knative_eventing_rabbitmq_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/eventing/controller/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
-        knative_eventing_kafka_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/eventing/controller/kafka/vars`)].content') | b64decode | from_yaml }}"
-        knative_cli_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/cli/vars`)].content') | b64decode | from_yaml }}"
-        knative_vars:
-          - { name: knative, vars: "{{ knative_operator_vars | combine(knative_serving_vars, recursive=true)
-                                                             | combine(knative_eventing_vars, recursive=true)
-                                                             | combine(knative_eventing_rabbitmq_vars, recursive=true)
-                                                             | combine(knative_eventing_kafka_vars, recursive=true)
-                                                             | combine(knative_cli_vars, recursive=true) }}" }
-
-        goldilocks_vars:
-          - { name: goldilocks, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/goldilocks/vars`)].content') | b64decode | from_yaml }}" }
-
-        keycloak_vars:
-          - { name: keycloak, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/keycloak/vars`)].content') | b64decode | from_yaml }}" }
-
-        tracing_vars:
-          - { name: tracing/jaeger, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tracing/jaeger/vars`)].content') | b64decode | from_yaml }}" }
-          - { name: tracing/open-telemetry, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tracing/open-telemetry/vars`)].content') | b64decode | from_yaml }}" }
-
-        loki_vars:
-          - { name: logging/loki, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/loki/vars`)].content') | b64decode | from_yaml }}" }
-
-        tekton_pipelines_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/pipelines/vars`)].content') | b64decode | from_yaml }}"
-        tekton_triggers_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/triggers/vars`)].content') | b64decode | from_yaml }}"
-        tekton_dashboard_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/dashboard/vars`)].content') | b64decode | from_yaml }}"
-        tekton_cli_vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/cli/vars`)].content') | b64decode | from_yaml }}"
-        tekton_vars:
-          - { name: devops/tekton, vars: "{{ tekton_pipelines_vars | combine(tekton_triggers_vars, recursive=true)
-                                                             | combine(tekton_dashboard_vars, recursive=true)
-                                                             | combine(tekton_cli_vars, recursive=true) }}" }
-
-        minio_vars:
-          - { name: devops/minio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/minio/vars`)].content') | b64decode | from_yaml }}" }
-
-        trivy_vars:
-          - { name: trivy, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/trivy/vars`)].content') | b64decode | from_yaml }}" }
-
         add_on_vars_to_use: "{{ item.checkpoint_name is defined | ternary(add_on_vars_with_checkpoint, add_on_vars) }}"
-
       ansible.builtin.uri:
         url: "{{ environment_url }}"
         method: POST
@@ -234,32 +72,32 @@
           }
         status_code: 204 # Created
       loop:
-        - { name: "Setup Infrastructure", content: "{{ infra_vars }}", is_add_on: no }
-        - { name: "Setup Basic Add-Ons", content: "{{ k8s_default_add_ons_vars }}" }
-        - { name: "Setup Semaphore Project", content: "{{ semaphore_reg_vars }}", is_add_on: no }
-        - { name: "Setup Add-On - DevOps (Gitlab)", content: "{{ gitlab_vars }}", checkpoint_name: "Gitlab Installed." }
-        - { name: "Setup Add-On - DevOps (Sonarqube)", content: "{{ sonarqube_vars }}", checkpoint_name: "Sonarqube Installed." }
-        - { name: "Setup Add-On - DevOps (Harbor)", content: "{{ harbor_vars }}", checkpoint_name: "Harbor Installed." }
-        - { name: "Setup Add-On - DevOps (ArgoCD)", content: "{{ argocd_vars }}", checkpoint_name: "ArgoCD Installed." }
-        - { name: "Setup Add-On - RabbitMQ", content: "{{ rabbitmq_vars }}", checkpoint_name: "RabbitMQ Installed." }
-        - { name: "Setup Add-On - Redis", content: "{{ redis_vars }}", checkpoint_name: "Redis Installed." }
-        - { name: "Setup Add-On - Velero", content: "{{ velero_vars }}", checkpoint_name: "Velero Installed." }
-        - { name: "Setup Add-On - Logging (Elastic Stack)", content: "{{ elastic_stack_vars }}", checkpoint_name: "Elastic Stack Installed." }
-        - { name: "Setup Add-On - Logging (Fluentd)",  content: "{{ fluentd_vars }}", checkpoint_name: "Fluentd Installed." }
-        - { name: "Setup Add-On - Istio", content: "{{ istio_vars }}", checkpoint_name: "Istio Installed." }
-        - { name: "Setup Add-On - MSSQL Server", content: "{{ mssql_vars }}", checkpoint_name: "MSSQL Server Installed." }
-        - { name: "Setup Add-On - AWX", content: "{{ awx_reg_vars }}", checkpoint_name: "AWX Installed." }
-        - { name: "Setup Add-On - Kafka", content: "{{ kafka_vars }}", checkpoint_name: "Kafka Installed." }
-        - { name: "Setup Add-On - Knative", content: "{{ knative_vars }}", checkpoint_name: "Knative Installed." }
-        - { name: "Setup Add-On - Goldilocks", content: "{{ goldilocks_vars }}", checkpoint_name: "Goldilocks Installed." }
-        - { name: "Setup Add-On - Keycloak", content: "{{ keycloak_vars }}", checkpoint_name: "Keycloak Installed." }
-        - { name: "Setup Add-On - Tracing", content: "{{ tracing_vars }}", checkpoint_name: "Tracing Installed." }
-        - { name: "Setup Add-On - Logging (Loki)", content: "{{ loki_vars }}", checkpoint_name: "Loki Installed." }
-        - { name: "Setup Add-On - DevOps (Tekton)", content: "{{ tekton_vars }}", checkpoint_name: "Tekton Installed." }
-        - { name: "Setup Add-On - DevOps (Minio)", content: "{{ minio_vars }}", checkpoint_name: "Minio Installed." }
-        - { name: "Setup Add-On - CSI", content: "{{ csi_vars }}", is_add_on: no }
-        - { name: "Setup Add-On - MetalLB", content: "{{ metallb_vars }}", checkpoint_name: "Metallb installed." }
-        - { name: "Setup Add-On - Trivy", content: "{{ trivy_vars }}", checkpoint_name: "Trivy installed." }
+        - { name: "Setup Infrastructure", content: "{{ INFRA_VARS }}", is_add_on: no }
+        - { name: "Setup Basic Add-Ons", content: "{{ K8S_DEFAULT_ADD_ONS_VARS }}" }
+        - { name: "Setup Semaphore Project", content: "{{ SEMAPHORE_REG_VARS }}", is_add_on: no }
+        - { name: "Setup Add-On - DevOps (Gitlab)", content: "{{ GITLAB_VARS }}", checkpoint_name: "Gitlab Installed." }
+        - { name: "Setup Add-On - DevOps (Sonarqube)", content: "{{ SONARQUBE_VARS }}", checkpoint_name: "Sonarqube Installed." }
+        - { name: "Setup Add-On - DevOps (Harbor)", content: "{{ HARBOR_VARS }}", checkpoint_name: "Harbor Installed." }
+        - { name: "Setup Add-On - DevOps (ArgoCD)", content: "{{ ARGOCD_VARS }}", checkpoint_name: "ArgoCD Installed." }
+        - { name: "Setup Add-On - RabbitMQ", content: "{{ RABBITMQ_VARS }}", checkpoint_name: "RabbitMQ Installed." }
+        - { name: "Setup Add-On - Redis", content: "{{ REDIS_VARS }}", checkpoint_name: "Redis Installed." }
+        - { name: "Setup Add-On - Velero", content: "{{ VELERO_VARS }}", checkpoint_name: "Velero Installed." }
+        - { name: "Setup Add-On - Logging (Elastic Stack)", content: "{{ ELASTIC_STACK_VARS }}", checkpoint_name: "Elastic Stack Installed." }
+        - { name: "Setup Add-On - Logging (Fluentd)",  content: "{{ FLUENTD_VARS }}", checkpoint_name: "Fluentd Installed." }
+        - { name: "Setup Add-On - Istio", content: "{{ ISTIO_VARS }}", checkpoint_name: "Istio Installed." }
+        - { name: "Setup Add-On - MSSQL Server", content: "{{ MSSQL_VARS }}", checkpoint_name: "MSSQL Server Installed." }
+        - { name: "Setup Add-On - AWX", content: "{{ AWX_REG_VARS }}", checkpoint_name: "AWX Installed." }
+        - { name: "Setup Add-On - Kafka", content: "{{ KAFKA_VARS }}", checkpoint_name: "Kafka Installed." }
+        - { name: "Setup Add-On - Knative", content: "{{ KNATIVE_VARS }}", checkpoint_name: "Knative Installed." }
+        - { name: "Setup Add-On - Goldilocks", content: "{{ GOLDILOCKS_VARS }}", checkpoint_name: "Goldilocks Installed." }
+        - { name: "Setup Add-On - Keycloak", content: "{{ KEYCLOAK_VARS }}", checkpoint_name: "Keycloak Installed." }
+        - { name: "Setup Add-On - Tracing", content: "{{ TRACING_VARS }}", checkpoint_name: "Tracing Installed." }
+        - { name: "Setup Add-On - Logging (Loki)", content: "{{ LOKI_VARS }}", checkpoint_name: "Loki Installed." }
+        - { name: "Setup Add-On - DevOps (Tekton)", content: "{{ TEKTON_VARS }}", checkpoint_name: "Tekton Installed." }
+        - { name: "Setup Add-On - DevOps (Minio)", content: "{{ MINIO_VARS }}", checkpoint_name: "Minio Installed." }
+        - { name: "Setup Add-On - CSI", content: "{{ CSI_VARS }}", is_add_on: no }
+        - { name: "Setup Add-On - MetalLB", content: "{{ METALLB_VARS }}", checkpoint_name: "Metallb installed." }
+        - { name: "Setup Add-On - Trivy", content: "{{ TRIVY_VARS }}", checkpoint_name: "Trivy installed." }
 
     - name: Query all environment records
       ansible.builtin.uri:

@@ -1,0 +1,9 @@
+# Tekton environment variables.
+TEKTON_PIPELINES_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/pipelines/vars`)].content') | b64decode | from_yaml }}"
+TEKTON_TRIGGERS_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/triggers/vars`)].content') | b64decode | from_yaml }}"
+TEKTON_DASHBOARD_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/dashboard/vars`)].content') | b64decode | from_yaml }}"
+TEKTON_CLI_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/tekton/cli/vars`)].content') | b64decode | from_yaml }}"
+TEKTON_VARS:
+  - { name: devops/tekton, vars: "{{ TEKTON_PIPELINES_VARS | combine(TEKTON_TRIGGERS_VARS, recursive=true)
+                                                            | combine(TEKTON_DASHBOARD_VARS, recursive=true)
+                                                            | combine(TEKTON_CLI_VARS, recursive=true) }}" }

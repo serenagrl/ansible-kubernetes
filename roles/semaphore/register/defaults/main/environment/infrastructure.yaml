@@ -1,0 +1,23 @@
+# Infrastructure environment variables.
+VM_UBUNTU_PRESETS:
+  vm:
+    local: no
+    os: "{{'{{'}} vm_os | default('') {{'}}'}}"
+    redhat:
+      username: "{{'{{'}} redhat_username | default('') {{'}}'}}"
+      password: "{{'{{'}} redhat_password | default('') {{'}}'}}"
+
+VM_UBUNTU_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `setup-vm/vars`)].content') | b64decode | from_yaml | combine(VM_UBUNTU_PRESETS, recursive=true) }}"
+HAPROXY_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `haproxy/vars`)].content') | b64decode | from_yaml }}"
+NFS_SERVER_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `nfs/server/vars`)].content') | b64decode | from_yaml }}"
+K8S_CLUSTER_NODE_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/cluster-node/vars`)].content') | b64decode | from_yaml }}"
+K8S_CONTROL_PLANE_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/control-plane/vars`)].content') | b64decode | from_yaml }}"
+K8S_WORKER_NODE_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/worker-node/vars`)].content') | b64decode | from_yaml }}"
+K8S_REMOTE_ADMIN_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/kubernetes/remote-admin/vars`)].content') | b64decode | from_yaml }}"
+
+INFRA_VARS: "{{ VM_UBUNTU_VARS | combine(HAPROXY_VARS, recursive=true)
+                                | combine(NFS_SERVER_VARS, recursive=true)
+                                | combine(K8S_CLUSTER_NODE_VARS, recursive=true)
+                                | combine(K8S_CONTROL_PLANE_VARS, recursive=true)
+                                | combine(K8S_WORKER_NODE_VARS, recursive=true)
+                                | combine(K8S_REMOTE_ADMIN_VARS, recursive=true) }}"

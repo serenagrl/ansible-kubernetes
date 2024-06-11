@@ -1,0 +1,3 @@
+# Mssql environment variables.
+MSSQL_VARS:
+  - { name: database/mssql, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/mssql/vars`)].content') | b64decode | from_yaml }}" }
