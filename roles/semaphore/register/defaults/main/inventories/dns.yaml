@@ -1,0 +1,9 @@
+# Dns inventory variables.
+INV_DNS: "{{ (inventory_files | community.general.json_query('results[?contains(source, `dns_server`)].content') | b64decode |
+              regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
+INV_DNS_VARS:
+  dns:
+    hosts:
+      dns_server: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `dns_server`)].content') | b64decode | from_yaml) }}"
+
+INVENTORY_DNS: "{{ INV_DNS | combine(INV_DNS_VARS, recursive=true) }}"

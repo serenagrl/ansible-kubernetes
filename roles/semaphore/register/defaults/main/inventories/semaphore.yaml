@@ -1,0 +1,11 @@
+# Semaphore inventory variables.
+INV_SEM_PRESETS:
+    ansible_connection: local
+
+INV_SEM: "{{ (inventory_files | community.general.json_query('results[?contains(source, `semaphore`)].content') | b64decode | from_yaml) }}"
+INV_SEM_VARS:
+  semaphore:
+    hosts:
+      semaphore_server: "{{ INV_SEM_PRESETS | combine(inventory_var_files | community.general.json_query('results[?contains(source, `semaphore_server`)].content') | b64decode | from_yaml, recursive=true) }}"
+
+INVENTORY_SEM: "{{ INV_SEM | combine(INV_SEM_VARS, recursive=true) }}"

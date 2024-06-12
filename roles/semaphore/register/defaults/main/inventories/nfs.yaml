@@ -1,0 +1,9 @@
+# Nfs inventory variables.
+INV_NFS: "{{ (inventory_files | community.general.json_query('results[?contains(source, `nfs_server`)].content') | b64decode |
+              regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
+INV_NFS_VARS:
+  nfs:
+    hosts:
+      nfs_server: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `nfs_server`)].content') | b64decode | from_yaml) }}"
+
+INVENTORY_NFS: "{{ INV_NFS | combine(INV_NFS_VARS, recursive=true) }}"

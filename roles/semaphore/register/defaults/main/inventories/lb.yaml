@@ -1,0 +1,8 @@
+# Lb inventory variables.
+INV_LB: "{{ (inventory_files | community.general.json_query('results[?contains(source, `load_balancers`)].content') | b64decode |
+              regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
+INV_LB_VARS:
+  load_balancers:
+    vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `load_balancers`)].content') | b64decode | from_yaml) }}"
+
+INVENTORY_LB: "{{ INV_LB | combine(INV_LB_VARS, recursive=true) }}"
