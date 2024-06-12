@@ -47,3 +47,6 @@
   vars:
     name: "Grafana Admin Login"
     command: "kubectl -n monitoring get secret monitoring-grafana -o jsonpath='{.data.admin-password}'"
+
+- debug: msg="Metrics server has been detected, please reinstall metrics server after this to ensure proper functionality."
+  when: fact_has_addon_metrics_server
