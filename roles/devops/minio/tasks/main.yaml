@@ -44,7 +44,6 @@
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if minio.version is defined and minio.version and minio.version != 'latest' %}{{ minio.version }}{% endif %}"
-        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: minio-operator
         atomic: yes

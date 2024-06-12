@@ -7,14 +7,11 @@
         state: directory
         mode: '0755'
 
-    - name: Copy registry certificate to containerd certificate directory
+    - name: Copy ca certificate to containerd certificate directory
       ansible.builtin.copy:
-        src: "{{ CERT_FILE }}"
-        dest: "{{ CR_CERT_DIR }}/harbor-ca.crt"
+        src: "/etc/pki/ca-trust/source/anchors/{{ kube.cluster.name }}-ca.crt"
+        dest: "{{ CR_CERT_DIR }}/{{ kube.cluster.name }}-ca.crt"
         mode: 0777
-
-    - name: Configure kubernetes nodes to trust registry certificate
-      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/trust-cert.yaml"
 
   ignore_errors: yes
   ignore_unreachable: yes

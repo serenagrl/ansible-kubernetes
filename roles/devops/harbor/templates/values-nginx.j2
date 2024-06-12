@@ -4,13 +4,9 @@ expose:
   type: ingress
   tls:
     enabled: true
-{% if has_issuer %}
     certSource: secret
     secret:
       secretName: "harbor-ingress-tls"
-{% else %}
-    certSource: auto
-{% endif %}
 
   ingress:
     hosts:
@@ -28,9 +24,7 @@ externalURL: https://core.harbor.{{ kube.cluster.domain }}
 persistence:
   enabled: true
 
-{% if has_issuer %}
 caSecretName: "harbor-ingress-tls"
-{% endif %}
 
 {% if not kube.allow_scheduling %}
 portal:

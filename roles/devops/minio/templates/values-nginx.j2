@@ -24,9 +24,7 @@ console:
     host: minio.{{ kube.cluster.domain }}
     path: /
     pathType: Prefix
-{% if has_issuer %}
     tls:
       - hosts:
           - minio.{{ kube.cluster.domain }}
         secretName: minio-console-ingress-tls
-{% endif %}

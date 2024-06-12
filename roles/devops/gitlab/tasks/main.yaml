@@ -46,7 +46,6 @@
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if gitlab.version is defined and gitlab.version and gitlab.version != 'latest' %}{{ gitlab.version }}{% endif %}"
-        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: gitlab
         atomic: yes

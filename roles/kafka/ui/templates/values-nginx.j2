@@ -25,9 +25,5 @@ ingress:
   enabled: true
   host: kafka.{{ kube.cluster.domain }}
   tls:
-{% if has_issuer %}
     enabled: true
     secretName: kafka-ingress-tls
-{% else %}
-    enabled: false
-{% endif %}

@@ -36,7 +36,6 @@
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if kafka.ui.version is defined and kafka.ui.version and kafka.ui.version != 'latest' %}{{ kafka.ui.version }}{% endif %}"
-        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: kafka-ui
         atomic: yes

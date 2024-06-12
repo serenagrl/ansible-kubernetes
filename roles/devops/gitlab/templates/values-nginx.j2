@@ -4,10 +4,8 @@ global:
     domain: {{ kube.cluster.domain }}
   ingress:
     enabled: true
-{% if has_issuer %}
     tls:
       secretName: gitlab-ingress-tls
-{% endif %}
     class: {{ ingress_name }}
     configureCertmanager: false
 

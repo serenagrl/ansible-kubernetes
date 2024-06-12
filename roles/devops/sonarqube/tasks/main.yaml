@@ -48,7 +48,6 @@
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if sonarqube.version is defined and sonarqube.version and sonarqube.version != 'latest' %}{{ sonarqube.version }}{% endif %}"
-        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: sonarqube
         atomic: yes
