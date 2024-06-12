@@ -10,15 +10,7 @@
         fact_cluster_issuer_name: "{{ cluster_issuer_result.resources[0].metadata.name | default('default-cluster-issuer') }}"
   when: fact_cluster_issuer_name is not defined or fact_cluster_issuer_name == ""
 
-- name: Check for existing cluster issuer
-  ansible.builtin.shell: |
-    kubectl get clusterissuer "{{ fact_cluster_issuer_name }}" -o json | jq .status.conditions[0].type -r
-  register: issuer_status
-  ignore_errors: yes
-
 - name: Create {{ name }} TLS Certificate
-  vars:
-    has_issuer: issuer_status.stdout == "Ready"
   kubernetes.core.k8s:
     definition: "{{ certificate_template }}"
-  when: has_issuer
+  when: fact_has_addon_cert_manager
