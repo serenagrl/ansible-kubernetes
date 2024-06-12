@@ -39,12 +39,15 @@
     - name: Read role variable files
       ansible.builtin.slurp:
         src: "{{ local_repo_dir + '/' + item + '/main.yaml' }}"
-      register: var_files
+      register: var_files_result
       loop: "{{ file_result.files | map(attribute='path') | list }}"
       ignore_errors: yes
 
     - name: Create default environments
       vars:
+        var_files: 
+          results: "{{ var_files_result.results | rejectattr('failed','eq', true) }}"
+
         name_prefix: "{{ semaphore.project.hostname_prefix | default('k8s') }}"
 
         add_on_vars:
