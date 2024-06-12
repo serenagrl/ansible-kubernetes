@@ -22,7 +22,7 @@
         state: directory
         mode: '0755'
 
-    - name: Copy ca certificate to temporary directory
+    - name: Copy ca certificate to ansible controller host
       delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
       become_user: root
       ansible.builtin.fetch:
@@ -30,7 +30,7 @@
         dest: "{{ TEMP_CERT_DIR }}/{{ cert_name }}"
         flat: yes
 
-    - name: Copy ca certificate to {{ cert_type_name }} certificate directory
+    - name: Copy ca certificate from ansible controller host to {{ cert_type_name }} certificate directory
       become_user: root
       ansible.builtin.copy:
         src: "{{ TEMP_CERT_DIR }}/{{ cert_name }}"
