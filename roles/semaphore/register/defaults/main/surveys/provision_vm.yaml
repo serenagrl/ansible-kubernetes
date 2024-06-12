@@ -1,6 +1,6 @@
 PROVISION_VM_SURVEYS:
   - name: "vm_os"
-    title: "Virtual Machine Operating System"
+    title: "VM Operating System"
     description: "The operating system to install for the VMs."
     type: "enum"
     required: true
