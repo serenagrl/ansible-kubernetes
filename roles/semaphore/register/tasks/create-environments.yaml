@@ -76,7 +76,7 @@
         status_code: 204 # Created
       loop:
         - { name: "Setup Infrastructure", content: "{{ INFRA_VARS }}", is_add_on: no }
-        - { name: "Setup Basic Add-Ons", content: "{{ K8S_DEFAULT_ADD_ONS_VARS }}" }
+        - { name: "Setup Basic Add-Ons", content: "{{ BASIC_ADD_ONS_VARS }}" }
         - { name: "Setup Semaphore Project", content: "{{ SEMAPHORE_REG_VARS }}", is_add_on: no }
         - { name: "Setup Add-On - DevOps (Gitlab)", content: "{{ GITLAB_VARS }}", checkpoint_name: "Gitlab Installed." }
         - { name: "Setup Add-On - DevOps (Sonarqube)", content: "{{ SONARQUBE_VARS }}", checkpoint_name: "Sonarqube Installed." }

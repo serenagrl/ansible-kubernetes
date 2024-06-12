@@ -1,2 +1,11 @@
 # Semaphore register environment variables.
-SEMAPHORE_REG_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml }}"
+SEMAPHORE_REG_PRESETS:
+  semaphore:
+    project:
+      name: "{{'{{'}} project_name | default('Ansible-Kubernetes') {{'}}'}}"
+      hostname_prefix: "{{'{{'}} project_hostname_prefix | default('k8s-lab') {{'}}'}}"
+    api_login:
+      username: "{{'{{'}} api_username {{'}}'}}"
+      password: "{{'{{'}} api_password {{'}}'}}"
+
+SEMAPHORE_REG_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/semaphore/register/vars`)].content') | b64decode | from_yaml | combine(SEMAPHORE_REG_PRESETS, recursive=true) }}"

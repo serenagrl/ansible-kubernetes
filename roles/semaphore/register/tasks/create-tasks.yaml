@@ -33,7 +33,7 @@
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs basic kubernetes components. (Cert-Manager, Ingress, Dashboard, Monitoring, Metrics Server)" }
     - { name: "4. Setup CSI", env_name: "Setup Add-On - CSI", surveys: "{{ SETUP_CSI_SURVEYS }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the CSI." }
-    - { name: "Setup Semaphore Project", env_name: "Setup Semaphore Project",
+    - { name: "Setup Semaphore Project", env_name: "Setup Semaphore Project", surveys: "{{ SEMAPHORE_PROJECT_SURVEYS }}",
         inv_id: "{{ SEMAPHORE_PROJECT_INVENTORY_ID }}",
         playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
       # Miscellaneous
