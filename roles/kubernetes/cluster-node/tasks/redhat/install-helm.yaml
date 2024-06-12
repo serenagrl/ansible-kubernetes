@@ -24,7 +24,7 @@
         remote_src: yes
 
     - name: Move Helm executable
-      shell: mv linux-amd64/helm /usr/bin/helm
+      ansible.builtin.shell: mv linux-amd64/helm /usr/bin/helm
       args:
         chdir: /tmp/helm
 

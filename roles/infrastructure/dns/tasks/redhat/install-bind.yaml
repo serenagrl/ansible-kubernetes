@@ -14,14 +14,14 @@
     update_cache: yes
 
 - name: Insert DNS Server IP
-  replace:
+  ansible.builtin.replace:
     path: /etc/named.conf
     regexp: '^\s*(listen-on port 53 { 127.0.0.1;)\s*(};\n)'
     replace: |2-
               \1 {{ hostvars.dns_server.ansible_host }}; \2
 
 - name: Configure query to allow any
-  replace:
+  ansible.builtin.replace:
     path: /etc/named.conf
     regexp: '^\s*(allow-query     {)\s*(localhost;)\s*(};\n)'
     replace: |2-

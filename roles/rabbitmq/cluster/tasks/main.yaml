@@ -79,7 +79,7 @@
 - name: Configure topology TLS
   block:
     - name: Retrieve RabbitMQ CA certificate from RabbitMQ Cluster
-      shell: |
+      ansible.builtin.shell: |
         kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.ca\.crt}'
       register: ca_cert_result
 

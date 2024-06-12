@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Get default AWX password from secret (if none provided)
-  shell: |
+  ansible.builtin.shell: |
     kubectl get secret -n awx awx-admin-password -o jsonpath='{.data.password}' | base64 --decode
   register: password_result
 
@@ -19,7 +19,7 @@
         name: ingress-nginx-controller
         namespace: ingress-nginx
     ingress: "{{ services[kube.ingress_type] }}"
-  shell: |
+  ansible.builtin.shell: |
     kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
   register: ingress_host_result
 

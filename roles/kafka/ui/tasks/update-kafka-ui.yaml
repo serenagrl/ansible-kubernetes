@@ -37,4 +37,4 @@
           {{ updated_yaml | to_nice_yaml(sort_keys=false, indent=2) }}
 
 - name: Restart kafka ui
-  shell: kubectl rollout restart deployment -n kafka kafka-ui
+  ansible.builtin.shell: kubectl rollout restart deployment -n kafka kafka-ui

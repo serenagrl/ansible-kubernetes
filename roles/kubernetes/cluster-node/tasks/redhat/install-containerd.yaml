@@ -17,7 +17,7 @@
     update_cache: yes
 
 - name: Set LimitNOFILE
-  lineinfile: 
+  ansible.builtin.lineinfile: 
     path: /usr/lib/systemd/system/containerd.service
     regexp: 'LimitNOFILE=(.*)$' 
     line: 'LimitNOFILE=1048576'

@@ -40,7 +40,7 @@
           register: disks_result
 
         - name: Partition and format {{ device }}
-          shell: |
+          ansible.builtin.shell: |
             (echo n; echo p; echo 1; echo ''; echo ''; echo 'w';) | sudo fdisk {{ device }}
             mkfs -t ext4 {{ device }}1
 

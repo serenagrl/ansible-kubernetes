@@ -26,14 +26,14 @@
         name: minio
         repo_url: "https://operator.min.io/"
 
-    - include_tasks: ./tasks/task-create-certificate.yaml
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
       vars:
         name: "{{ minio_tenant.tenant_name }}"
         certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
     # Notes: Uses own domain names.
     - name: Setup ingress
-      include_tasks: "{{ INGRESS_SETUP }}"
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
 
     - name: Deploying minio tenant for {{ minio_tenant.name }}
       vars:
@@ -52,7 +52,7 @@
         wait: yes
 
     - name: Waiting for {{ minio_tenant.name }} minio tenant to be ready
-      shell: kubectl wait --for=jsonpath='{.status.currentState}'='Initialized' tenant {{ minio_tenant.tenant_name }} -n {{ minio_tenant.namespace }} --timeout=300s
+      ansible.builtin.shell: kubectl wait --for=jsonpath='{.status.currentState}'='Initialized' tenant {{ minio_tenant.tenant_name }} -n {{ minio_tenant.namespace }} --timeout=300s
 
 - name: Get minio credentials
   vars:
@@ -62,7 +62,7 @@
         --overrides='{\"spec\":{\"nodeSelector\":{\"node-role.kubernetes.io/control-plane\":\"\"},\"tolerations\":[{\"effect\": \"NoSchedule\", \"key\": \"node-role.kubernetes.io/control-plane\", \"operator\": \"Exists\"}]}}'
       {% endif %}"
 
-  shell: |
+  ansible.builtin.shell: |
     kubectl run --rm -i mc -n {{ minio_tenant.namespace }} --restart=Never --image=minio/mc {{ overrides }} --command -- bash -c "sleep 5 && mc alias set {{ minio_tenant.tenant_name }} {{ tenant_endpoint }} minio minio123 && mc admin user svcacct add {{ minio_tenant.tenant_name }} minio"
   register: minio_credentials
 
@@ -80,6 +80,6 @@
     - name: Create minio secret for {{ minio_tenant.name }}
       vars:
         secret_name: "{{ minio_tenant.tenant_name }}-secret"
-      shell: |
+      ansible.builtin.shell: |
         kubectl delete secret {{ secret_name }} -n {{ minio_tenant.namespace }} --ignore-not-found
         kubectl create secret generic {{ secret_name }} -n {{ minio_tenant.namespace }} --from-literal=accesskey={{ accesskey }} --from-literal=secretkey={{ secretkey }}

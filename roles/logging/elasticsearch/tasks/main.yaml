@@ -31,7 +31,7 @@
           {{ ELASTICSEARCH_CRD_TEMPLATE }}
 
 - name: Waiting for elasticsearch to be ready
-  shell: kubectl wait --for=jsonpath='{.status.health}'=green elasticsearch elasticsearch -n logging --timeout=300s && kubectl wait --for=condition=ready pods -n logging -l common.k8s.elastic.co/type=elasticsearch --timeout=300s
+  ansible.builtin.shell: kubectl wait --for=jsonpath='{.status.health}'=green elasticsearch elasticsearch -n logging --timeout=300s && kubectl wait --for=condition=ready pods -n logging -l common.k8s.elastic.co/type=elasticsearch --timeout=300s
 
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:

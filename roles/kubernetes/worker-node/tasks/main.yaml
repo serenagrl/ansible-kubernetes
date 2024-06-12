@@ -49,14 +49,14 @@
         - name: Get ingress http node port
           become_user: "{{ kube.user }}"
           delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
-          shell: |
+          ansible.builtin.shell: |
             kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}'
           register: ingress_http_port_result
 
         - name: Get ingress https node port
           become_user: "{{ kube.user }}"
           delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
-          shell: |
+          ansible.builtin.shell: |
             kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}'
           register: ingress_https_port_result
 

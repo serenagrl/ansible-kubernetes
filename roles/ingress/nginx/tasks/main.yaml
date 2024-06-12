@@ -13,7 +13,7 @@
     name: ingress-nginx
     kind: Namespace
 
-- include_tasks: ./tasks/task-create-certificate.yaml
+- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: ingress-nginx
     ingress_host: "{{ ingress_nginx.metallb.enabled | ternary(ingress_nginx.metallb.hostname, kube.cluster.name) }}.{{ kube.cluster.domain }}"

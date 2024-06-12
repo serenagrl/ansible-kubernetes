@@ -9,7 +9,7 @@
   become_user: root
   block:
     - name: Get HAProxy config file from HAProxy load-balancer
-      slurp:
+      ansible.builtin.slurp:
         src: /etc/haproxy/haproxy.cfg
       register: haproxy_config_file
 

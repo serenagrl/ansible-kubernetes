@@ -17,7 +17,7 @@
       register: release_tag
 
     - name: Create krew directory
-      file:
+      ansible.builtin.file:
         path: "{{ cli_dir }}"
         state: directory
 

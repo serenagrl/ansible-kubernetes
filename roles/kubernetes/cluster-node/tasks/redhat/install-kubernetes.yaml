@@ -48,6 +48,6 @@
         update_cache: yes
 
     - name: Enable and start Kubelet service
-      shell: |
+      ansible.builtin.shell: |
         sudo systemctl enable kubelet
         sudo systemctl start kubelet

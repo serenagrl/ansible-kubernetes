@@ -16,12 +16,12 @@
   become_user: root
   block:
     - name: Export coredns configmap
-      copy:
+      ansible.builtin.copy:
         content: "{{ corefile_data.resources.0.data.Corefile }}"
         dest: "{{ TEMP_CONFIG_FILE }}"
 
     - name: Add dns server entry into coredns
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: "{{ TEMP_CONFIG_FILE }}"
         block: |2
           {{ kube.cluster.domain }}:53 {
@@ -47,6 +47,6 @@
 - name: Cleanup files
   delegate_to: localhost
   become_user: root
-  file:
+  ansible.builtin.file:
     path: "{{ TEMP_CONFIG_FILE }}"
     state: absent

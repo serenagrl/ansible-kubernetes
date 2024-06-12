@@ -17,12 +17,12 @@
     ingress: "{{ services[kube.ingress_type] }}"
   block:
     - name: Get ingress host
-      shell: |
+      ansible.builtin.shell: |
         kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
       register: ingress_host_result
 
     - name: Get ingress loadbalancer ip (if any)
-      shell: kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+      ansible.builtin.shell: kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.status.loadBalancer.ingress[].ip}'
       register: ingress_ip_result
 
 - name: Register DNS entries
