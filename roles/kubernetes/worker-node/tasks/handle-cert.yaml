@@ -1,0 +1,49 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check if ca certificate exist on control plane
+  delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
+  become_user: root
+  ansible.builtin.stat:
+    path: "{{ cert_dir }}/{{ cert_name }}"
+  register: file_stats
+
+- name: Copy ca certificate from control plane
+  become_user: root
+  block:
+    - name: Create a {{ cert_type_name }} certificate directory (if not exist)
+      ansible.builtin.file:
+        path: "{{ cert_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy ca certificate to temporary directory
+      delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
+      become_user: root
+      ansible.builtin.fetch:
+        src: "{{ cert_dir }}/{{ cert_name }}"
+        dest: "{{ TEMP_CERT_DIR }}/{{ cert_name }}"
+        flat: yes
+
+    - name: Copy ca certificate to {{ cert_type_name }} certificate directory
+      become_user: root
+      ansible.builtin.copy:
+        src: "{{ TEMP_CERT_DIR }}/{{ cert_name }}"
+        dest: "{{ cert_dir }}/{{ cert_name }}"
+        mode: 0777
+
+    - name: Cleanup files
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ TEMP_CERT_DIR }}/{{ cert_name }}"
+        state: absent
+      when: auto_cleanup
+  ignore_errors: yes
+  ignore_unreachable: yes
+  when: file_stats.stat.exists|bool
