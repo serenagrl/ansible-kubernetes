@@ -1,6 +1,5 @@
-
 grafana:
-  enabled: false
+  enabled: {{ grafana.enabled }}
 
 admissionController:
 {% if kyverno.ha_mode %}
@@ -125,4 +124,3 @@ cleanupJobs:
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
 {% endif %}
-

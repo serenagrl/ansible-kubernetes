@@ -5,9 +5,6 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# - name: Verify dependencies
-#   ansible.builtin.include_tasks: verify-dependencies.yaml
-
 - name: Add kyverno chart repo
   kubernetes.core.helm_repository:
     name: kyverno
@@ -26,8 +23,12 @@
     values: "{{ VALUES_FILE }}"
     wait: yes
 
+- name: Create ServiceMonitor
+  kubernetes.core.k8s:
+    definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
+  when: kyverno.grafana.enabled|bool and fact_has_addon_grafana|bool
+
 - name: Install default policies
   ansible.builtin.include_role:
     name: devops/kyverno/policies
   when: kyverno.policies.enabled
-

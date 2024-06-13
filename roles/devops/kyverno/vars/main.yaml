@@ -9,3 +9,7 @@ kyverno:
   # Determines whether to install default policies.
   policies:
     enabled: yes
+
+  # Determines whether to show metrics on grafana.
+  grafana:
+    enabled: yes
