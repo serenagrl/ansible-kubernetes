@@ -3,4 +3,9 @@ kyverno:
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
   version: latest
 
+  # Determines whether to deploy in H/A mode (Will consume more resources).
   ha_mode: no
+
+  # Determines whether to install default policies.
+  policies:
+    enabled: yes

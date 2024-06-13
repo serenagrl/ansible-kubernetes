@@ -15,19 +15,14 @@
 
 - name: Deploy kyverno
   vars:
-    version: "{% if kyverno.version is defined and kyverno.version and kyverno.version != 'latest' %}{{ kyverno.version }}{% endif %}"
+    version: "{% if kyverno.policies.version is defined and kyverno.policies.version and kyverno.policies.version != 'latest' %}{{ kyverno.policies.version }}{% endif %}"
   kubernetes.core.helm:
-    name: kyverno
+    name: kyverno-policies
     atomic: yes
-    chart_ref: kyverno/kyverno
+    chart_ref: kyverno/kyverno-policies
     chart_version: "{{ version }}"
     namespace: kyverno
     create_namespace: yes
     values: "{{ VALUES_FILE }}"
+    timeout: 10m0s
     wait: yes
-
-- name: Install default policies
-  ansible.builtin.include_role:
-    name: devops/kyverno/policies
-  when: kyverno.policies.enabled
-
