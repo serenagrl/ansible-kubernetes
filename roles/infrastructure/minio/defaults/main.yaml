@@ -1,0 +1,1 @@
+MINIO_TEMPLATE: "{{ lookup('template', 'minio.j2') }}"

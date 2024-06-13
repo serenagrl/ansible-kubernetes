@@ -1,0 +1,4 @@
+minio:
+  username: minio
+  password: minio123 # Password require at least 8 characters.
+  volume: /mnt/data

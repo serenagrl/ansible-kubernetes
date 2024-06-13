@@ -1,0 +1,5 @@
+minio:
+  hosts:
+    minio_server:
+      ansible_hostname: k8s-minio
+      ansible_host: 192.168.0.203

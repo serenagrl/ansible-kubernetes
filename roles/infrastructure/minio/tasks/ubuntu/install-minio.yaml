@@ -1,0 +1,26 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install minio
+  vars:
+    minio_deb_file: minio.deb
+  block:
+    - name: Download minio deb package
+      become_user: root
+      ansible.builtin.shell: |
+        curl -sSL -o {{ minio_deb_file }} https://dl.min.io/server/minio/release/linux-amd64/archive/minio_{{ release }}.0.0_amd64.deb
+
+    - name: Install minio
+      ansible.builtin.apt:
+        deb: "{{ minio_deb_file }}"
+        
+    - name: Cleanup file
+      ansible.builtin.file:
+        path: "{{ minio_deb_file }}"
+        state: absent
+      when: auto_cleanup
