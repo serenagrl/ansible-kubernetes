@@ -1,9 +1,9 @@
 PROVISION_VM_SURVEYS:
   - name: "vm_os"
-    title: "VM Operating System"
-    description: "The operating system to install for the VMs."
+    title: "VM Operating System [Ubuntu]"
+    description: "The operating system to install for the VMs. Default is Ubuntu."
     type: "enum"
-    required: true
+    required: false
     values:
       - name: "Red Hat"
         value: "redhat"

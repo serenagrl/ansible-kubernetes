@@ -2,7 +2,7 @@
 VM_UBUNTU_PRESETS:
   vm:
     local: no
-    os: "{{'{{'}} vm_os | default('') {{'}}'}}"
+    os: "{{'{{'}} vm_os | default('ubuntu') {{'}}'}}"
     redhat:
       username: "{{'{{'}} redhat_username | default('') {{'}}'}}"
       password: "{{'{{'}} redhat_password | default('') {{'}}'}}"
