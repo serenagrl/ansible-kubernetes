@@ -9,16 +9,20 @@
     # local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ '%Y-%m-%d' | strftime }}"
     local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ semaphore.project.hostname_prefix }}-cluster"
   block:
-    - name: Get repository directory information
-      ansible.builtin.stat:
-        path: "{{ local_repo_dir }}"
-      register: repo_dir_stat
+    - name: Check if repo already exist.
+      block:
+        - name: Get repository directory information
+          ansible.builtin.stat:
+            path: "{{ local_repo_dir }}"
+          register: repo_dir_stat
 
-    - name: Check if directory exist
-      ansible.builtin.fail:
-        msg: "{{ local_repo_dir }} already exist. Please perform the necessary backup/deletion before proceeding."
-      failed_when: repo_dir_stat.stat.exists
-      changed_when: false
+        - name: Check if directory exist
+          ansible.builtin.fail:
+            msg: "{{ local_repo_dir }} already exist. Please perform the necessary backup/deletion before proceeding."
+          failed_when: repo_dir_stat.stat.exists
+          changed_when: false
+
+      when: semaphore.project.abort_if_repo_exist|bool
 
     - name: Authenticate with Semaphore API
       ansible.builtin.include_tasks: authenticate.yaml
@@ -40,6 +44,18 @@
 
     - name: Create semaphore tasks
       ansible.builtin.include_tasks: create-tasks.yaml
+
+  rescue:
+    - name: Cleanup broken project
+      ansible.builtin.uri:
+        url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}"
+        method: DELETE
+        headers:
+          Content-Type: application/json
+          Accept: application/json
+          Authorization: "Bearer {{ SEMAPHORE_ACCESS_TOKEN }}"
+        status_code: 204 # Project Deleted
+      when: project_response is defined and project_response != None
 
   always:
     - name: Delete access token

@@ -7,6 +7,9 @@ semaphore:
     # The root folder for the playbooks.
     local_repo_dir: /ansible-playbooks/ansible-kubernetes
 
+    # Indicates not create project if a repo already exist in the path, otherwise, it will overwrite the contents.
+    abort_if_repo_exist: yes
+
   # The login credentials to use to login to the Semaphore API.
   api_login:
     username: admin
