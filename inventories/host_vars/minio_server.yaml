@@ -6,8 +6,8 @@ winrm_host: local_machine
 # The VM settings for each host.
 vm:
   specs:
-    ram_size: 1GB
-    min_ram_size: 1GB
+    ram_size: 2GB
+    min_ram_size: 2GB
     disk_size: 127GB
     v_cpu: 2
 
