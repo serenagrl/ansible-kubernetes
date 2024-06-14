@@ -15,4 +15,4 @@
 
 - name: Setup NFS Server
   ansible.builtin.import_playbook: setup-nfs.yaml
-  when: (setup_lb is defined and setup_nfs|bool)
+  when: (setup_nfs is defined and setup_nfs|bool)
