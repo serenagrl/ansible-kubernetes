@@ -5,14 +5,18 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Setup DNS Server
+- name: Setup and configure DNS Server VM
   ansible.builtin.import_playbook: setup-dns.yaml
   when: (setup_dns is not defined) or (setup_dns|bool)
 
-- name: Setup Load-balancers
+- name: Setup and configure Load-balancers VMs
   ansible.builtin.import_playbook: setup-load-balancers.yaml
   when: (setup_lb is not defined) or (setup_lb|bool)
 
-- name: Setup NFS Server
+- name: Setup and configure NFS Server VM
   ansible.builtin.import_playbook: setup-nfs.yaml
   when: (setup_nfs is defined and setup_nfs|bool)
+
+- name: Setup and configure MinIO Server VM
+  ansible.builtin.import_playbook: setup-minio.yaml
+  when: (setup_minio is defined and setup_minio|bool)
