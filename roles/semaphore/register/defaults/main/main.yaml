@@ -3,8 +3,8 @@ SEMAPHORE_ACCESS_TOKEN: "{{ token_response.json.id }}"
 SEMAPHORE_PROJECT_ID: "{{ project_response.json.id }}"
 SEMAPHORE_KEY_ID: "{{ key_response.json.0.id }}"
 SEMAPHORE_REPO_ID: "{{ (local_repo_response | community.general.json_query('json[?name==`Local File System`].id')).0 }}"
-SEMAPHORE_DEFAULT_INVENTORY_ID: "{{ (inventory_response | community.general.json_query('json[?name==`Default`].id'))[0] }}"
-SEMAPHORE_PROJECT_INVENTORY_ID: "{{ (inventory_response | community.general.json_query('json[?name==`Default Semaphore Project`].id'))[0] }}"
+SEMAPHORE_DEFAULT_INVENTORY_ID: "{{ (inventory_response | community.general.json_query('json[?name==`Topology`].id'))[0] }}"
+SEMAPHORE_PROJECT_INVENTORY_ID: "{{ (inventory_response | community.general.json_query('json[?name==`Semaphore Server`].id'))[0] }}"
 
 PLAYBOOKS:
   SETUP_KUBERNETES: setup-kubernetes.yaml

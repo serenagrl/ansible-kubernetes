@@ -58,8 +58,8 @@
           }
         status_code: 201 # Created
       loop:
-        - { name: "Default", content: "{{ inventory_default }}" }
-        - { name: "Default Semaphore Project", content: "{{ INVENTORY_SEM }}" }
+        - { name: "Topology", content: "{{ inventory_default }}" }
+        - { name: "Semaphore Server", content: "{{ INVENTORY_SEM }}" }
 
     - name: Query default inventory record
       ansible.builtin.uri:
