@@ -2,12 +2,13 @@
   vars:
     name_prefix: "{{ semaphore.project.hostname_prefix | default('k8s') }}"
 
-    inventory_default: "{{ INV_ALL_VARS | combine(INVENTORY_LB, recursive=true) 
-                                        | combine(INVENTORY_CP, recursive=true) 
-                                        | combine(INVENTORY_WK, recursive=true) 
+    inventory_default: "{{ INV_ALL_VARS | combine(INVENTORY_LB, recursive=true)
+                                        | combine(INVENTORY_CP, recursive=true)
+                                        | combine(INVENTORY_WK, recursive=true)
                                         | combine(INVENTORY_K8S, recursive=true)
-                                        | combine(INVENTORY_DNS, recursive=true) 
-                                        | combine(INVENTORY_NFS, recursive=true) 
+                                        | combine(INVENTORY_DNS, recursive=true)
+                                        | combine(INVENTORY_NFS, recursive=true)
+                                        | combine(INVENTORY_MINIO, recursive=true)
                                         | combine(INV_WINRM, recursive=true) }}"
 
     inventory_url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/inventory"

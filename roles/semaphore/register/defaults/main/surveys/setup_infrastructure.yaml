@@ -23,3 +23,8 @@ SETUP_INFRA_SURVEYS:
     title: "Setup NFS Server (if using csi/nfs) [No]"
     description: "Setup and configure an NFS server VM."
     <<: *enum_bool
+
+  - name: setup_minio
+    title: "Setup MinIO Server (Testing only) [No]"
+    description: "Setup and configure a MinIO server VM."
+    <<: *enum_bool
