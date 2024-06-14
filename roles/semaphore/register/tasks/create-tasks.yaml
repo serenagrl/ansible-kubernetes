@@ -25,9 +25,9 @@
       }
     status_code: 201 # Created
   loop:
-    - { name: "1. Setup Infrastructure", env_name: "Setup Infrastructure", surveys: "{{ SETUP_INFRA_SURVEYS + PROVISION_VM_SURVEYS }}",
+    - { name: "1. Setup Infrastructure Services", env_name: "Setup Infrastructure", surveys: "{{ SETUP_INFRA_SURVEYS + PROVISION_VM_SURVEYS }}",
         playbook: "{{ PLAYBOOKS.SETUP_INFRASTRUCTURE }}", desc: "Setup and configure supporting infrastructure services servers." }
-    - { name: "2. Setup Kubernetes", env_name: "Setup Infrastructure", surveys: "{{ SETUP_KUBERNETES_SURVEYS + PROVISION_VM_SURVEYS }}",
+    - { name: "2. Setup Kubernetes Cluster", env_name: "Setup Infrastructure", surveys: "{{ SETUP_KUBERNETES_SURVEYS + PROVISION_VM_SURVEYS }}",
         playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes. Optionally, provisions VM for them." }
     - { name: "3. Setup Basic Add-Ons", env_name: "Setup Basic Add-Ons",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs basic kubernetes components. (Cert-Manager, Ingress, Dashboard, Monitoring, Metrics Server)" }
