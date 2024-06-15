@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: longhorn-manager
+  namespace: longhorn-system
+  labels:
+    app: longhorn-manager
+    release: monitoring
+spec:
+  endpoints:
+    - port: manager
+  selector:
+    matchLabels:
+      app: longhorn-manager
+  namespaceSelector:
+    matchNames:
+      - longhorn-system

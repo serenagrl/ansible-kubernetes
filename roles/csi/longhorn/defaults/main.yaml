@@ -2,4 +2,4 @@ INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + kube.ingress_type + '.yaml' 
 INGRESS_TEMPLATE: "{{ (kube.ingress_type == 'nginx') | ternary('', lookup('template', 'ingress-' + kube.ingress_type + '.j2') | from_yaml) }}"
 INGRESS_CREATE: "{{ kube.ingress_type == 'contour' }}"
 VALUES_FILE: "{{ lookup('template', 'values-' + kube.ingress_type + '.j2') | from_yaml }}"
-SECRET_TEMPLATE: "{{ lookup('template', 'secret.yaml.j2') | from_yaml }}"
+DASHBOARDS_TEMP_DIR: "{{ temp_dir }}/longhorn-grafana-dashboards"

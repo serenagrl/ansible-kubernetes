@@ -10,9 +10,3 @@
     msg: Dependency check failed. Please make sure ingress is installed.
   failed_when: not fact_has_addon_ingress|bool
   changed_when: false
-
-- name: Check if prometheus is installed
-  ansible.builtin.fail:
-    msg: Dependency check failed. Please make sure prometheus is installed.
-  failed_when: longhorn.prometheus|bool and not fact_has_addon_prometheus|bool
-  changed_when: false
