@@ -54,7 +54,6 @@
 - name: Create ServiceMonitor
   kubernetes.core.k8s:
     template: service-monitor.j2
-  when: longhorn.prometheus.enabled|bool and fact_has_addon_prometheus|bool
 
 - name: Download dashboard json model to ansible controller host
   delegate_to: localhost
