@@ -35,7 +35,3 @@
 - name: Update coredns with dns server information
   ansible.builtin.include_tasks: update-coredns.yaml
   when: kube.cluster.use_dns_server
-
-- ansible.builtin.include_role:
-    name: kubernetes/remote-admin
-  when: remote_admin.enabled

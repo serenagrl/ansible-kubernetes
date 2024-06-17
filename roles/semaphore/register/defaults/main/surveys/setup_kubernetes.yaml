@@ -24,6 +24,11 @@ SETUP_KUBERNETES_SURVEYS:
     description: "Setup and join secondary control planes into the cluster."
     <<: *enum_bool
 
+  - name: setup_remote_admin
+    title: "Remote Administration [Yes]"
+    description: "Enable remote administration of the kubernetes cluster from ansible controller host."
+    <<: *enum_bool
+
   - name: provision_wk
     title: "Provision Worker Node VMs [No]"
     description: "Provisions VMs for the worker nodes."

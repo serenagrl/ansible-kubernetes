@@ -1,8 +1,4 @@
 remote_admin:
-  # Enable this to allow remote administration from the Ansible controller host.
-  # Use 'kubectl config' to change the context to the cluster that you want to manage.
-  enabled: yes
-
   # Specify whether to install the latest kubectl on the Ansible controller host.
   install_kubectl: yes
 
