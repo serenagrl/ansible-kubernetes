@@ -102,5 +102,5 @@
   when: fact_has_addon_prometheus|bool
 
 - name: Install rook-ceph plugin
-  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/check-kubectl.yaml"
+  ansible.builtin.include_tasks: install-plugin.yaml
   when: rook_ceph.install_kubectl_plugin

@@ -13,6 +13,10 @@
   ansible.builtin.include_tasks: "install-k9s.yaml"
   when: remote_admin.install_k9s
 
+- name: Install krew
+  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/check-kubectl.yaml"
+  when: remote_admin.install_kubectl
+
 - delegate_to: localhost
   become_user: root
   vars:
