@@ -112,6 +112,11 @@
 
   when: rabbitmq.enable_tls and rabbitmq.use_topology_operator
 
+- name: Create ServiceMonitor
+  kubernetes.core.k8s:
+    template: service-monitor.j2
+  when: fact_has_addon_prometheus|bool
+
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "RabbitMQ cluster ({{ rabbitmq.namespace }}) login"

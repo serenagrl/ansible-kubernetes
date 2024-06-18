@@ -4,3 +4,4 @@ dependencies:
       depends_on:
         - cert-mgr
         - ingress
+        - prometheus
