@@ -56,42 +56,12 @@
     template: service-monitor.j2
   when: longhorn.prometheus.enabled|bool and fact_has_addon_prometheus|bool
 
-- name: Download dashboard json model to ansible controller host
-  delegate_to: localhost
-  become_user: root
-  block:
-    - name: Create dashboard download directory
-      ansible.builtin.file:
-        path: "{{ DASHBOARDS_TEMP_DIR }}"
-        state: directory
-
-    - name: Download dashboard json model
-      ansible.builtin.get_url:
-        url: "{{ item }}"
-        dest: "{{ DASHBOARDS_TEMP_DIR }}"
-        force: yes
-      loop: "{{ longhorn.prometheus.grafana_dashboards }}"
-
-- name: Create dashboard configmap
+- name: Install Longhorn grafana dashboard
+  ansible.builtin.include_role:
+    name: monitoring/grafana-dashboard
   vars:
-    # extract the name and load the file.
-    fname: "{{ item | basename }}"
-    data: "{{ lookup('file', item) }}"
-
-    # build a dictionary to form "fname": "data"
-    cm_data: "{{ [{'key': fname, 'value': data | to_nice_json} ] | items2dict }}"
-  kubernetes.core.k8s:
-    api_version: v1
-    kind: ConfigMap
-    name: "longhorn-{{ item | basename | replace('_','')  | splitext | first }}-grafana"
+    dashboards: "{{ longhorn.prometheus.grafana_dashboards }}"
     namespace: longhorn-system
-    definition:
-      metadata:
-        labels:
-          grafana_dashboard: "1"
-      data: |
-        {{ cm_data }}
-  loop: "{{ q('fileglob', DASHBOARDS_TEMP_DIR + '/*.json') }}"
 
 - name: Configure local minio backupstore
   kubernetes.core.k8s:
