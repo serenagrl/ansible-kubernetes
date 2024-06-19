@@ -21,7 +21,14 @@
     atomic: yes
     chart_ref: aqua/trivy-operator
     chart_version: "{{ version }}"
-    namespace: trivy-system
+    namespace: trivy-operator
     create_namespace: yes
     values: "{{ VALUES_FILE }}"
     wait: yes
+
+- name: Install trivy grafana dashboard
+  ansible.builtin.include_role:
+    name: monitoring/grafana-dashboard
+  vars:
+    dashboards: "{{ trivy.grafana_dashboards }}"
+    namespace: trivy-operator

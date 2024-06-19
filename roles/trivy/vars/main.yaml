@@ -10,4 +10,8 @@ trivy:
   targetWorkloads: "pod,replicaset,replicationcontroller,statefulset,daemonset,cronjob,job"
 
   # Create Prometheus ServiceMonitor to scrap metrics (Requires prometheus to be installed)
-  prometheus: no
+  prometheus: yes
+
+  grafana_dashboards:
+    - { name: "Trivy Operator Dashboard",
+        url: "https://grafana.com/api/dashboards/17813/revisions/2/download" }
