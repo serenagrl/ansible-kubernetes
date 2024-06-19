@@ -2,4 +2,5 @@ dependencies:
   - role: common/check-dependencies
     vars:
       depends_on:
+        - prometheus
         - grafana

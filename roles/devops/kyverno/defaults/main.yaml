@@ -1,2 +1,1 @@
 VALUES_FILE: "{{ lookup('template', 'values.j2') | from_yaml }}"
-SERVICE_MONITOR_TEMPLATE: "{{ lookup('template', 'service-monitor.j2') | from_yaml }}"

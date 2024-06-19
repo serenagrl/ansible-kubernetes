@@ -13,7 +13,7 @@
     name: kyverno
     repo_url: "https://kyverno.github.io/kyverno/"
 
-- name: Deploy kyverno
+- name: Deploy kyverno policies
   vars:
     version: "{% if kyverno.policies.version is defined and kyverno.policies.version and kyverno.policies.version != 'latest' %}{{ kyverno.policies.version }}{% endif %}"
   kubernetes.core.helm:

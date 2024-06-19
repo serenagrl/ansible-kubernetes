@@ -10,6 +10,8 @@ kyverno:
   policies:
     enabled: yes
 
-  # Determines whether to show metrics on grafana.
-  grafana:
-    enabled: yes
+  # Determines whether to crease ServiceMonitors for Prometheus metrics scraping.
+  prometheus: yes
+
+  # Determines whether to enable the grafana dashboard.
+  grafana: yes

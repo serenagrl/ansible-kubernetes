@@ -1,7 +1,11 @@
 grafana:
-  enabled: {{ kyverno.grafana.enabled }}
+  enabled: {{ kyverno.grafana }}
 
 admissionController:
+  serviceMonitor:
+    enabled: {{ kyverno.prometheus }}
+    additionalLabels:
+      release: monitoring
 {% if kyverno.ha_mode %}
   replicas: 3
 {% endif %}
@@ -15,6 +19,10 @@ admissionController:
 {% endif %}
 
 backgroundController:
+  serviceMonitor:
+    enabled: {{ kyverno.prometheus }}
+    additionalLabels:
+      release: monitoring
 {% if kyverno.ha_mode %}
   replicas: 2
 {% endif %}
@@ -28,6 +36,10 @@ backgroundController:
 {% endif %}
 
 cleanupController:
+  serviceMonitor:
+    enabled: {{ kyverno.prometheus }}
+    additionalLabels:
+      release: monitoring
 {% if kyverno.ha_mode %}
   replicas: 2
 {% endif %}
@@ -41,6 +53,10 @@ cleanupController:
 {% endif %}
 
 reportsController:
+  serviceMonitor:
+    enabled: {{ kyverno.prometheus }}
+    additionalLabels:
+      release: monitoring
 {% if kyverno.ha_mode %}
   replicas: 2
 {% endif %}
