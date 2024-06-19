@@ -17,7 +17,7 @@
     - name: Download rabbitmq grafana dashboard json model
       ansible.builtin.get_url:
         url: "{{ item.url }}"
-        dest: "{{ DASHBOARDS_TEMP_DIR }}/{{ item.name | lower }}.json"
+        dest: "{{ DASHBOARDS_TEMP_DIR }}/{{ item.name | replace(' ', '-') | lower }}.json"
         force: yes
       loop: "{{ dashboards }}"
 
@@ -29,7 +29,7 @@
   kubernetes.core.k8s:
     api_version: v1
     kind: ConfigMap
-    name: "{{ item | basename | replace(' ', '-') | splitext | first }}-grafana"
+    name: "{{ file_name | splitext | first }}-grafana"
     namespace: "{{ namespace }}"
     definition:
       metadata:
