@@ -10,6 +10,8 @@ trivy:
 
 serviceMonitor:
   enabled: {{ trivy.prometheus }}
+  labels:
+    release: monitoring
 
 {% if not kube.allow_scheduling %}
 tolerations:
