@@ -101,6 +101,10 @@
         definition: "{{ SERVICE_MONITOR_TEMPLATE }}"
   when: fact_has_addon_prometheus|bool
 
-- name: Install rook-ceph plugin
-  ansible.builtin.include_tasks: install-plugin.yaml
+- name: Install rook ceph plugin to ansible controller host
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.shell: |
+    export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+    kubectl krew install rook-ceph
   when: rook_ceph.install_kubectl_plugin|bool and fact_has_plugin_krew|bool
