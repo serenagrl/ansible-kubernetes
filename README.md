@@ -20,8 +20,8 @@ A collection of Ansible playbooks and roles to provision a bare-metal Kubernetes
 A Windows machine with sufficient processing power, RAM and disk space (i7 CPU, 128GB RAM, SSD recommended) with the Hyper-V feature enabled and [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed. These playbooks have been tested on Windows 11 and Windows Server 2022 hosts with Ubuntu 22.04 running in WSL.
 
 Two folders are expected to be available on the Windows Hyper-V host:
-* A folder where the playbooks will place temporary iso images i.e. `Installation Files`
-* A folder where the Virtual Machines will be created in i.e. `Virtual Machines` 
+* A folder where the playbooks will place temporary iso images i.e. `"D:\Installation Files"`
+* A folder where the Virtual Machines will be created in i.e. `"D:\Virtual Machines"`
 
 ### 2. Virtual Machine Requirements
 
@@ -55,7 +55,7 @@ b. The recommendations for the **Infrastructure Services** VMs are as follows:
 
 c. The recommendations for **disk size** is the VM default (127GB) but when using CSI such as Longhorn or Rook-ceph, it is recommended to set the disk size to 256GB.
 
-## Setting Up Your Enviroment
+## Setting Up Your Environment
 #### 1. Install Ansible on the Ubuntu OS in your WSL.
 ```
 sudo apt update
