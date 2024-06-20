@@ -17,6 +17,25 @@
   ansible.builtin.include_tasks: install-krew.yaml
   when: remote_admin.install_krew
 
+- name: Install helm
+  become_user: root
+  block:
+    - name: Install Helm
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-helm.yaml"
+
+    - name: Check if helm diff plugin is installed
+      ansible.builtin.shell: |
+        helm plugin list diff | grep diff
+      register: helm_plugin_result
+      ignore_errors: yes
+
+    # Prevents warnings when running ansible helm commands.
+    - name: Install helm diff
+      ansible.builtin.shell: |
+        helm plugin install https://github.com/databus23/helm-diff
+      when: helm_plugin_result.stdout_lines | length <= 0 | bool
+  when: remote_admin.install_helm
+
 - delegate_to: localhost
   become_user: root
   vars:

@@ -7,3 +7,6 @@ remote_admin:
   
   # Specify whether to install krew on the Ansible controller host.
   install_krew: yes
+
+  # Specify whether to install helm on the Ansible controller host.
+  install_helm: yes
