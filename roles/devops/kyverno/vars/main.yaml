@@ -15,3 +15,6 @@ kyverno:
 
   # Determines whether to enable the grafana dashboard.
   grafana: yes
+
+  # Determines whether to install kyverno cli.
+  install_kubectl_plugin: yes
