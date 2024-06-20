@@ -22,13 +22,11 @@ users:
     ssh_authorized_keys:
       - {{ id_rsa_pub }}
 
-{%if vm.redhat.auto_register %}
 rh_subscription:
   username: {{ vm.redhat.username }}
   password: '{{ vm.redhat.password }}'
   auto-attach: true
   service-level: self-support
-{% endif %}
 
 write_files:
   - path: /etc/cloud/cloud.cfg.d/99-enable-ssh-pwauth.cfg

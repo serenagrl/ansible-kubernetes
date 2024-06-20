@@ -19,14 +19,13 @@ vm:
   # download it and place it somewhere.
   redhat:
     # The full path and name to the RHEL KVM image to use.
-    kvm_image: "/mnt/d/Installation Files/RedHat/rhel-9.3-x86_64-kvm.qcow2"
-    auto_register: yes
+    kvm_image: "/mnt/c/Installation Files/RedHat/rhel-9.3-x86_64-kvm.qcow2"
 
     # Your redhat login id
-    username:
+    username: <username>
 
     # Your redhat login password
-    password:
+    password: <password>
 
   ubuntu:
     # The url to download the ubuntu cloud image file. You may need to change this when new release is available.
