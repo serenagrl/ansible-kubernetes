@@ -76,6 +76,7 @@
 
   when: rabbitmq.enable_tls and rabbitmq.export_certs
 
+# NOTE: Allow topology to have different ca cert.
 - name: Configure topology TLS
   block:
     - name: Retrieve RabbitMQ CA certificate from RabbitMQ Cluster
@@ -91,7 +92,7 @@
         name: rabbitmq-ca-secret
         definition: |
           data:
-            {{ rabbitmq.namespace }}-rabbitmq-ca.crt: {{ ca_cert_result.stdout }}
+            {{ rabbitmq.name }}-{{ rabbitmq.namespace }}-ca.crt: {{ ca_cert_result.stdout }}
 
     - name: Mount CA certificate volume to cert path
       kubernetes.core.k8s:
