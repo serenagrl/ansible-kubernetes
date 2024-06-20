@@ -105,6 +105,7 @@
   delegate_to: localhost
   become_user: root
   ansible.builtin.shell: |
+    export HOME=/root
     export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
     kubectl krew install rook-ceph
   when: rook_ceph.install_kubectl_plugin|bool and fact_has_plugin_krew|bool
