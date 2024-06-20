@@ -19,6 +19,10 @@ A collection of Ansible playbooks and roles to provision a bare-metal Kubernetes
 
 A Windows machine with sufficient processing power, RAM and disk space (i7 CPU, 128GB RAM, SSD recommended) with the Hyper-V feature enabled and [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed. These playbooks have been tested on Windows 11 and Windows Server 2022 hosts with Ubuntu 22.04 running in WSL.
 
+Two folders are expected to be available on the Windows Hyper-V host:
+* A folder where the playbooks will place temporary iso images i.e. `Installation Files`
+* A folder where the Virtual Machines will be created in i.e. `Virtual Machines` 
+
 ### 2. Virtual Machine Requirements
 
 The computing resources for each VM is depending on how much add-ons you are planning to install and how much capacity your Windows host can provide. Remember that you can pool multiple Windows Hyper-V servers together to host the VMs to distribute the load.
@@ -119,9 +123,9 @@ a. Run the following list of optional **infrastructure playbooks** in sequence:
 | No. | Name                        | Description                                                 | Remarks |
 |  :-:| ----------------------------| ----------------------------------------------------------- | ------- |
 |  1. | `setup-dns.yaml`            | Provision and configure a VM for BIND (DNS) server.         | WARNING! Do not set host to existing DNS server. <br> Additional configuration required: <br> a. Set `kube.cluster.use_dns_server:` to `yes` or `no` in `inventories/group_vars/all.yaml`. |
-|  2. | `setup-load-balancers.yaml` | Provision and configure two VMs for HAProxy and Keepalived. | Additional configuration required: <br> a. When deploying load-balancers: <br>&nbsp;&nbsp;&nbsp; * Set `register_to_load_balancer: yes` in `inventories/group_vars/kubernetes_cluster.yaml`. <br>&nbsp;&nbsp;&nbsp; * Set `kube.cluster.address` to point to the virtual ip address in `inventories/group_vars/all.yaml`. When not deploying load-balancers: <br>&nbsp;&nbsp;&nbsp; * Set `register_to_load_balancer: no` in `inventories/group_vars/kubernetes_cluster.yaml`. <br>&nbsp;&nbsp;&nbsp; * Set `kube.cluster.address` to point to the ip address of primary control plane in `inventories/group_vars/all.yaml`. |
+|  2. | `setup-load-balancers.yaml` | Provision and configure two VMs for HAProxy and Keepalived. | Additional configuration required: <br> a. When deploying load-balancers: <br>&nbsp;&nbsp;&nbsp; * Set `register_to_load_balancer: yes` in `inventories/group_vars/kubernetes_cluster.yaml`. <br>&nbsp;&nbsp;&nbsp; * Set `kube.cluster.address` to point to the virtual ip address in `inventories/group_vars/all.yaml`. <br> When not deploying load-balancers: <br>&nbsp;&nbsp;&nbsp; * Set `register_to_load_balancer: no` in `inventories/group_vars/kubernetes_cluster.yaml`. <br>&nbsp;&nbsp;&nbsp; * Set `kube.cluster.address` to point to the ip address of primary control plane in `inventories/group_vars/all.yaml`. |
 |  3. | `setup-nfs.yaml`            | Install NFS server on infrastructure service VM.            | Run this if you plan to use CSI NFS. Note: You must run this **before** running the csi/nfs role. |
-|  4. | `setup-minio.yaml`          | Install Minio on infrastructure service VM.                 | Run this if you plan to test add-ons that requires external S3 storage for backups i.e. velero or longhorn |
+|  4. | `setup-minio.yaml`          | Install Minio on infrastructure service VM.                 | Run this if you plan to test add-ons that requires external S3 storage for backups i.e. velero or csi/longhorn |
 
 b. Run the following list of **kubernetes playbooks** in sequence:
 
