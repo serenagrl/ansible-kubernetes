@@ -6,14 +6,8 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Install krew
+- name: Check if kubectl is installed
   delegate_to: localhost
   become_user: root
-  block:
-    - name: Check if kubectl is installed
-      ansible.builtin.shell: apt list kubectl --installed
-      register: kubectl_result
-
-    - name: Install krew
-      ansible.builtin.include_tasks: install-krew.yaml
-      when: (kubectl_result.stdout_lines | select('search', 'installed') | length > 0) | bool 
+  ansible.builtin.shell: apt list kubectl --installed
+  register: kubectl_result

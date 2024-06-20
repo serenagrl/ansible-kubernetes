@@ -4,3 +4,4 @@ dependencies:
     vars:
       depends_on:
         - ingress
+        - krew

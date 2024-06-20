@@ -6,17 +6,16 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Check if krew is installed
-  delegate_to: localhost
-  become_user: root
-  ansible.builtin.stat:
-    path: /root/.krew/bin/kubectl-krew
-  register: file_stats
+- name: check if kubectl is installed
+  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/check-kubectl.yaml"
 
 - name: Install kubectl rook-ceph krew plugin on ansible controller host
   delegate_to: localhost
   become_user: root
   vars:
+    is_kubectl_installed:
+      redhat: "{{ kubectl_result.stdout_lines | length > 0 | bool }}"
+      ubuntu: "{{ (kubectl_result.stdout_lines | select('search', 'installed') | length > 0) | bool }}"
     cli_dir: "{{ temp_dir }}/krew"
   block:
     - name: Create krew directory
@@ -45,4 +44,4 @@
         path: "{{ cli_dir }}"
         state: absent
       when: auto_cleanup
-  when: not file_stats.stat.exists
+  when: not fact_has_plugin_krew and is_kubectl_installed[hostvars['localhost'].ansible_distribution | lower]

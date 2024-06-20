@@ -103,4 +103,4 @@
 
 - name: Install rook-ceph plugin
   ansible.builtin.include_tasks: install-plugin.yaml
-  when: rook_ceph.install_kubectl_plugin
+  when: rook_ceph.install_kubectl_plugin|bool and fact_has_plugin_krew|bool

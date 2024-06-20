@@ -1,0 +1,22 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check for krew installation
+  vars:
+    is_installed: "{{ file_stats.stat.exists }}"
+  block:
+    - name: Check if krew is installed
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.stat:
+        path: /root/.krew/bin/kubectl-krew
+      register: file_stats
+
+    - name: Krew is{{ is_installed | ternary(' ', ' not ') }}installed
+      ansible.builtin.set_fact:
+        fact_has_plugin_krew: "{{ is_installed }}"
