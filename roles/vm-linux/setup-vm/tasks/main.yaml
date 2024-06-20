@@ -13,7 +13,7 @@
     - name: Check for Red Hat subscription username & password
       ansible.builtin.fail:
         msg: Red Hat subscription username and password required.
-      when: vm.os == "redhat" and vm.redhat.auto_register and (not vm.redhat.username or not vm.redhat.password)
+      when: vm.os == "redhat" and (not vm.redhat.username or not vm.redhat.password)
 
     - name: Create working directory
       ansible.builtin.file:
