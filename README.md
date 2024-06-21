@@ -23,7 +23,7 @@ You are required to supply the location of two folders on the Windows Hyper-V ho
 * A folder for storing temporary seed iso images i.e. `"D:\Installation Files"`
 * A folder where the Virtual Machines will be created in i.e. `"D:\Virtual Machines"`
 
-> [!NOTE]
+> [!CAUTION]
 > You can set both to point to the same folder but you may have some residue seed iso images leftover from provisioning errors. In such cases, you may need to manually clean them up yourself.
 
 ### Virtual Machine Requirements
@@ -35,10 +35,10 @@ The computing resources for each VM is depending on how much add-ons you are pla
 
 #### Infrastructure Services VMs
 
-There are additional 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. The Load-Balancers will each have their own VM and a spearate VM is dedicated to host DNS, NFS and Minio for testing purposes in the lab. NFS and Minio will not provision their own VMs by default.
+There are additional 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster if you choose to include them in your lab. The Load-Balancers will each have their own VM and a spearate VM is dedicated to host DNS, NFS and Minio for testing purposes in the lab. NFS and Minio will not provision their own VMs by default.
 
    > [!CAUTION]
-   > The Infrastructure Services VMs are purely meant to simulate existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, you should not target them to existing production servers that are already running. Doing so will corrupt the existing servers.
+   > The Infrastructure Services VMs are purely meant to simulate existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, **do not target them to existing production servers** that are already running. Doing so will corrupt the existing servers.
 
    The recommendations for the **Infrastructure Services** VMs are as follows:
 
@@ -61,6 +61,7 @@ The **Kubernetes Cluster** will require a minimum of 3 VMs for the control plane
    | Basic (NFS)                 | 3             | 4    | 8GB       | 12GB | Optional    | 4    | 4GB       | 4GB  |
    | Basic (Longhorn/Rook-ceph)  | 3             | 6    | 12GB      | 16GB | Optional    | 4    | 4GB       | 4GB  |
    | DevOps/DevSecOps            | 3             | 6    | 16GB      | 24GB | Optional    | 4    | 4GB       | 4GB  |
+   | Observablity                | 3             | 6    | 16GB      | 24GB | Optional    | 4    | 4GB       | 4GB  |
    | Test/SIT Environment        | 3             | 8    | 24GB      | 32GB | 2 (or more) | 4    | 4GB       | 8GB  |
 
    > [!WARNING]
@@ -71,7 +72,9 @@ The **Kubernetes Cluster** will require a minimum of 3 VMs for the control plane
 The recommendations for **disk size** is the VM default (**127GB**) but when using CSI such as Longhorn or Rook-ceph, it is recommended to set the disk size to **256GB** to support the request limits.
 
 ## Setting Up Your Environment
-#### 1. Install Ansible on the Ubuntu OS in your WSL.
+### 1. Install Ansible
+
+Open a terminal in the Ubuntu OS of your WSL and execute the following command to install ansible.
 ```
 sudo apt update
 sudo apt install software-properties-common
@@ -81,7 +84,7 @@ sudo apt install ansible
 > [!NOTE]
 > You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu).
 
-#### 2. Configure Windows Remote Management (WinRM) on your Windows host.
+### 2. Configure Windows Remote Management (WinRM) on your Windows host.
 
 Open an Ubuntu terminal in your WSL and run the following:
 ```
@@ -111,7 +114,7 @@ Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
 > [!IMPORTANT]
 > Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
 
-#### 3. Configure WinRM Settings in Playbooks
+### 3. Configure WinRM Settings in Playbooks
 
 Clone this repository into a directory of your choice. You may need to configure the necessary access rights for the directory.
 
@@ -141,7 +144,7 @@ winrm:
 > [!NOTE]
 > Detail documentation [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html).
 
-#### 4. Optional: Configure Playbooks to Use WinRM With Certificates
+### 4. Optional: Configure Playbooks to Use WinRM With Certificates
 
 Although not compulsory, it is recommended to use certificates to connect to WinRM from your playbooks. Follow these [steps](docs/configure-winrm-certs.md), if you wish to enable WinRM using certificates.
 
