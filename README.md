@@ -1,12 +1,13 @@
 # Kubernetes Lab on Hyper-V
-A collection of Ansible playbooks and roles to provision a bare-metal Kubernetes cluster on Hyper-V, either for testing/learning purposes or SIT environments. These playbooks and add-ons were tailored to my working environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
+A collection of Ansible playbooks and roles to provision a bare-metal Kubernetes cluster for on-premise Hyper-V, either for testing/learning purposes or SIT/Proof-of-Concept environments. These playbooks and add-ons were tailored to my working environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
 
 ## Quick Notes
-* Playbooks are tested on **Ubuntu 22.04** and **Red Hat 9.3** Linux.
-* Playbooks are defaulted to setup a DNS server, 2 HAProxy load balancers and 3 control-plane VMs.
-* The Kubernetes cluster uses **Containerd** as container runtime and **Calico** as CNI.
-* Configure the IP addresses, host names and domain to your environment in the host files located in `\inventories`
+* Playbooks are tested on **Windows 11** and **Windows Server 2022** Hyper-V hosts.
+* Playbooks can provision VMs for **Ubuntu 22.04** or **Red Hat 9.3** Linux.
+* Playbooks default to setup a DNS server, 2 HAProxy load balancers and 3 control-plane VMs.
 * An infrastructure service VM is dedicated to host DNS, NFS and Minio for testing purposes. NFS and Minio will not provision VMs by default.
+* The Kubernetes cluster uses **Containerd** as container runtime and **Calico** as CNI.
+* Configure the IP addresses, host names and domain in the host files located in `\inventories`
 * Some roles are deploying sample/example configurations only (although some may deploy production environments).
 * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
 * Version incompatibility may occur i.e. new Kubernetes version may break everything or some add-ons version may not be compatible with each other. Configure the desired versions in the `vars\main.yaml` of the role.
@@ -14,46 +15,60 @@ A collection of Ansible playbooks and roles to provision a bare-metal Kubernetes
 * Be patient if you are running on a slow internet connection. Installation may take some time. Increase the timeout of tasks if your environment needs more time to complete certain tasks.
 * VM Checkpoints will be created to provide safety just in case your installation breaks. These checkpoints may consume a lot of disk space. You may remove the checkpoints when you feel everything is stable to recover the disk space.
 
-## Host and Virtual Machine Requirements
-### 1. Host Requirements
+## Hyper-V Host Requirements
 
-A Windows machine with sufficient processing power, RAM and disk space (i7 CPU, 128GB RAM, SSD recommended) with the Hyper-V feature enabled and [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed. These playbooks have been tested on Windows 11 and Windows Server 2022 hosts with Ubuntu 22.04 running in WSL.
+A Windows machine or server with sufficient processing power, RAM and disk space (i7 CPU, 128GB RAM, SSD recommended) with the Hyper-V feature enabled and [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed.
 
-Two folders are expected to be available on the Windows Hyper-V host:
-* A folder where the playbooks will place temporary iso images i.e. `"D:\Installation Files"`
+You are required to supply the location of two folders on the Windows Hyper-V host to the playbooks:
+* A folder for storing temporary seed iso images i.e. `"D:\Installation Files"`
 * A folder where the Virtual Machines will be created in i.e. `"D:\Virtual Machines"`
 
-### 2. Virtual Machine Requirements
+> [!NOTE]
+> You can set both to point to the same folder but you may have some residue seed iso images leftover from provisioning errors. In such cases, you may need to manually clean them up yourself.
+
+### Virtual Machine Requirements
 
 The computing resources for each VM is depending on how much add-ons you are planning to install and how much capacity your Windows host can provide. Remember that you can pool multiple Windows Hyper-V servers together to host the VMs to distribute the load.
 
-a. The recommendations for the **Kubernetes** VMs are as follows:
+> [!NOTE]
+> The VMs created are using **Dynamic Memory** as the default. You can change this in **Hyper-V Manager** if you want to prevent the VMs from exceeding the assigned memory limits.
 
-  | Lab Type                    | Control Plane | vCPU | Min. RAM  | Recommended RAM | Worker Node | vCPU | Min. RAM  | Recommended RAM |
-  | --------------------------- | :-----------: | :--: | :-------: | :-------------: | :---------: | :--: | :-------: | :-------------: |
-  | Barebones - Cluster Only    | 3             | 4    | 4GB       | 6GB             | Optional    | 4    | 4GB       | 4GB             |
-  | Basic (NFS)                 | 3             | 4    | 8GB       | 12GB            | Optional    | 4    | 4GB       | 4GB             |
-  | Basic (Longhorn/Rook-ceph)  | 3             | 6    | 12GB      | 16GB            | Optional    | 4    | 4GB       | 4GB             |
-  | DevOps/DevSecOps            | 3             | 6    | 16GB      | 24GB            | Optional    | 4    | 4GB       | 4GB             |
-  | Test/SIT Environment        | 3             | 8    | 24GB      | 32GB            | 2           | 4    | 4GB       | 8GB             |
+#### Infrastructure Services VMs
 
-  > [!NOTE]
-  > Generally, worker nodes are only provisioned for learning kubernetes concepts or in SIT environments where workload isolation is required for applications.
+There are additional 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. The Load-Balancers will each have their own VM and a spearate VM is dedicated to host DNS, NFS and Minio for testing purposes in the lab. NFS and Minio will not provision their own VMs by default.
 
-  > [!WARNING]
-  > Both Longhorn and Rook-Ceph CSIs can consume a lot of resources but offers a good learning path and discipline for managing clustered storage. You may need to utilize more than 1 Hyper-V hosts with more RAM if you ran out of resources.
+   > [!CAUTION]
+   > The Infrastructure Services VMs are purely meant to simulate existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, you should not target them to existing production servers that are already running. Doing so will corrupt the existing servers.
 
+   The recommendations for the **Infrastructure Services** VMs are as follows:
 
-b. The recommendations for the **Infrastructure Services** VMs are as follows:
+   | Services                    | Unit | vCPU | Min. RAM  | RAM |
+   | --------------------------- | :--: | :--: | :-------: | :-: |
+   | Load-Balancers              | 2    | 2    | 1GB       | 1GB |
+   | K8s-svc (DNS)               | 1    | 2    | 1GB       | 1GB |
+   | K8s-svc (DNS + NFS)         | 1    | 2    | 2GB       | 2GB |
+   | K8s-svc (DNS + NFS + Minio) | 1    | 4    | 4GB       | 8GB |
 
-  | Services                    | Unit | vCPU | Min. RAM  | Recommended RAM |
-  | --------------------------- | :--: | :--: | :-------: | :-------------: |
-  | Load-Balancers              | 2    | 2    | 1GB       | 1GB             |
-  | K8s-svc (DNS)               | 1    | 2    | 1GB       | 1GB             |
-  | K8s-svc (DNS + NFS)         | 1    | 2    | 2GB       | 2GB             |
-  | K8s-svc (DNS + NFS + Minio) | 1    | 4    | 4GB       | 8GB             |
+#### Kubernetes Cluster VMs
 
-c. The recommendations for **disk size** is the VM default (127GB) but when using CSI such as Longhorn or Rook-ceph, it is recommended to set the disk size to 256GB.
+The **Kubernetes Cluster** will require a minimum of 3 VMs for the control planes. Generally in a lab environment where computing resources is limited, you can skip provisioning the worker nodes. However, if you want to learn Kubernetes concepts or deploy SIT/Proof-of-Concept environments where workload isolation is required for applications, then you can decide the number or worker nodes you need to deploy.
+
+   The recommendations for the **Kubernetes** VMs are as follows:
+
+   | Lab Type                    | Control Plane | vCPU | Min. RAM  | RAM  | Worker Node | vCPU | Min. RAM  | RAM  |
+   | --------------------------- | :-----------: | :--: | :-------: | :--: | :---------: | :--: | :-------: | :--: |
+   | Barebones Cluster           | 3             | 4    | 4GB       | 6GB  | Optional    | 4    | 4GB       | 4GB  |
+   | Basic (NFS)                 | 3             | 4    | 8GB       | 12GB | Optional    | 4    | 4GB       | 4GB  |
+   | Basic (Longhorn/Rook-ceph)  | 3             | 6    | 12GB      | 16GB | Optional    | 4    | 4GB       | 4GB  |
+   | DevOps/DevSecOps            | 3             | 6    | 16GB      | 24GB | Optional    | 4    | 4GB       | 4GB  |
+   | Test/SIT Environment        | 3             | 8    | 24GB      | 32GB | 2 (or more) | 4    | 4GB       | 8GB  |
+
+   > [!WARNING]
+   > Both Longhorn and Rook-Ceph CSIs can consume a lot of resources but offers a good learning path and discipline for managing clustered storage. You may need to utilize more than 1 Hyper-V hosts with more RAM if you have insufficient computing resources.
+
+#### Disk Size
+
+The recommendations for **disk size** is the VM default (**127GB**) but when using CSI such as Longhorn or Rook-ceph, it is recommended to set the disk size to **256GB** to support the request limits.
 
 ## Setting Up Your Environment
 #### 1. Install Ansible on the Ubuntu OS in your WSL.
@@ -68,13 +83,13 @@ sudo apt install ansible
 
 #### 2. Configure Windows Remote Management (WinRM) on your Windows host.
 
-2.1. Open an Ubuntu terminal in your WSL and run the following:
+Open an Ubuntu terminal in your WSL and run the following:
 ```
 sudo apt install python3-pip
 pip install ansible pywinrm kubernetes jsonpatch
 ```
 
-2.2. Create a Windows user with Administrator (or proper) access rights for ansible in the Windows Hyper-V host. Open a Powershell command prompt with Administrator rights in your Windows host and run the following:
+Create a Windows user with Administrator (or proper) access rights for ansible in the Windows Hyper-V host. Open a Powershell command prompt with Administrator rights in your Windows host and run the following:
 ```
 $username = "ansible"
 $password = ConvertTo-SecureString "p@ssw0rd" -AsPlainText -Force
@@ -84,7 +99,7 @@ New-LocalUser -Name $username -Password $password -FullName $username -Descripti
 Add-LocalGroupMember -Group Administrators -Member $username
 ```
 
-2.3. Run the configuration script provided by ansible to configure your WinRM in the same powershell terminal:
+Run the configuration script provided by ansible to configure your WinRM in the same powershell terminal:
 ```
 $setupscript = "https://raw.githubusercontent.com/ansible/ansible-documentation/ae8772176a5c645655c91328e93196bcf741732d/examples/scripts/ConfigureRemotingForAnsible.ps1"
 Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
@@ -96,17 +111,43 @@ Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
 > [!IMPORTANT]
 > Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
 
-#### 3. Clone this repository into a directory of your choice in the WSL and [configure WinRM access](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html) in the `\inventories\winrm.yaml` file. You may need to configure the necessary access rights for the directory.
+#### 3. Configure WinRM Settings in Playbooks
+
+Clone this repository into a directory of your choice. You may need to configure the necessary access rights for the directory.
 
 ```
 git clone https://github.com/serenagrl/ansible-kubernetes.git
 ```
 
-#### 4. Optional: Follow these [steps](docs/configure-winrm-certs.md), if you wish to connect to WinRM using certificates.
+Set the neccesary credentials in the `\inventories\winrm.yaml` file:
+```
+# This should be your local machine or an Ansible host. Winrm must be setup correctly for this to work.
+# You can have more than 1 winrm host to distribute the kubernetes VMs; remember to set the winrm_host.
+winrm:
+  hosts:
+    local_machine:
+      ansible_host: 192.168.0.118
+      # You can use username and password if you do not want to use cert.
+      ansible_user: ansible            # Create a user in your Windows
+      ansible_password: p@ssw0rd       # Provide the password for the user
+      ansible_become_method: runas
+      ansible_become_user: ansible     # Must set this to the user you created
+      ansible_connection: winrm
+      ansible_port: 5986
+      ansible_winrm_transport: ntlm
+      ansible_winrm_server_cert_validation: ignore
+```
+
+> [!NOTE]
+> Detail documentation [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html).
+
+#### 4. Optional: Configure Playbooks to Use WinRM With Certificates
+
+Although not compulsory, it is recommended to use certificates to connect to WinRM from your playbooks. Follow these [steps](docs/configure-winrm-certs.md), if you wish to enable WinRM using certificates.
 
 ## Running the Playbooks with Semaphore UI
 
-You can leverage on Semaphore UI to provide a User Interface on-top of the playbooks in this repository. You can run the `setup-semaphore.yaml` playbook to create and configure a separate VM for Semaphore UI and then run the `setup-semaphore-project.yaml` playbook to automate the creation of a project in the semaphore server based on the existing cloned repository on your filesystem.
+If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore), you can leverage on it to provide a user interface on-top of the playbooks in this repository. You can run the `setup-semaphore.yaml` playbook to create and configure a separate VM for Semaphore UI and then run the `setup-semaphore-project.yaml` playbook to automate the creation of a project in the semaphore server based on the cloned version of this repository on your filesystem.
 
 This option is best for beginners who do not want to go through the internals and complexities of configuring and running the playbooks from a terminal.
 

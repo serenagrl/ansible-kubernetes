@@ -44,7 +44,8 @@
 
    #### 3. Configure WinRM to use the certificate for the ansible user.
 
-   **Warning!** Please use your own secure password instead of the default password in the sample script.
+  > [!CAUTION]
+  > Please use your own secure password instead of the default password in the sample script.
 
    ```
    $username = "ansible"
