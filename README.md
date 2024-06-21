@@ -17,9 +17,12 @@ A collection of Ansible playbooks and roles to provision a bare-metal Kubernetes
 
 ## Hyper-V Host Requirements
 
-A Windows machine or server with sufficient processing power, RAM and disk space (i7 CPU, 128GB RAM, SSD recommended) with the Hyper-V feature enabled and [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed.
+A Windows machine or server with sufficient processing power, RAM and disk space (i7 CPU, 128GB RAM, SSD recommended) with:
+* Hyper-V feature enabled.
+* [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed.
+* Ubuntu 22.04 distribution installed in WSL.
 
-You are required to supply the location of two folders on the Windows Hyper-V host to the playbooks:
+Prepare two folders on the Windows Hyper-V host for the playbooks:
 * A folder for storing temporary seed iso images i.e. `"D:\Installation Files"`
 * A folder where the Virtual Machines will be created in i.e. `"D:\Virtual Machines"`
 
@@ -182,61 +185,161 @@ b. Run the following list of **kubernetes playbooks** in sequence:
 |  5. | `setup-worker-nodes.yaml`          | Create and join worker nodes into the kubernetes cluster. | Run this if you want to create worker nodes. |
 |  6. | `setup-add-ons.yaml`               | Install add-on components listed in `add_ons`. | You can run this each time you want to install a particular add-on but keep an eye on the checkpoints. The installation order is important as some add-ons have dependencies on the others. |
 
-### Add-ons stack
-* Metallb
-* Ingress
-  * Nginx
-  * Contour
-* Cert Manager
-* Kubernetes Dashboard
-* Metrics Server
-* Container Storage Interface (CSI)
-  * NFS Provisioner
-  * Longhorn
-  * Rook Ceph
-* Monitoring (Kube-Prometheus)
-  * Prometheus
-  * Grafana
-  * AlertManager
-* Logging
-  * Elastic Operator
-  * Elasticsearch
-  * Kibana
-  * FluentD
-  * Loki (with Promtail)
-* Tracing
-  * Jaeger
-  * OpenTelemetry Collector
-* DevOps
-  * ArgoCD
-  * Gitlab
-  * Gitlab Runner
-  * Harbor
-  * Minio
-  * Sonarqube
-  * Kyverno
-* Istio
-* KNative
-* RabbitMQ
-  * Rabbitmq Operator
-  * Rabbitmq Cluster
-  * Messaging Topology Operator
-* Redis
-  * Redis Cluster
-  * Redis Sentinel
-* Kafka
-  * Strimzi Kafka Operator
-  * Kafka Bridge
-  * Kafka Connect
-* Database
-  * Microsoft SQL Server
-* Trivy
-* Keycloak
-* Goldilocks
-* Velero
-* Ansible Tower (AWX)
+## Add-ons stack
 
-### Roles Guide
+<table>
+<tr>
+  <th><b>Category</b></th>
+  <th><b>Add-On Components</b></th>
+</tr>
+<tr>
+  <td rowspan=3>Service Proxy</td>
+  <td>Metallb</td>
+</tr>
+<tr>
+  <td>Nginx</td>
+</tr>
+<tr>
+  <td>Contour</td>
+</tr>
+<tr>
+  <td rowspan=3>Container Storage Interface (CSI)</td>
+  <td>Longhorn</td>
+</tr>
+<tr>
+  <td>NFS</td>
+</tr>
+<tr>
+  <td>Rook-Ceph</td>
+</tr>
+<tr>
+  <td rowspan=4>Security &amp; Compliance</td>
+  <td>Cert Manager</td>
+</tr>
+ <tr><td>Keycloak</td>
+</tr>
+<tr>
+  <td>Trivy</td>
+</tr>
+<tr>
+  <td>Goldilocks</td>
+</tr>
+<tr>
+  <td rowspan=2>Kubernetes-sig</td>
+  <td>Kubernetes Dashboard</td>
+</tr>
+<tr>
+  <td>Metrics Server</td>
+</tr>
+<tr>
+  <td rowspan=3>Monitoring</td>
+  <td>Prometheus</td>
+</tr>
+<tr>
+  <td>Grafana</td>
+</tr>
+<tr>
+  <td>AlertManager</td>
+</tr>
+<tr>
+  <td rowspan=3>Logging</td>
+  <td>ElasticOperator
+  <ul>
+    <li>Elasticsearch</li>
+    <li>Kibana</li>
+  </ul>
+  </td>
+</tr>
+<tr>
+  <td>FluentD</td>
+</tr>
+<tr>
+  <td> Grafana Loki (Promtail)</td>
+</tr>
+<tr>
+  <td rowspan=2>Tracing</td>
+  <td>Jaeger</td>
+</tr>
+<tr>
+  <td>OpenTelemetry</td>
+</tr>
+<tr>
+  <td>Service Mesh</td>
+  <td>Istio</td>
+</tr>
+<tr>
+  <td rowspan=8>DevOps</td>
+  <td>ArgoCD</td>
+</tr>
+<tr>
+  <td>Gitlab</td>
+</tr>
+<tr>
+  <td>Gitlab Runner</td>
+</tr>
+<tr>
+  <td>Harbor</td>
+</tr>
+<tr>
+  <td>Kyverno</td>
+</tr>
+<tr>
+  <td>Minio</td>
+</tr>
+<tr>
+  <td>Sonarqube</td>
+</tr>
+<tr>
+  <td>Tekton</td>
+</tr>
+<tr>
+  <td rowspan=2>Messaging</td>
+  <td>RabbitMQ
+    <ul>
+      <li>Operator</li>
+      <li>Cluster</li>
+      <li>Messaging Topology Operator</li>
+    </ul>
+  </td>
+</tr>
+<tr>
+  <td>Strimzi Kafka
+    <ul>
+      <li>Operator</li>
+      <li>Kafka Bridge</li>
+      <li>Kafka Connect</li>
+      <li>Kafka UI</li>
+    </ul>
+  </td>
+</tr>
+<tr>
+  <td>Caching</td>
+  <td>Redis</td>
+</tr>
+<tr>
+  <td>Database</td>
+  <td>Microsoft SQL Server</td>
+</tr>
+<tr>
+  <td>Serverless</td>
+  <td>KNative
+    <ul>
+      <li>Eventing</li>
+      <li>Serving</li>
+    </ul>
+  </td>
+</tr>
+<tr>
+  <td>Operations</td>
+  <td>Velero</td>
+</tr>
+<tr>
+  <td>Automation</td>
+  <td>AWX</td>
+</tr>
+</table>
+
+## Roles Guide
 
 The roles folders are structured in the following manner:
 
@@ -250,5 +353,5 @@ The roles folders are structured in the following manner:
 
 To install the specific add-on, specify them in the `add_ons` collection before running `setup-add-ons.yaml`.
 
-### Disclaimer
+## Disclaimer
 Everything provided here is 'as-is' and comes with no warranty or support.
