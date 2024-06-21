@@ -3,7 +3,7 @@
    #### 1. Create a `certs` folder inside the `ansible-kubernetes` project repository which you have cloned earlier i.e. `/root/ansible-kubernetes/certs`.
 
    Open an Ubuntu terminal in WSL to create the certificates in the folder:
-   ```
+   ```bash
    USERNAME="ansible"
 
    cat > openssl.conf << EOL
@@ -22,7 +22,7 @@
    #### 2. Register the certificates to the Windows certificate store and configure WinRM to use it for the ansible user.
 
    You can manually add the certificates using the Certificate Manager UI (`certmgr.msc`) or execute the following script in a Powershell command prompt with Administrator access:
-   ```
+   ```powershell
    $cert = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 "\\wsl.localhost\Ubuntu-22.04\root\ansible-kubernetes\certs\cert.pem"
 
    $store_name = [System.Security.Cryptography.X509Certificates.StoreName]::Root
@@ -47,7 +47,7 @@
   > [!CAUTION]
   > Please use your own secure password instead of the default password in the sample script.
 
-   ```
+   ```powershell
    $username = "ansible"
    $password = ConvertTo-SecureString -String "p@ssw0rd" -AsPlainText -Force
    $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $username, $password
@@ -64,7 +64,7 @@
    Set-Item -Path WSMan:\localhost\Service\Auth\Certificate -Value $true
    ```
    #### 4. Configure the WinRM settings in the `inventories/winrm.yaml` file for the playbooks.
-   ```
+   ```yaml
    # This should be your local machine or an Ansible host. Winrm must be setup correctly for this to work.
    # You can have more than 1 winrm host to distribute the kubernetes VMs; remember to set the winrm_host.
    winrm:

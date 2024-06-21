@@ -75,7 +75,7 @@ The recommendations for **disk size** is the VM default (**127GB**) but when usi
 ### 1. Install Ansible
 
 Open a terminal in the Ubuntu OS of your WSL and execute the following command to install ansible.
-```
+```bash
 sudo apt update
 sudo apt install software-properties-common
 sudo add-apt-repository --yes --update ppa:ansible/ansible
@@ -87,13 +87,13 @@ sudo apt install ansible
 ### 2. Configure Windows Remote Management (WinRM) on your Windows host.
 
 Open an Ubuntu terminal in your WSL and run the following:
-```
+```bash
 sudo apt install python3-pip
 pip install ansible pywinrm kubernetes jsonpatch
 ```
 
 Create a Windows user with Administrator (or proper) access rights for ansible in the Windows Hyper-V host. Open a Powershell command prompt with Administrator rights in your Windows host and run the following:
-```
+```powershell
 $username = "ansible"
 $password = ConvertTo-SecureString "p@ssw0rd" -AsPlainText -Force
 
@@ -103,7 +103,7 @@ Add-LocalGroupMember -Group Administrators -Member $username
 ```
 
 Run the configuration script provided by ansible to configure your WinRM in the same powershell terminal:
-```
+```powershell
 $setupscript = "https://raw.githubusercontent.com/ansible/ansible-documentation/ae8772176a5c645655c91328e93196bcf741732d/examples/scripts/ConfigureRemotingForAnsible.ps1"
 Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
 .\winrm-setup.ps1
@@ -116,14 +116,14 @@ Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
 
 ### 3. Configure WinRM Settings in Playbooks
 
-Clone this repository into a directory of your choice. You may need to configure the necessary access rights for the directory.
+Clone this repository into a directory of your choice in the Ubuntu OS inside the WSL. You may need to configure the necessary access rights for the directory.
 
-```
+```bash
 git clone https://github.com/serenagrl/ansible-kubernetes.git
 ```
 
 Set the neccesary credentials in the `\inventories\winrm.yaml` file:
-```
+```yaml
 # This should be your local machine or an Ansible host. Winrm must be setup correctly for this to work.
 # You can have more than 1 winrm host to distribute the kubernetes VMs; remember to set the winrm_host.
 winrm:
