@@ -1,3 +1,1 @@
-# servers: "{{ groups['load_balancers'] + ['dns_server'] + groups['kubernetes_cluster'] }}"
-servers: "{{ groups['kubernetes_cluster'] }}"
-
+servers: "{{ groups['infrastructure_services'] + groups['kubernetes_cluster'] }}"
