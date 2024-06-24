@@ -1,5 +1,0 @@
-dns:
-  hosts:
-    dns_server:
-      ansible_hostname: k8s-dns
-      ansible_host: 192.168.0.203

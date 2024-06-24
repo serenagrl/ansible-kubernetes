@@ -1,9 +1,0 @@
-# Minio inventory variables.
-INV_MINIO: "{{ (inventory_files | community.general.json_query('results[?contains(source, `minio_server`)].content') | b64decode |
-              regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
-INV_MINIO_VARS:
-  minio:
-    hosts:
-      minio_server: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `minio_server`)].content') | b64decode | from_yaml) }}"
-
-INVENTORY_MINIO: "{{ INV_MINIO | combine(INV_MINIO_VARS, recursive=true) }}"

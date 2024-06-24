@@ -1,0 +1,13 @@
+ansible_user: root
+ansible_become: yes
+
+winrm_host: local_machine
+
+# The VM settings for the host.
+# Comment off this if provisioning individual VMs.
+vm:
+  specs:
+    ram_size: 1GB
+    min_ram_size: 1GB
+    disk_size: 256GB
+    v_cpu: 2

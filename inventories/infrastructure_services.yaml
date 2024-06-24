@@ -1,0 +1,20 @@
+infrastructure_services:
+  vars:
+    # NOTE: This is solely for the purpose of defining YAML anchors only. DO NOT define any variables here.
+    # DO NOT rename the variables here as it will break semaphore UI logic.
+    infra_server: &infra_server
+      ansible_hostname: k8s-svc
+      ansible_host: 192.168.0.203
+
+  children:
+    load_balancers:
+
+  hosts:
+    dns_server:
+      << : *infra_server
+
+    nfs_server:
+      << : *infra_server
+
+    minio_server:
+      << : *infra_server

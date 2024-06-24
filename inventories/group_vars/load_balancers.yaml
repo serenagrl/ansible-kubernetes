@@ -1,8 +1,7 @@
 ansible_user: root
 ansible_become: yes
 
-# You can also set this in individual host if you are splitting the nodes to different physical
-# servers.
+# You can also set this in individual host if you are splitting the nodes to different physical servers.
 winrm_host: local_machine
 
 # The VM settings for each host.
