@@ -3,7 +3,9 @@ RABBITMQ_ROOT_VARS: "{{ var_files | community.general.json_query('results[?conta
 RABBITMQ_OPERATOR_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/operator/vars`)].content') | b64decode | from_yaml }}"
 RABBITMQ_CLUSTER_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/cluster/vars`)].content') | b64decode | from_yaml }}"
 RABBITMQ_TOPOLOGY_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/topology/vars`)].content') | b64decode | from_yaml }}"
+RABBITMQ_GRAFANA_DASHBOARD_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `roles/rabbitmq/grafana-dashboard/vars`)].content') | b64decode | from_yaml }}"
 RABBITMQ_VARS:
   - { name: rabbitmq, vars: "{{ RABBITMQ_ROOT_VARS | combine(RABBITMQ_OPERATOR_VARS, recursive=true)
-                                                    | combine(RABBITMQ_CLUSTER_VARS, recursive=true)
-                                                    | combine(RABBITMQ_TOPOLOGY_VARS, recursive=true) }}" }
+                                                   | combine(RABBITMQ_GRAFANA_DASHBOARD_VARS, recursive=true)
+                                                   | combine(RABBITMQ_CLUSTER_VARS, recursive=true)
+                                                   | combine(RABBITMQ_TOPOLOGY_VARS, recursive=true) }}" }
