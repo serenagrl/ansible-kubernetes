@@ -1,5 +1,5 @@
-operator:
 {% if not kube.allow_scheduling %}
+operator:
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
