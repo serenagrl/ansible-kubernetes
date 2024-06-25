@@ -101,6 +101,7 @@
         - { name: "Setup Add-On - CSI", content: "{{ CSI_VARS }}", is_add_on: no }
         - { name: "Setup Add-On - MetalLB", content: "{{ METALLB_VARS }}", checkpoint_name: "Metallb installed." }
         - { name: "Setup Add-On - Trivy", content: "{{ TRIVY_VARS }}", checkpoint_name: "Trivy installed." }
+        - { name: "Setup Add-On - DevOps (Kyverno)", content: "{{ KYVERNO_VARS }}", checkpoint_name: "Kyverno installed." }
 
     - name: Query all environment records
       ansible.builtin.uri:

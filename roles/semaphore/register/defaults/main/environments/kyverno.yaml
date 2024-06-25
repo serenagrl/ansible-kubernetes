@@ -1,0 +1,6 @@
+# Kyverno environment variables.
+KYVERNO_ROOT_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/kyverno/vars`)].content') | b64decode | from_yaml }}"
+KYVERNO_POLICIES_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/kyverno/policies/vars`)].content') | b64decode | from_yaml }}"
+
+KYVERNO_VARS:
+  - { name: devops/kyverno, vars: "{{ KYVERNO_ROOT_VARS | combine(KYVERNO_POLICIES_VARS, recursive=true) }}" }
