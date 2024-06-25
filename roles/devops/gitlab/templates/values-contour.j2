@@ -194,4 +194,34 @@ gitlab:
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+{% else %}
+upgradeCheck:
+  enabled: false
+
+postgresql:
+  primary: # Change this accordingly in new versions
+    persistence:
+      size: {{ gitlab.postgres.storage_size }}
+
+redis:
+  master:
+    persistence:
+      size: {{ gitlab.redis.master.storage_size }}
+
+  replica:
+    persistence:
+      size: {{ gitlab.redis.replica.storage_size }}
+
+gitlab:
+  toolbox:
+{% if gitlab.external_minio %}
+    backups:
+      objectStorage:
+        config:
+          secret: gitlab-storage-secret
+          key: connection
+{% endif %}
+  gitaly:
+    persistence:
+      size: {{ gitlab.gitaly.storage_size }}
 {% endif %}
