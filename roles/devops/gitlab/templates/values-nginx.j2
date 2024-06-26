@@ -64,14 +64,16 @@ prometheus:
 registry:
   enabled: false
 
-{% if not kube.allow_scheduling %}
 upgradeCheck:
   enabled: false
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
       operator: Exists
+{% endif %}
 
+{% if not kube.allow_scheduling %}
 shared-secrets:
   tolerations:
     - effect: NoSchedule
@@ -80,17 +82,6 @@ shared-secrets:
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
 
-postgresql:
-  primary: # Change this accordingly in new versions
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-    persistence:
-      size: {{ gitlab.postgres.storage_size }}
-
 minio:
   tolerations:
     - effect: NoSchedule
@@ -98,48 +89,73 @@ minio:
       operator: Exists
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+postgresql:
+  primary: # Change this accordingly in new versions
+    persistence:
+      size: {{ gitlab.postgres.storage_size }}
+{% if not kube.allow_scheduling %}
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
 
 redis:
   master:
     persistence:
       size: {{ gitlab.redis.master.storage_size }}
+{% if not kube.allow_scheduling %}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+{% endif %}
 
   replica:
     persistence:
       size: {{ gitlab.redis.replica.storage_size }}
+{% if not kube.allow_scheduling %}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+{% endif %}
 
 gitlab:
+{% if not kube.allow_scheduling %}
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
+{% endif %}
 
+{% if not kube.allow_scheduling or gitlab.external_minio %}
   toolbox:
+  {%- if not kube.allow_scheduling +%}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+  {%- endif +%}
 
-{% if gitlab.external_minio %}
+  {%- if gitlab.external_minio +%}
     backups:
       objectStorage:
         config:
           secret: gitlab-storage-secret
           key: connection
+  {%- endif +%}
 {% endif %}
 
+{% if not kube.allow_scheduling %}
   migrations:
     tolerations:
       - effect: NoSchedule
@@ -157,16 +173,6 @@ gitlab:
       node-role.kubernetes.io/control-plane: ""
 
   sidekiq:
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-
-  gitaly:
-    persistence:
-      size: {{ gitlab.gitaly.storage_size }}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
@@ -197,34 +203,16 @@ gitlab:
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
-{% else %}
-upgradeCheck:
-  enabled: false
-
-postgresql:
-  primary: # Change this accordingly in new versions
-    persistence:
-      size: {{ gitlab.postgres.storage_size }}
-
-redis:
-  master:
-    persistence:
-      size: {{ gitlab.redis.master.storage_size }}
-
-  replica:
-    persistence:
-      size: {{ gitlab.redis.replica.storage_size }}
-
-gitlab:
-  toolbox:
-{% if gitlab.external_minio %}
-    backups:
-      objectStorage:
-        config:
-          secret: gitlab-storage-secret
-          key: connection
 {% endif %}
+
   gitaly:
     persistence:
       size: {{ gitlab.gitaly.storage_size }}
+{% if not kube.allow_scheduling %}
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
 {% endif %}
