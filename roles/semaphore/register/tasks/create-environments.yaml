@@ -82,26 +82,26 @@
         - { name: "Setup Add-On - DevOps (Sonarqube)", content: "{{ SONARQUBE_VARS }}", checkpoint_name: "Sonarqube Installed." }
         - { name: "Setup Add-On - DevOps (Harbor)", content: "{{ HARBOR_VARS }}", checkpoint_name: "Harbor Installed." }
         - { name: "Setup Add-On - DevOps (ArgoCD)", content: "{{ ARGOCD_VARS }}", checkpoint_name: "ArgoCD Installed." }
-        - { name: "Setup Add-On - RabbitMQ", content: "{{ RABBITMQ_VARS }}", checkpoint_name: "RabbitMQ Installed." }
-        - { name: "Setup Add-On - Redis", content: "{{ REDIS_VARS }}", checkpoint_name: "Redis Installed." }
-        - { name: "Setup Add-On - Velero", content: "{{ VELERO_VARS }}", checkpoint_name: "Velero Installed." }
-        - { name: "Setup Add-On - Logging (Elastic Stack)", content: "{{ ELASTIC_STACK_VARS }}", checkpoint_name: "Elastic Stack Installed." }
-        - { name: "Setup Add-On - Logging (Fluentd)",  content: "{{ FLUENTD_VARS }}", checkpoint_name: "Fluentd Installed." }
-        - { name: "Setup Add-On - Istio", content: "{{ ISTIO_VARS }}", checkpoint_name: "Istio Installed." }
-        - { name: "Setup Add-On - MSSQL Server", content: "{{ MSSQL_VARS }}", checkpoint_name: "MSSQL Server Installed." }
-        - { name: "Setup Add-On - AWX", content: "{{ AWX_REG_VARS }}", checkpoint_name: "AWX Installed." }
-        - { name: "Setup Add-On - Kafka", content: "{{ KAFKA_VARS }}", checkpoint_name: "Kafka Installed." }
-        - { name: "Setup Add-On - Knative", content: "{{ KNATIVE_VARS }}", checkpoint_name: "Knative Installed." }
-        - { name: "Setup Add-On - Goldilocks", content: "{{ GOLDILOCKS_VARS }}", checkpoint_name: "Goldilocks Installed." }
-        - { name: "Setup Add-On - Keycloak", content: "{{ KEYCLOAK_VARS }}", checkpoint_name: "Keycloak Installed." }
-        - { name: "Setup Add-On - Tracing", content: "{{ TRACING_VARS }}", checkpoint_name: "Tracing Installed." }
-        - { name: "Setup Add-On - Logging (Loki)", content: "{{ LOKI_VARS }}", checkpoint_name: "Loki Installed." }
         - { name: "Setup Add-On - DevOps (Tekton)", content: "{{ TEKTON_VARS }}", checkpoint_name: "Tekton Installed." }
         - { name: "Setup Add-On - DevOps (Minio)", content: "{{ MINIO_VARS }}", checkpoint_name: "Minio Installed." }
-        - { name: "Setup Add-On - CSI", content: "{{ CSI_VARS }}", is_add_on: no }
-        - { name: "Setup Add-On - MetalLB", content: "{{ METALLB_VARS }}", checkpoint_name: "Metallb installed." }
-        - { name: "Setup Add-On - Trivy", content: "{{ TRIVY_VARS }}", checkpoint_name: "Trivy installed." }
         - { name: "Setup Add-On - DevOps (Kyverno)", content: "{{ KYVERNO_VARS }}", checkpoint_name: "Kyverno installed." }
+        - { name: "Setup Add-On - Logging (Elastic Stack)", content: "{{ ELASTIC_STACK_VARS }}", checkpoint_name: "Elastic Stack Installed." }
+        - { name: "Setup Add-On - Logging (Fluentd)",  content: "{{ FLUENTD_VARS }}", checkpoint_name: "Fluentd Installed." }
+        - { name: "Setup Add-On - Logging (Loki)", content: "{{ LOKI_VARS }}", checkpoint_name: "Loki Installed." }
+        - { name: "Setup Add-On - AWX", content: "{{ AWX_REG_VARS }}", checkpoint_name: "AWX Installed." }
+        - { name: "Setup Add-On - CSI", content: "{{ CSI_VARS }}", is_add_on: no }
+        - { name: "Setup Add-On - Goldilocks", content: "{{ GOLDILOCKS_VARS }}", checkpoint_name: "Goldilocks Installed." }
+        - { name: "Setup Add-On - Istio", content: "{{ ISTIO_VARS }}", checkpoint_name: "Istio Installed." }
+        - { name: "Setup Add-On - Kafka", content: "{{ KAFKA_VARS }}", checkpoint_name: "Kafka Installed." }
+        - { name: "Setup Add-On - Keycloak", content: "{{ KEYCLOAK_VARS }}", checkpoint_name: "Keycloak Installed." }
+        - { name: "Setup Add-On - Knative", content: "{{ KNATIVE_VARS }}", checkpoint_name: "Knative Installed." }
+        - { name: "Setup Add-On - MetalLB", content: "{{ METALLB_VARS }}", checkpoint_name: "Metallb installed." }
+        - { name: "Setup Add-On - MSSQL Server", content: "{{ MSSQL_VARS }}", checkpoint_name: "MSSQL Server Installed." }
+        - { name: "Setup Add-On - RabbitMQ", content: "{{ RABBITMQ_VARS }}", checkpoint_name: "RabbitMQ Installed." }
+        - { name: "Setup Add-On - Redis", content: "{{ REDIS_VARS }}", checkpoint_name: "Redis Installed." }
+        - { name: "Setup Add-On - Tracing", content: "{{ TRACING_VARS }}", checkpoint_name: "Tracing Installed." }
+        - { name: "Setup Add-On - Trivy", content: "{{ TRIVY_VARS }}", checkpoint_name: "Trivy installed." }
+        - { name: "Setup Add-On - Velero", content: "{{ VELERO_VARS }}", checkpoint_name: "Velero Installed." }
 
     - name: Query all environment records
       ansible.builtin.uri:

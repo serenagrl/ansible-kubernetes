@@ -45,41 +45,41 @@
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Harbor container registry." }
     - { name: "Setup Add-On - DevOps (ArgoCD)", env_name: "Setup Add-On - DevOps (ArgoCD)",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs ArgoCD." }
-    - { name: "Setup Add-On - RabbitMQ", env_name: "Setup Add-On - RabbitMQ",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs RabbitMQ Operator and creates a RabbitMQ Cluster." }
-    - { name: "Setup Add-On - Redis", env_name: "Setup Add-On - Redis",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Creates a Redis cluster or Sentinel." }
-    - { name: "Setup Add-On - Velero", env_name: "Setup Add-On - Velero",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Velero." }
-    - { name: "Setup Add-On - Logging (Elastic Stack)", env_name: "Setup Add-On - Logging (Elastic Stack)",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
-    - { name: "Setup Add-On - Logging (Fluentd)", env_name: "Setup Add-On - Logging (Fluentd)",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
-    - { name: "Setup Add-On - Istio", env_name: "Setup Add-On - Istio",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Istio" }
-    - { name: "Setup Add-On - MSSQL Server", env_name: "Setup Add-On - MSSQL Server",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Microsoft SQL Server." }
-    - { name: "Setup Add-On - AWX", env_name: "Setup Add-On - AWX",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs AWX and register the environment for use." }
-    - { name: "Setup Add-On - Kafka", env_name: "Setup Add-On - Kafka",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Strimzi and creates a Kafka cluster." }
-    - { name: "Setup Add-On - Knative", env_name: "Setup Add-On - Knative",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs knative." }
-    - { name: "Setup Add-On - Goldilocks", env_name: "Setup Add-On - Goldilocks",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs goldilocks." }
-    - { name: "Setup Add-On - Keycloak", env_name: "Setup Add-On - Keycloak",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs keycloak." }
-    - { name: "Setup Add-On - Tracing", env_name: "Setup Add-On - Tracing",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs tracing." }
-    - { name: "Setup Add-On - Logging (Loki)", env_name: "Setup Add-On - Logging (Loki)",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs loki." }
     - { name: "Setup Add-On - DevOps (Tekton)", env_name: "Setup Add-On - DevOps (Tekton)",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs tekton." }
     - { name: "Setup Add-On - DevOps (Minio)", env_name: "Setup Add-On - DevOps (Minio)",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs minio." }
-    - { name: "Setup Add-On - MetalLB", env_name: "Setup Add-On - MetalLB",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs MetalLB." }
-    - { name: "Setup Add-On - Trivy", env_name: "Setup Add-On - Trivy",
-        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Trivy." }
     - { name: "Setup Add-On - DevOps (Kyverno)", env_name: "Setup Add-On - DevOps (Kyverno)",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Kyverno." }
+    - { name: "Setup Add-On - Logging (Elastic Stack)", env_name: "Setup Add-On - Logging (Elastic Stack)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
+    - { name: "Setup Add-On - Logging (Fluentd)", env_name: "Setup Add-On - Logging (Fluentd)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
+    - { name: "Setup Add-On - Logging (Loki)", env_name: "Setup Add-On - Logging (Loki)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs loki." }
+    - { name: "Setup Add-On - AWX", env_name: "Setup Add-On - AWX",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs AWX and register the environment for use." }
+    - { name: "Setup Add-On - Goldilocks", env_name: "Setup Add-On - Goldilocks",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs goldilocks." }
+    - { name: "Setup Add-On - Istio", env_name: "Setup Add-On - Istio",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Istio" }
+    - { name: "Setup Add-On - Kafka", env_name: "Setup Add-On - Kafka",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Strimzi and creates a Kafka cluster." }
+    - { name: "Setup Add-On - Keycloak", env_name: "Setup Add-On - Keycloak",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs keycloak." }
+    - { name: "Setup Add-On - Knative", env_name: "Setup Add-On - Knative",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs knative." }
+    - { name: "Setup Add-On - MetalLB", env_name: "Setup Add-On - MetalLB",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs MetalLB." }
+    - { name: "Setup Add-On - MSSQL Server", env_name: "Setup Add-On - MSSQL Server",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Microsoft SQL Server." }
+    - { name: "Setup Add-On - RabbitMQ", env_name: "Setup Add-On - RabbitMQ",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs RabbitMQ Operator and creates a RabbitMQ Cluster." }
+    - { name: "Setup Add-On - Redis", env_name: "Setup Add-On - Redis",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Creates a Redis cluster or Sentinel." }
+    - { name: "Setup Add-On - Tracing", env_name: "Setup Add-On - Tracing",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs tracing." }
+    - { name: "Setup Add-On - Trivy", env_name: "Setup Add-On - Trivy",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Trivy." }
+    - { name: "Setup Add-On - Velero", env_name: "Setup Add-On - Velero",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Velero." }
