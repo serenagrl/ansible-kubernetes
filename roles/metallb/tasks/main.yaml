@@ -40,3 +40,15 @@
     force: yes
     definition: |
       {{ L2_ADVERTISEMENT_TEMPLATE }}
+  
+# Note: To fix metallb not working in the latest version. This code is temporary and may be removed in the future.
+- name: Remove external load balancer label
+  kubernetes.core.k8s:
+    kind: Node
+    name: "{{ hostvars[item].ansible_hostname }}"
+    definition:
+      metadata:
+        labels: 
+          node.kubernetes.io/exclude-from-external-load-balancers:
+    state: patched
+  loop: "{{ fact_active_hosts }}"
