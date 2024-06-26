@@ -39,7 +39,7 @@ The computing resources for each VM is depending on how much add-ons you are pla
 
 #### Infrastructure Services VMs
 
-There are additional 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster if you choose to include them in your lab. The Load-Balancers will each have their own VM and a spearate VM is dedicated to host DNS, NFS and Minio for testing purposes in the lab.
+There are additional 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster if you choose to include them in your lab. The Load-Balancers will each have their own VM and a separate VM is dedicated to host DNS, NFS and Minio for testing purposes in the lab.
 
 > [!WARNING]
 > By default, the Infrastructure Services VM will only be created during the provisioning of DNS. NFS and Minio will not provision their own VMs by default. You can change this behavior by setting the `provision_vm` variable for each DNS, NFS and Minio.
