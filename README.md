@@ -2,6 +2,7 @@
 A collection of Ansible playbooks and roles to provision a bare-metal Kubernetes cluster for on-premise Hyper-V, either for testing/learning purposes or SIT/Proof-of-Concept environments. These playbooks and add-ons were tailored to my working environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
 
 ## Quick Notes
+* Working knowledge of [Ansible](https://www.ansible.com/) is required to navigate around the playbooks.
 * Playbooks are tested on **Windows 11** and **Windows Server 2022** Hyper-V hosts.
 * Playbooks can provision VMs for **Ubuntu 22.04** or **Red Hat 9.3** Linux.
 * Playbooks default to setup a DNS server, 2 HAProxy load balancers and 3 control-plane VMs.
@@ -27,18 +28,21 @@ Prepare two folders on the Windows Hyper-V host for the playbooks:
 * A folder where the Virtual Machines will be created in i.e. `"D:\Virtual Machines"`
 
 > [!CAUTION]
-> You can set both to point to the same folder but you may have some residue seed iso images leftover from provisioning errors. In such cases, you may need to manually clean them up yourself.
+> You can set both to point to the same folder but you may have some residue seed iso images leftover from provisioning errors. In such cases, you may need to manually clean them up.
 
 ### Virtual Machine Requirements
 
-The computing resources for each VM is depending on how much add-ons you are planning to install and how much capacity your Windows host can provide. Remember that you can pool multiple Windows Hyper-V servers together to host the VMs to distribute the load.
+The computing resources for each VM is depending on how much add-ons you are planning to install and how much capacity your Windows host can provide. You can pool multiple Windows Hyper-V servers together to host the VMs to distribute the load.
 
 > [!NOTE]
 > The VMs created are using **Dynamic Memory** as the default. You can change this in **Hyper-V Manager** if you want to prevent the VMs from exceeding the assigned memory limits.
 
 #### Infrastructure Services VMs
 
-There are additional 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster if you choose to include them in your lab. The Load-Balancers will each have their own VM and a spearate VM is dedicated to host DNS, NFS and Minio for testing purposes in the lab. NFS and Minio will not provision their own VMs by default.
+There are additional 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster if you choose to include them in your lab. The Load-Balancers will each have their own VM and a spearate VM is dedicated to host DNS, NFS and Minio for testing purposes in the lab.
+
+> [!WARNING]
+> By default, the Infrastructure Services VM will only be created during the provisioning of DNS. NFS and Minio will not provision their own VMs by default. You can change this behavior by setting the `provision_vm` variable for each DNS, NFS and Minio.
 
    > [!CAUTION]
    > The Infrastructure Services VMs are purely meant to simulate existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, **do not target them to existing production servers** that are already running. Doing so will corrupt the existing servers.
@@ -72,7 +76,7 @@ The **Kubernetes Cluster** will require a minimum of 3 VMs for the control plane
 
 #### Disk Size
 
-The recommendations for **disk size** is the VM default (**127GB**) but when using CSI such as Longhorn or Rook-ceph, it is recommended to set the disk size to **256GB** to support the request limits.
+The recommendation for **disk size** is the VM default (**127GB**) but when using CSI such as Longhorn or Rook-ceph, it is recommended to set the disk size to **256GB** to support the request limits.
 
 ## Setting Up Your Environment
 ### 1. Install Ansible
@@ -115,9 +119,11 @@ Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
 > You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html).
 
 > [!IMPORTANT]
-> Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have it configured correctly before you attempt to run the playbooks.
+> Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have configured it correctly before you attempt to run the playbooks.
 
 ### 3. Configure WinRM Settings in Playbooks
+
+It is recommended that you download and install [Visual Studio Code](https://code.visualstudio.com/) and enable the [Ansible VS Code Extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.ansible) to work with the playbooks. You may also want to enable any Jinja2 syntax highlighting extensions of your choice.
 
 Clone this repository into a directory of your choice in the Ubuntu OS inside the WSL. You may need to configure the necessary access rights for the directory.
 
@@ -147,6 +153,23 @@ winrm:
 > [!NOTE]
 > Detail documentation [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html).
 
+Run the `test-winrm-connection.yaml` playbook to verify your winrm connection.
+```bash
+ansible-playbook test-winrm-connection.yaml
+```
+
+You should get something similar to the following result when success:
+```bash
+PLAY [Test WinRM Connection] *******************************************************************************************
+
+TASK [Sending echo to WinRM host] **************************************************************************************
+Wednesday 26 June 2024  17:17:22 +0800 (0:00:00.013)       0:00:00.013 ********
+changed: [local_machine]
+
+PLAY RECAP *************************************************************************************************************
+local_machine              : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+
 ### 4. Optional: Configure Playbooks to Use WinRM With Certificates
 
 Although not compulsory, it is recommended to use certificates to connect to WinRM from your playbooks. Follow these [steps](docs/configure-winrm-certs.md), if you wish to enable WinRM using certificates.
@@ -160,6 +183,49 @@ This option is best for beginners who do not want to go through the internals an
 To support Semaphore UI, you will need to create shared folders for the `Installation Files` and `Virtual Machines` folders on your Windows Hyper-V Host and grant full-control access to the `ansible` user which you have created in the earlier section.
 
 ## Running the Playbooks via Command Line
+
+Configure the host names and IP addresses of the VMs in the inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. You should review all the inventory files and make any necessary changes for your lab.
+```yaml
+kubernetes_control_planes:
+  hosts:
+    control-plane-01:
+      ansible_hostname: k8s-cp1
+      ansible_host: 192.168.0.204
+
+    control-plane-02:
+      ansible_hostname: k8s-cp2
+      ansible_host: 192.168.0.205
+
+    control-plane-03:
+      ansible_hostname: k8s-cp3
+      ansible_host: 192.168.0.206
+```
+
+Next, configure the settings for your Kubernetes Cluster in the `inventories/group_vars/all.yaml` file.
+
+Finally, configure the VM settings in the `roles/vm-linux/setup-vm/vars/main.yaml` file.
+
+You can choose which Linux OS to install by specifying the value in `vm.os`. Currently, the playbooks can support `ubuntu` or `redhat`. If selecting `redhat`, please download the **Red Hat Enterprise Linux Guest Image** and make it available to your WSL before running the playbooks. The username and password to your Red Hat subscription is also required to automatically register the VMs to enable the dnf repositories.
+
+```yaml
+vm:
+  # Valid values for now are:
+  # ubuntu - for ubuntu
+  # redhat - Red Hat Enterprise Linux
+  os: redhat
+
+  # RHEL images cannot be downloaded without signing in. Therefore, you will need to manually
+  # download it and place it somewhere.
+  redhat:
+    # The full path and name to the RHEL KVM image to use.
+    kvm_image: "/mnt/c/Installation Files/RedHat/rhel-9.3-x86_64-kvm.qcow2"
+
+    # Your redhat login id
+    username: <username>
+
+    # Your redhat login password
+    password: <password>
+```
 
 The playbooks can be run with the `ansible-playbook` command. i.e.
 ```
