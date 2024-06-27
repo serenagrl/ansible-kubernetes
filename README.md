@@ -5,16 +5,9 @@ A collection of Ansible playbooks and roles to provision a bare-metal Kubernetes
 * Working knowledge of [Ansible](https://www.ansible.com/) is required to navigate around the playbooks.
 * Playbooks are tested on **Windows 11** and **Windows Server 2022** Hyper-V hosts.
 * Playbooks can provision VMs for **Ubuntu 22.04** or **Red Hat 9.3** Linux.
-* Playbooks default to setup a DNS server, 2 HAProxy load balancers and 3 control-plane VMs.
-* An infrastructure service VM is dedicated to host DNS, NFS and Minio for testing purposes. NFS and Minio will not provision VMs by default.
+* Playbooks default to setup a DNS, 2 HAProxy load balancers and 3 control-plane VMs.
 * The Kubernetes cluster uses **Containerd** as container runtime and **Calico** as CNI.
-* Configure the IP addresses, host names and domain in the host files located in `\inventories`
-* Some roles are deploying sample/example configurations only (although some may deploy production environments).
-* Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). Adjust the order of installation if needed.
-* Version incompatibility may occur i.e. new Kubernetes version may break everything or some add-ons version may not be compatible with each other. Configure the desired versions in the `vars\main.yaml` of the role.
-* If an add-on fails to install, try using an older release of the add-on since the playbooks may not be compatible with the latest releases.
-* Be patient if you are running on a slow internet connection. Installation may take some time. Increase the timeout of tasks if your environment needs more time to complete certain tasks.
-* VM Checkpoints will be created to provide safety just in case your installation breaks. These checkpoints may consume a lot of disk space. You may remove the checkpoints when you feel everything is stable to recover the disk space.
+* Configure everything in the `/inventories` folder and `roles/vm-linux/setup-vm/vars/main.yaml`.
 
 ## Hyper-V Host Requirements
 
@@ -37,51 +30,57 @@ The computing resources for each VM is depending on how much add-ons you are pla
 > [!NOTE]
 > The VMs created are using **Dynamic Memory** as the default. You can change this in **Hyper-V Manager** if you want to prevent the VMs from exceeding the assigned memory limits.
 
+> [!CAUTION]
+> VM Checkpoints are created to provide recovery in case of installation breaks/errors. **These checkpoints consume additional disk space**. You will need to manually perform housekeeping to keep only checkpoints that are stable if you need to recover the disk space.
+
 #### Infrastructure Services VMs
 
-There are additional 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster if you choose to include them in your lab. The Load-Balancers will each have their own VM and a separate VM is dedicated to host DNS, NFS and Minio for testing purposes in the lab.
+There are 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster if you choose to include them. The Load-Balancers will each have their own VM and a separate VM is dedicated to host DNS, NFS and Minio for testing purposes.
 
 > [!WARNING]
-> By default, the Infrastructure Services VM will only be created during the provisioning of DNS. NFS and Minio will not provision their own VMs by default. You can change this behavior by setting the `provision_vm` variable for each DNS, NFS and Minio.
+> By default, the Infrastructure Services VM will only be created during the provisioning of DNS. NFS and Minio will not provision their own VMs by default. Configure the `provision_vm` variable for each DNS, NFS and Minio to change this behavior.
 
-   > [!CAUTION]
-   > The Infrastructure Services VMs are purely meant to simulate existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, **do not target them to existing production servers** that are already running. Doing so will corrupt the existing servers.
+> [!CAUTION]
+> The Infrastructure Services VMs are purely meant to simulate existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, **do not target them to existing production servers** that are already running. Doing so will corrupt the existing servers.
 
-   The recommendations for the **Infrastructure Services** VMs are as follows:
+Recommendations for **Infrastructure Services** VMs are as follows:
 
-   | Services                    | Unit | vCPU | Min. RAM  | RAM |
-   | --------------------------- | :--: | :--: | :-------: | :-: |
-   | Load-Balancers              | 2    | 2    | 1GB       | 1GB |
-   | K8s-svc (DNS)               | 1    | 2    | 1GB       | 1GB |
-   | K8s-svc (DNS + NFS)         | 1    | 2    | 2GB       | 2GB |
-   | K8s-svc (DNS + NFS + Minio) | 1    | 4    | 4GB       | 8GB |
+| Services                    | Unit | vCPU | Min. RAM  | RAM | Disk  |
+| --------------------------- | :--: | :--: | :-------: | :-: | :--:  |
+| Load-Balancers              | 2    | 2    | 1GB       | 1GB | 127GB |
+| K8s-svc (DNS)               | 1    | 2    | 1GB       | 1GB | 127GB |
+| K8s-svc (DNS + NFS)         | 1    | 2    | 2GB       | 2GB | 127GB |
+| K8s-svc (DNS + NFS + Minio) | 1    | 4    | 4GB       | 8GB | 256GB |
 
 #### Kubernetes Cluster VMs
 
-The **Kubernetes Cluster** will require a minimum of 3 VMs for the control planes. Generally in a lab environment where computing resources is limited, you can skip provisioning the worker nodes. However, if you want to learn Kubernetes concepts or deploy SIT/Proof-of-Concept environments where workload isolation is required for applications, then you can decide the number or worker nodes you need to deploy.
+The **Kubernetes Cluster** requires a minimum of 3 VMs for the control planes. Worker nodes are optional - you can determine the number and size of worker nodes base on your needs.
 
-   The recommendations for the **Kubernetes** VMs are as follows:
+Recommendations for **Kubernetes Cluster** VMs are as follows:
 
-   | Lab Type                    | Control Plane | vCPU | Min. RAM  | RAM  | Worker Node | vCPU | Min. RAM  | RAM  |
-   | --------------------------- | :-----------: | :--: | :-------: | :--: | :---------: | :--: | :-------: | :--: |
-   | Barebones Cluster           | 3             | 4    | 4GB       | 6GB  | Optional    | 4    | 4GB       | 4GB  |
-   | Basic (NFS)                 | 3             | 4    | 8GB       | 12GB | Optional    | 4    | 4GB       | 4GB  |
-   | Basic (Longhorn/Rook-ceph)  | 3             | 6    | 12GB      | 16GB | Optional    | 4    | 4GB       | 4GB  |
-   | DevOps/DevSecOps            | 3             | 6    | 16GB      | 24GB | Optional    | 4    | 4GB       | 4GB  |
-   | Observablity                | 3             | 6    | 16GB      | 24GB | Optional    | 4    | 4GB       | 4GB  |
-   | Test/SIT Environment        | 3             | 8    | 24GB      | 32GB | 2 (or more) | 4    | 4GB       | 8GB  |
+| Lab Type                    | Control Plane | vCPU | Min. RAM  | RAM  | Worker Node | vCPU | Min. RAM  | RAM  |
+| --------------------------- | :-----------: | :--: | :-------: | :--: | :---------: | :--: | :-------: | :--: |
+| Barebones Cluster           | 3             | 4    | 4GB       | 6GB  | Optional    | 4    | 4GB       | 4GB  |
+| Basic (NFS)                 | 3             | 4    | 8GB       | 12GB | Optional    | 4    | 4GB       | 4GB  |
+| Basic (Longhorn/Rook-ceph)  | 3             | 6    | 12GB      | 16GB | Optional    | 4    | 4GB       | 4GB  |
+| DevOps/DevSecOps            | 3             | 6    | 16GB      | 24GB | Optional    | 4    | 4GB       | 4GB  |
+| Observablity                | 3             | 6    | 16GB      | 24GB | Optional    | 4    | 4GB       | 4GB  |
+| Test/SIT Environment        | 3             | 8    | 24GB      | 32GB | 2 (or more) | 4    | 4GB       | 8GB  |
 
-   > [!WARNING]
-   > Both Longhorn and Rook-Ceph CSIs can consume a lot of resources but offers a good learning path and discipline for managing clustered storage. You may need to utilize more than 1 Hyper-V hosts with more RAM if you have insufficient computing resources.
+> [!WARNING]
+> Both Longhorn and Rook-Ceph CSIs can consume a lot of resources but offers a good learning path and discipline for managing clustered storage. You may need to utilize more than 1 Hyper-V hosts with more RAM if you have insufficient computing resources.
 
 #### Disk Size
 
-The recommendation for **disk size** is the VM default (**127GB**) but when using CSI such as Longhorn or Rook-ceph, it is recommended to set the disk size to **256GB** to support the request limits.
+The recommendation for **disk size** is the VM default of **127GB** but when using CSIs such as Longhorn or Rook-ceph, it is recommended to set the disk size to **256GB** to support the pod request limits.
 
 ## Setting Up Your Environment
+
+It is recommended that you download and install [Visual Studio Code](https://code.visualstudio.com/) and enable the [Ansible VS Code Extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.ansible) to work with the playbooks.
+
 ### 1. Install Ansible
 
-Open a terminal in the Ubuntu OS of your WSL and execute the following command to install ansible.
+Open a terminal in the Ubuntu OS of the WSL and execute the following command to install ansible:
 ```bash
 sudo apt update
 sudo apt install software-properties-common
@@ -91,15 +90,15 @@ sudo apt install ansible
 > [!NOTE]
 > You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu).
 
-### 2. Configure Windows Remote Management (WinRM) on your Windows host.
+### 2. Configure Windows Remote Management (WinRM) on Windows Host
 
-Open an Ubuntu terminal in your WSL and run the following:
+Open an Ubuntu terminal in the WSL and run the following to install the pre-requisites:
 ```bash
 sudo apt install python3-pip
 pip install ansible pywinrm kubernetes jsonpatch
 ```
 
-Create a Windows user with Administrator (or proper) access rights for ansible in the Windows Hyper-V host. Open a Powershell command prompt with Administrator rights in your Windows host and run the following:
+Create a Windows user with Administrator (or proper) proviledges for ansible in the Windows Hyper-V host. Below is an example of a powershell script that you can use to create the user. Please change the username and password accordingly. Open a Powershell command prompt with Administrator rights in the Windows host to execute the script:
 ```powershell
 $username = "ansible"
 $password = ConvertTo-SecureString "p@ssw0rd" -AsPlainText -Force
@@ -109,7 +108,7 @@ New-LocalUser -Name $username -Password $password -FullName $username -Descripti
 Add-LocalGroupMember -Group Administrators -Member $username
 ```
 
-Run the configuration script provided by ansible to configure your WinRM in the same powershell terminal:
+Run the configuration script provided by ansible to configure WinRM in the same powershell terminal:
 ```powershell
 $setupscript = "https://raw.githubusercontent.com/ansible/ansible-documentation/ae8772176a5c645655c91328e93196bcf741732d/examples/scripts/ConfigureRemotingForAnsible.ps1"
 Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
@@ -118,23 +117,17 @@ Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
 > [!NOTE]
 > You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html).
 
-> [!IMPORTANT]
-> Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have configured it correctly before you attempt to run the playbooks.
 
 ### 3. Configure WinRM Settings in Playbooks
 
-It is recommended that you download and install [Visual Studio Code](https://code.visualstudio.com/) and enable the [Ansible VS Code Extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.ansible) to work with the playbooks. You may also want to enable any Jinja2 syntax highlighting extensions of your choice.
-
-Clone this repository into a directory of your choice in the Ubuntu OS inside the WSL. You may need to configure the necessary access rights for the directory.
+Clone this repository into a directory in the Ubuntu OS inside the WSL. Necessary access rights may need to be configured for the directory.
 
 ```bash
 git clone https://github.com/serenagrl/ansible-kubernetes.git
 ```
 
-Set the neccesary credentials in the `\inventories\winrm.yaml` file:
+Set the WinRM credentials that was created earlier in the `/inventories/winrm.yaml` file:
 ```yaml
-# This should be your local machine or an Ansible host. Winrm must be setup correctly for this to work.
-# You can have more than 1 winrm host to distribute the kubernetes VMs; remember to set the winrm_host.
 winrm:
   hosts:
     local_machine:
@@ -153,12 +146,18 @@ winrm:
 > [!NOTE]
 > Detail documentation [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html).
 
-Run the `test-winrm-connection.yaml` playbook to verify your winrm connection.
+### 4. Optional: Configure Playbooks to Use WinRM With Certificates
+
+It is recommended to use certificates to connect to WinRM from your playbooks. Follow these [steps](docs/configure-winrm-certs.md), to enable certificates in WinRM.
+
+### 5. Testing WinRM Connectivity
+
+Run the `test-winrm-connection.yaml` playbook to verify the winrm connection.
 ```bash
 ansible-playbook test-winrm-connection.yaml
 ```
 
-You should get something similar to the following result when success:
+You should get something similar to the following result if success:
 ```bash
 PLAY [Test WinRM Connection] *******************************************************************************************
 
@@ -170,21 +169,18 @@ PLAY RECAP *********************************************************************
 local_machine              : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```
 
-### 4. Optional: Configure Playbooks to Use WinRM With Certificates
-
-Although not compulsory, it is recommended to use certificates to connect to WinRM from your playbooks. Follow these [steps](docs/configure-winrm-certs.md), if you wish to enable WinRM using certificates.
+> [!IMPORTANT]
+> Setting up WinRM is usually the hardest part of the pre-requisites. Make sure you have configured it correctly before any attempts to run the playbooks.
 
 ## Running the Playbooks with Semaphore UI
 
-If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore), you can leverage on it to provide a user interface on-top of the playbooks in this repository. You can run the `setup-semaphore.yaml` playbook to create and configure a separate VM for Semaphore UI and then run the `setup-semaphore-project.yaml` playbook to automate the creation of a project in the semaphore server based on the cloned version of this repository on your filesystem.
+If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore), you will be pleased to know that these playbooks supports it. Run the `setup-semaphore.yaml` playbook to automatically create and configure a separate VM for Semaphore UI and then run the `setup-semaphore-project.yaml` playbook to automate the creation of a project in the semaphore server based on the cloned version of this repository on the filesystem.
 
-This option is best for beginners who do not want to go through the internals and complexities of configuring and running the playbooks from a terminal.
-
-To support Semaphore UI, you will need to create shared folders for the `Installation Files` and `Virtual Machines` folders on your Windows Hyper-V Host and grant full-control access to the `ansible` user which you have created in the earlier section.
+**Additional steps are required to support Semaphore UI** - Share the `Installation Files` and `Virtual Machines` folders on the Windows Hyper-V Host and grant full-control access to the `ansible` user created in the earlier section.
 
 ## Running the Playbooks via Command Line
 
-Configure the host names and IP addresses of the VMs in the inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. You should review all the inventory files and make any necessary changes for your lab.
+Configure the host names and IP addresses of the VMs in the inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **You should review all the inventory files and make any necessary changes for your lab environment**.
 ```yaml
 kubernetes_control_planes:
   hosts:
@@ -201,11 +197,25 @@ kubernetes_control_planes:
       ansible_host: 192.168.0.206
 ```
 
-Next, configure the settings for your Kubernetes Cluster in the `inventories/group_vars/all.yaml` file.
+Next, configure the settings for the Kubernetes Cluster in the `inventories/group_vars/all.yaml` file.
 
 Finally, configure the VM settings in the `roles/vm-linux/setup-vm/vars/main.yaml` file.
 
-You can choose which Linux OS to install by specifying the value in `vm.os`. Currently, the playbooks can support `ubuntu` or `redhat`. If selecting `redhat`, please download the **Red Hat Enterprise Linux Guest Image** and make it available to your WSL before running the playbooks. The username and password to your Red Hat subscription is also required to automatically register the VMs to enable the dnf repositories.
+Specify the two folders which you have created earlier in the `vm:` section:
+```yaml
+vm:
+  # The location where the seed isos will be placed
+  iso_folder: "D:\\Virtual Machines\\Kubernetes"
+
+  # The location where the VMs will be created
+  vm_folder: "D:\\Virtual Machines\\Kubernetes"
+```
+
+Select which Linux OS to install by specifying it in the `vm.os`. Currently, the playbooks supports `ubuntu` (by default) or `redhat`.
+
+If `redhat` is selected:
+* Please download the **Red Hat Enterprise Linux Guest Image** and specify it in the `vm.redhat.kvm_image`.
+* Specify the Red Hat Subscription username and password for automatic registration of the VMs to enable the dnf repositories.
 
 ```yaml
 vm:
@@ -228,30 +238,71 @@ vm:
 ```
 
 The playbooks can be run with the `ansible-playbook` command. i.e.
-```
+```bash
 ansible-playbook setup-load-balancers.yaml
 ```
-a. Run the following list of optional **infrastructure playbooks** in sequence:
+a. Run the following list of optional **Infrastructure Services** playbooks in sequence:
 
 | No. | Name                        | Description                                                 | Remarks |
 |  :-:| ----------------------------| ----------------------------------------------------------- | ------- |
-|  1. | `setup-dns.yaml`            | Provision and configure a VM for BIND (DNS) server.         | WARNING! Do not set host to existing DNS server. <br> Additional configuration required: <br><ul><li>Set `kube.cluster.use_dns_server:` to `yes` or `no` in `inventories/group_vars/all.yaml`. </li></ul> |
-|  2. | `setup-load-balancers.yaml` | Provision and configure two VMs for HAProxy and Keepalived. | When deploying load-balancers:<br><ul><li>Set `register_to_load_balancer: yes` in `inventories/group_vars/kubernetes_cluster.yaml`. </li><li>Set `kube.cluster.address` to point to the virtual ip address in `inventories/group_vars/all.yaml`. </li></ul>When not deploying load-balancers:<ul><li>Set `register_to_load_balancer: no` in `inventories/group_vars/kubernetes_cluster.yaml`. </li><li>Set `kube.cluster.address` to point to the ip address of primary control plane in `inventories/group_vars/all.yaml`.</li></ul> |
+|  1. | `setup-dns.yaml`            | Provision and configure a VM for BIND (DNS) server.         | **WARNING! Do not set host to existing DNS server!** <br> Additional configuration - Set `kube.cluster.use_dns_server:` to `yes` or `no` in `inventories/group_vars/all.yaml` accordingly. |
+|  2. | `setup-load-balancers.yaml` | Provision and configure two VMs for HAProxy and Keepalived. | When deploying load-balancers:<br><ul><li>Set `register_to_load_balancer: yes` in `inventories/group_vars/kubernetes_cluster.yaml`. </li><li>Set `kube.cluster.address` to the desired **virtual ip address** in `inventories/group_vars/all.yaml`. </li></ul>When not deploying load-balancers:<ul><li>Set `register_to_load_balancer: no` in `inventories/group_vars/kubernetes_cluster.yaml`. </li><li>Set `kube.cluster.address` to point to the **ip address of primary control plane** in `inventories/group_vars/all.yaml`.</li></ul> |
 |  3. | `setup-nfs.yaml`            | Install NFS server on infrastructure service VM.            | Run this if you plan to use CSI NFS. Note: You must run this **before** running the csi/nfs role. |
-|  4. | `setup-minio.yaml`          | Install Minio on infrastructure service VM.                 | Run this if you plan to test add-ons that requires external S3 storage for backups i.e. velero or csi/longhorn |
+|  4. | `setup-minio.yaml`          | Install Minio on infrastructure service VM.                 | Run this if you plan to test add-ons that requires external S3 storage for backups i.e. **velero** or **csi/longhorn** |
 
-b. Run the following list of **kubernetes playbooks** in sequence:
+b. Run the following list of **Kubernetes Cluster** playbooks in sequence:
 
 | No. | Name                               | Description                                                         | Remarks |
 |  :-:| ---------------------------------- | ------------------------------------------------------------------- | ------- |
 |  1. | `setup-control-plane-servers.yaml` | Provision VMs for kubernetes control planes. ||
 |  2. | `setup-control-plane-primary.yaml` | Create primary control plane in the kubernetes cluster. ||
 |  3. | `setup-control-plane-other.yaml`   | Create and join secondary control planes to the kubernetes cluster. ||
-|  4. | `setup-worker-node-servers.yaml`   | Provisions VMs for the kubernetes worker nodes. | Run this if you want to create worker nodes. |
-|  5. | `setup-worker-nodes.yaml`          | Create and join worker nodes into the kubernetes cluster. | Run this if you want to create worker nodes. |
-|  6. | `setup-add-ons.yaml`               | Install add-on components listed in `add_ons`. | You can run this each time you want to install a particular add-on but keep an eye on the checkpoints. The installation order is important as some add-ons have dependencies on the others. |
+|  4. | `setup-worker-node-servers.yaml`   | Provisions VMs for the kubernetes worker nodes. | Run this to create worker nodes. |
+|  5. | `setup-worker-nodes.yaml`          | Create and join worker nodes into the kubernetes cluster. | Run this to create worker nodes. |
+|  6. | `setup-add-ons.yaml`               | Install add-on components listed in `add_ons`. | See next section. |
 
-## Add-ons stack
+## Installing and Configuring Add-ons
+
+The `setup-add-ons.yaml` playbook is used to install and configure the add-on stack for the Kubernetes Cluster. It can be executed multiple times to install different add-ons. Each add-on is modularized into ansible roles and you can specify which one to install by listing them in the `add_ons:` collection.
+
+The roles folders are structured in the following manner:
+
+| Folder         | Description |
+| -------------- |----         |
+| defaults       | Default values that you should not change for the role. |
+| tasks          | The tasks that performs the installation and configuration work. |
+| vars           | Variable values that you can change to customize the role. |
+| templates      | The jinja2 templates that you can modify to add extra configurations. |
+| meta           | Role dependencies that you should not touch. |
+
+Below is an example of installing some basic add-ons with csi/longhorn as the persistent technology:
+```yaml
+- name: Install Kubernetes add-ons
+  hosts: kubernetes_control_planes[0]
+  become_user: "{{ kube.user }}"
+  gather_facts: yes
+
+  roles:
+    # Comment/uncomment the add-ons you want to build your stack. The sequence matters.
+    # You can rerun this many times with different add-ons selected.
+    - role: kubernetes/add-on
+      add_ons:
+        - name: cert-manager
+        - name: ingress
+        - name: dashboard
+        - name: monitoring
+        - name: metrics-server
+        - name: csi/longhorn
+```
+
+> [!WARNING]
+> * Some roles are deploying sample/example configurations and some may be deploying production environments.
+> * Add-ons may conflict with each other (i.e. Kube-Prometheus vs. Metrics Server). The order of installation is important.
+> * Version incompatibility can occur i.e. new Kubernetes version may break everything or some add-ons version may not be compatible with each other. Configure the desired versions in the `vars\main.yaml` of the role.
+> * If an add-on fails to install, use an older release of the add-on since the playbooks may not be compatible with the latest releases.
+> * Be patient if you are running on a slow internet connection. Installation may take some time. Increase the timeout of tasks if more time is required to complete certain tasks (requires ansible knowledge).
+
+### List of Add-ons Available
 
 <table>
 <tr>
@@ -404,20 +455,6 @@ b. Run the following list of **kubernetes playbooks** in sequence:
   <td>AWX</td>
 </tr>
 </table>
-
-## Roles Guide
-
-The roles folders are structured in the following manner:
-
-| Folder         | Description |
-| -------------- |----         |
-| defaults       | Default values that you should not change for the role. |
-| tasks          | The tasks that performs the installation and configuration work. |
-| vars           | Variable values that you can change to customize the role. |
-| templates      | The jinja2 templates that you can modify to add extra configurations. |
-| meta           | Role dependencies that you should not touch. |
-
-To install the specific add-on, specify them in the `add_ons` collection before running `setup-add-ons.yaml`.
 
 ## Disclaimer
 Everything provided here is 'as-is' and comes with no warranty or support.
