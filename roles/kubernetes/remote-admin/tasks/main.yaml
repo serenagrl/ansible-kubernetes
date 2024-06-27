@@ -27,7 +27,7 @@
       ansible.builtin.shell: |
         helm plugin list diff | grep diff
       register: helm_plugin_result
-      ignore_errors: yes
+      failed_when: helm_plugin_result.stderr_lines | length > 0 | bool
 
     # Prevents warnings when running ansible helm commands.
     - name: Install helm diff
