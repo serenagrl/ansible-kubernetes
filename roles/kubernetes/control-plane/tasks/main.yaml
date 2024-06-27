@@ -6,6 +6,7 @@
 #
 - name: Installing python kubernetes module and dependencies for Ansible
   ansible.builtin.pip:
+    break_system_packages: yes
     name:
       - pyyaml
       - kubernetes
