@@ -180,6 +180,8 @@ If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore
 
 ## Running the Playbooks via Command Line
 
+### Configuring the Inventories and Settings
+
 Configure the host names and IP addresses of the VMs in the inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **You should review all the inventory files and make any necessary changes for your lab environment**.
 ```yaml
 kubernetes_control_planes:
@@ -211,10 +213,10 @@ vm:
   vm_folder: "D:\\Virtual Machines\\Kubernetes"
 ```
 
-Select which Linux OS to install by specifying it in the `vm.os`. Currently, the playbooks supports `ubuntu` (by default) or `redhat`.
+Select which Linux OS to install by specifying it in `vm.os`. The playbooks currently support `ubuntu` (default) or `redhat`.
 
 If `redhat` is selected:
-* Please download the **Red Hat Enterprise Linux Guest Image** and specify it in the `vm.redhat.kvm_image`.
+* Please download the **Red Hat Enterprise Linux Guest Image** and specify it in `vm.redhat.kvm_image`.
 * Specify the Red Hat Subscription username and password for automatic registration of the VMs to enable the dnf repositories.
 
 ```yaml
@@ -237,11 +239,13 @@ vm:
     password: <password>
 ```
 
+### Running the Playbooks
+
 The playbooks can be run with the `ansible-playbook` command. i.e.
 ```bash
 ansible-playbook setup-load-balancers.yaml
 ```
-a. Run the following list of optional **Infrastructure Services** playbooks in sequence:
+a. To setup any **(Optional) Infrastructure Services**, run the following playbooks in sequence:
 
 | No. | Name                        | Description                                                 | Remarks |
 |  :-:| ----------------------------| ----------------------------------------------------------- | ------- |
@@ -250,7 +254,7 @@ a. Run the following list of optional **Infrastructure Services** playbooks in s
 |  3. | `setup-nfs.yaml`            | Install NFS server on infrastructure service VM.            | Run this if you plan to use CSI NFS. Note: You must run this **before** running the csi/nfs role. |
 |  4. | `setup-minio.yaml`          | Install Minio on infrastructure service VM.                 | Run this if you plan to test add-ons that requires external S3 storage for backups i.e. **velero** or **csi/longhorn** |
 
-b. Run the following list of **Kubernetes Cluster** playbooks in sequence:
+b. To setup the **Kubernetes Cluster**, run the following playbooks in sequence:
 
 | No. | Name                               | Description                                                         | Remarks |
 |  :-:| ---------------------------------- | ------------------------------------------------------------------- | ------- |
@@ -259,7 +263,7 @@ b. Run the following list of **Kubernetes Cluster** playbooks in sequence:
 |  3. | `setup-control-plane-other.yaml`   | Create and join secondary control planes to the kubernetes cluster. ||
 |  4. | `setup-worker-node-servers.yaml`   | Provisions VMs for the kubernetes worker nodes. | Run this to create worker nodes. |
 |  5. | `setup-worker-nodes.yaml`          | Create and join worker nodes into the kubernetes cluster. | Run this to create worker nodes. |
-|  6. | `setup-add-ons.yaml`               | Install add-on components listed in `add_ons`. | See next section. |
+|  6. | `setup-add-ons.yaml`               | Install add-on components listed in `add_ons`. | See [Installing and Configuring Add-ons](#installing-and-configuring-add-ons). |
 
 ## Installing and Configuring Add-ons
 
