@@ -1,4 +1,4 @@
-NSUPDATE_FILE: "/tmp/{{ ansible_hostname }}.dns"
+NSUPDATE_FILE: "/tmp/{{ hostvars.dns_server.ansible_hostname }}.dns"
 
 KEY_LOCATION:
   ubuntu: /etc/bind
