@@ -51,6 +51,7 @@
   ansible.builtin.lineinfile:
     path: /etc/resolvconf/resolv.conf.d/head
     line: "nameserver {{ ansible_host }}"
+    create: true
 
 - name: Update resolveconf
   ansible.builtin.shell: |
