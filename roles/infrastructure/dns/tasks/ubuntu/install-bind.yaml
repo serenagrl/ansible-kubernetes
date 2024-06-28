@@ -53,6 +53,12 @@
     line: "nameserver {{ ansible_host }}"
     create: true
 
+- name: Add nameserver entry in resolved.conf
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/resolved.conf
+    line: "DNS={{ ansible_host }}"
+    create: true
+
 - name: Update resolveconf
   ansible.builtin.shell: |
     sudo resolvconf -u
