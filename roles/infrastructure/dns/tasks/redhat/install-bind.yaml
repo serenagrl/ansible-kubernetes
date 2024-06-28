@@ -57,13 +57,3 @@
     enabled: yes
     state: restarted
     name: named
-
-# - name: Add nameserver entry in resolvconf
-#   ansible.builtin.lineinfile:
-#     path: /etc/resolvconf/resolv.conf.d/head
-#     line: "nameserver {{ ansible_host }}"
-
-# - name: Update resolveconf
-#   ansible.builtin.shell: |
-#     sudo resolvconf -u
-#     sudo systemctl restart systemd-resolved
