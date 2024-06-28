@@ -84,7 +84,7 @@ Open a terminal in the Ubuntu OS of the WSL with **root user access** and execut
 ```bash
 apt update
 apt install -y python3-pip software-properties-common
-pip install ansible
+pip install ansible pywinrm jmespath
 ```
 
 > [!NOTE]
