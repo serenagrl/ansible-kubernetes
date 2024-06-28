@@ -10,6 +10,7 @@
 
   roles:
     - role: vm-linux
+      lab_name: ""
       when: provision_vm is defined and provision_vm|bool
 
     - role: semaphore/vm
