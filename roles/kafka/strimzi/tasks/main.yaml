@@ -85,5 +85,6 @@
 
     - name: Installing strimzi kafka cli on Ansible host
       ansible.builtin.pip:
+        break_system_packages: yes
         name: strimzi-kafka-cli
         version: "{{ strimzi.cli.version }}"

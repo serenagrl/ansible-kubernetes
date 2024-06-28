@@ -86,6 +86,7 @@
 
     - name: Installing AWX cli on Ansible host
       ansible.builtin.pip:
+        break_system_packages: yes
         name: awxkit
 
     - name: Install AWX Ansible galaxy collection

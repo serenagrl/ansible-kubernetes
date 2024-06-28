@@ -24,6 +24,7 @@
 - name: Installing dependencies on Ansible host
   ansible.builtin.pip:
     executable: pip3.12
+    break_system_packages: yes
     name:
       - pywinrm
       - jmespath
