@@ -5,16 +5,17 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Add ansible repository
-  ansible.builtin.apt_repository:
-    repo: "ppa:ansible/ansible"
-    state: present
-    update_cache: yes
-
-- name: Installing ansible
+- name: Installing dependencies on Ansible host
   ansible.builtin.apt:
     pkg:
       - software-properties-common
-      - ansible
+      - python3-pip
     state: latest
     update_cache: yes
+
+- name: Installing ansible on Ansible host
+  become_user:
+  ansible.builtin.pip:
+    break_system_packages: yes
+    name:
+      - ansible

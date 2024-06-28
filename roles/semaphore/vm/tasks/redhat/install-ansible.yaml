@@ -5,48 +5,25 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing ansible
+# As of coding this task, the python version in rhel is < 3.12. 
+# This task will attempt to upgrade it.
+- name: Installing pip
   ansible.builtin.dnf:
     pkg:
-      - ansible-core
-      - python3-pip
+      - python3.12-pip
     state: latest
     update_cache: yes
 
-- name: Installing pywinrm on Ansible host
+- name: Installing ansible on Ansible host
   ansible.builtin.pip:
-    name: pywinrm
+    executable: pip3.12
+    break_system_packages: yes
+    name:
+      - ansible
 
-- name: Installing jmespath on Ansible host
+- name: Installing dependencies on Ansible host
   ansible.builtin.pip:
-    name: jmespath
-
-- name: Install ansible.windows Ansible galaxy collection
-  community.general.ansible_galaxy_install:
-    type: collection
-    name: ansible.windows
-    dest: /usr/share/ansible/collections
-
-- name: Install kubernetes.core Ansible galaxy collection
-  community.general.ansible_galaxy_install:
-    type: collection
-    name: kubernetes.core
-    dest: /usr/share/ansible/collections
-
-- name: Install ansible.posix Ansible galaxy collection
-  community.general.ansible_galaxy_install:
-    type: collection
-    name: ansible.posix
-    dest: /usr/share/ansible/collections
-
-- name: Install community.general Ansible galaxy collection
-  community.general.ansible_galaxy_install:
-    type: collection
-    name: community.general
-    dest: /usr/share/ansible/collections
-
-- name: Install community.grafana Ansible galaxy collection
-  community.general.ansible_galaxy_install:
-    type: collection
-    name: community.grafana
-    dest: /usr/share/ansible/collections
+    executable: pip3.12
+    name:
+      - pywinrm
+      - jmespath

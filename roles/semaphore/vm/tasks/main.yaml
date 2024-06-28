@@ -8,9 +8,28 @@
 - name: Gather facts
   ansible.builtin.setup:
 
-- name: Install ansible
-  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-ansible.yaml"
-  when: semaphore.install_ansible
+- name: Install ansible and galaxy collection
+  block:
+    - name: Install ansible
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-ansible.yaml"
+      when: semaphore.install_ansible
+
+    - name: Update ansible dependencies on Ansible host
+      vars:
+        galaxy_template: &galaxy_template
+          type: collection
+          dest: /usr/share/ansible/collections
+          force: true
+      block:
+        - name: Updating kubernetes.core Ansible galaxy collection
+          community.general.ansible_galaxy_install:
+            name: kubernetes.core
+            <<: *galaxy_template
+
+        - name: Updating community.grafana Ansible galaxy collection
+          community.general.ansible_galaxy_install:
+            name: community.grafana
+            <<: *galaxy_template
 
 - block:
   - name: Install postgres
