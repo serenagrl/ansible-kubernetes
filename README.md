@@ -80,22 +80,59 @@ It is recommended that you download and install [Visual Studio Code](https://cod
 
 ### 1. Install Ansible
 
-Open a terminal in the Ubuntu OS of the WSL and execute the following command to install ansible:
+Open a terminal in the Ubuntu OS of the WSL with **root user access** and execute the following command to install Ansible:
 ```bash
-sudo apt update
-sudo apt install software-properties-common
-sudo add-apt-repository --yes --update ppa:ansible/ansible
-sudo apt install ansible
+apt update
+apt install -y python3-pip software-properties-common
+pip install ansible
 ```
+
 > [!NOTE]
 > You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu).
+
+Use the following command to check the Ansible version:
+```bash
+ansible --version
+```
+
+Ensure the Ansible version is atleast **2.17.1** or higher:
+```bash
+ansible [core 2.17.1]
+  config file = /etc/ansible/ansible.cfg
+  configured module search path = ['/root/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/local/lib/python3.10/dist-packages/ansible
+  ansible collection location = /root/.ansible/collections:/usr/share/ansible/collections
+  executable location = /usr/local/bin/ansible
+  python version = 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0] (/usr/bin/python3)
+  jinja version = 3.1.2
+  libyaml = True
+```
+
+Next, update the required ansible galaxy collections:
+```bash
+ansible-galaxy collection install kubernetes.core -p /usr/share/ansible/collections -U
+ansible-galaxy collection install community.grafana -p /usr/share/ansible/collections -U
+```
+
+Use the following command to list the collections in ansible galaxy:
+```bash
+ansible-galaxy collection list
+```
+
+Ensure the following ansible galaxy collections match the following versions or higher:
+```bash
+# /usr/share/ansible/collections/ansible_collections
+Collection                               Version
+---------------------------------------- -------
+community.grafana                        2.0.0
+kubernetes.core                          5.0.0
+```
 
 ### 2. Configure Windows Remote Management (WinRM) on Windows Host
 
 Open an Ubuntu terminal in the WSL and run the following to install the pre-requisites:
 ```bash
-sudo apt install python3-pip
-pip install ansible pywinrm kubernetes jsonpatch
+pip install pywinrm kubernetes jsonpatch
 ```
 
 Create a Windows user with Administrator (or proper) proviledges for ansible in the Windows Hyper-V host. Below is an example of a powershell script that you can use to create the user. Please change the username and password accordingly. Open a Powershell command prompt with Administrator rights in the Windows host to execute the script:
