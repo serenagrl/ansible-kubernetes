@@ -21,7 +21,7 @@
         - name: dashboard
         - name: monitoring
         - name: metrics-server
-        - name: csi/longhorn
+        # - name: csi/longhorn
         # - name: csi/nfs
         # - name: csi/rook-ceph
         # - name: devops/minio
@@ -30,10 +30,13 @@
         # - name: devops/sonarqube
         # - name: devops/harbor
         # - name: devops/argocd
+        # - name: devops/kyverno
+        # - name: devops/tekton
         # - name: logging/elastic-stack
         # - name: logging/fluentd
         # - name: logging/loki
         # - name: tracing
+        # - name: trivy
         # - name: awx/operator
         # - name: awx/register
         # - name: istio

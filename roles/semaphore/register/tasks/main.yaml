@@ -7,7 +7,7 @@
 - name: Automatically register project in Semaphore
   vars:
     # local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ '%Y-%m-%d' | strftime }}"
-    local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ semaphore.project.hostname_prefix }}-cluster"
+    local_repo_dir: "{{ semaphore.project.local_repo_dir }}/{{ semaphore.project.lab_name }}-cluster"
   block:
     - name: Check if repo already exist.
       block:

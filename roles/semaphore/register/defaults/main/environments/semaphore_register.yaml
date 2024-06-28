@@ -3,7 +3,7 @@ SEMAPHORE_REG_PRESETS:
   semaphore:
     project:
       name: "{{'{{'}} project_name | default('Ansible-Kubernetes') {{'}}'}}"
-      hostname_prefix: "{{'{{'}} project_hostname_prefix | default('k8s-lab') {{'}}'}}"
+      lab_name: "{{'{{'}} project_lab_name | default('k8s') {{'}}'}}"
     api_login:
       username: "{{'{{'}} api_username {{'}}'}}"
       password: "{{'{{'}} api_password {{'}}'}}"

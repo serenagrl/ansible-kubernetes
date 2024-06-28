@@ -13,14 +13,14 @@
       ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
       vars:
         # parameter hostname flowing in
-        win_folder: "{{ virtual_disk.vm_folder }}"
+        win_folder: "{{ VM_FOLDER }}"
         disk_name: "{{ virtual_disk.name }}"
 
     # IMPORTANT! You need to remove the disks manually if you wish to rerun this.
     - name: Create Hyper-V virtual disks and attach them to nodes
       delegate_to: "{{ hostvars[item].winrm_host }}"
       vars:
-        vhd_disk: "{{ virtual_disk.vm_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ virtual_disk.name }}.vhdx"
+        vhd_disk: "{{ VM_FOLDER }}\\{{ hostname }}\\Virtual Hard Disks\\{{ virtual_disk.name }}.vhdx"
       ansible.windows.win_powershell:
         script: |
           New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ virtual_disk.size }} -Dynamic
@@ -30,7 +30,7 @@
     - name: Prepare external disk
       become_user: root
       vars:
-        device: "{{ (disks_result | community.general.json_query('files[*].path')).0 }}"
+        device: "{{ disks_result.files | map(attribute='path') | sort | last }}"
       block:
         - name: Get all devices
           find:

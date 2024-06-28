@@ -1,6 +1,5 @@
 # Infrastructure inventory variables.
-INV_INFRA: "{{ (inventory_files | community.general.json_query('results[?contains(source, `infrastructure_services`)].content') | b64decode |
-              regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
+INV_INFRA: "{{ inventory_files | community.general.json_query('results[?contains(source, `infrastructure_services`)].content') | b64decode | from_yaml }}"
 
 INV_INFRA_VARS:
   infrastructure_services:

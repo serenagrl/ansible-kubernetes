@@ -45,10 +45,8 @@
 
     - name: Create default environments
       vars:
-        var_files: 
+        var_files:
           results: "{{ var_files_result.results | rejectattr('failed','eq', true) }}"
-
-        name_prefix: "{{ semaphore.project.hostname_prefix | default('k8s') }}"
 
         add_on_vars:
           add_ons: "{{ item.content }}"

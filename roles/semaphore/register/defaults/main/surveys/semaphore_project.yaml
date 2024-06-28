@@ -5,9 +5,9 @@ SEMAPHORE_PROJECT_SURVEYS:
     type: "string"
     required: false
 
-  - name: "project_hostname_prefix"
-    title: "Hostname Prefix"
-    description: "The prefix for all the server names."
+  - name: "project_lab_name"
+    title: "Lab Name"
+    description: "Will be use as the prefix for all server names."
     type: "string"
     required: false
 
@@ -18,7 +18,7 @@ SEMAPHORE_PROJECT_SURVEYS:
     required: true
 
   - name: "api_password"
-    title: "API password"
+    title: "API Password"
     description: "The password for the user."
     type: "secret"
     required: true

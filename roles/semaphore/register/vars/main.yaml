@@ -2,7 +2,7 @@ semaphore:
   project:
     # Name of the Project to create in Semaphore.
     name: "Ansible-Kubernetes"
-    hostname_prefix: k8s-lab
+    lab_name: k8s
 
     # The root folder for the playbooks.
     local_repo_dir: /ansible-playbooks/ansible-kubernetes

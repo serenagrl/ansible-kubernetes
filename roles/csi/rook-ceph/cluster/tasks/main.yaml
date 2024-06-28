@@ -12,7 +12,7 @@
 - name: Check for existing Virtual Hard Disks
   ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
   vars:
-    win_folder: "{{ rook_ceph.cluster.disk.vm_folder }}"
+    win_folder: "{{ VM_FOLDER }}"
     hostname: "{{ hostvars[item].ansible_hostname }}"
     disk_name: "{{ rook_ceph.cluster.disk.name }}"
     hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
@@ -24,7 +24,7 @@
   vars:
     hostname: "{{ hostvars[item].ansible_hostname }}"
     hostnames: "{% if (groups['kubernetes_control_planes'] | length >= 3) %}kubernetes_control_planes{% else %}kubernetes_cluster{% endif %}"
-    vhd_disk: "{{ rook_ceph.cluster.disk.vm_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ rook_ceph.cluster.disk.name }}.vhdx"
+    vhd_disk: "{{ VM_FOLDER }}\\{{ hostname }}\\Virtual Hard Disks\\{{ rook_ceph.cluster.disk.name }}.vhdx"
   ansible.windows.win_powershell:
     script: |
       New-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ rook_ceph.cluster.disk.size }} -Dynamic

@@ -4,3 +4,5 @@ INGRESS_CREATE: "{{ kube.ingress_type == 'contour' }}"
 VALUES_FILE: "{{ lookup('template', 'values-' + kube.ingress_type + '.j2') | from_yaml }}"
 
 SERVICE_MONITOR_TEMPLATE: "{{ lookup('template', 'service-monitor.j2') | from_yaml }}"
+
+VM_FOLDER: "{{ rook_ceph.cluster.disk.vm_folder }}\\{{ lab_name }}"

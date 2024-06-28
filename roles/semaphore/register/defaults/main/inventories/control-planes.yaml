@@ -1,6 +1,5 @@
 # Cp inventory variables.
-INV_CP: "{{ (inventory_files | community.general.json_query('results[?contains(source, `kubernetes_control_planes`)].content') | b64decode |
-              regex_replace('(?<=: )(.*)(?=-)', name_prefix, multiline=true)) | from_yaml }}"
+INV_CP: "{{ inventory_files | community.general.json_query('results[?contains(source, `kubernetes_control_planes`)].content') | b64decode | from_yaml }}"
 INV_CP_VARS:
   kubernetes_control_planes:
     vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `kubernetes_control_planes`)].content') | b64decode | from_yaml) }}"

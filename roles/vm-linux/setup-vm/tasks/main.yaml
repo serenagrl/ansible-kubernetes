@@ -37,8 +37,8 @@
   vars:
     backslash: '\'
     mount_path: "/mnt/{{ hostvars[winrm_host]['ansible_host'] }}"
-    vm_dir: "{{ vm.local | ternary('/mnt/' + (vm.vm_folder[0] | lower) + (vm.vm_folder[2:] | replace( backslash, '/')),
-                                   mount_path + '/' + (vm.vm_folder[3:] | replace(backslash, '/'))) }}"
+    vm_dir: "{{ vm.local | ternary('/mnt/' + (VM_FOLDER[0] | lower) + (VM_FOLDER[2:] | replace( backslash, '/')),
+                                   mount_path + '/' + (VM_FOLDER[3:] | replace(backslash, '/'))) }}"
     iso_dir: "{{ vm.local | ternary('/mnt/' + (vm.iso_folder[0] | lower) + (vm.iso_folder[2:] | replace( backslash, '/')),
                                    mount_path + '/' + (vm.iso_folder[3:] | replace(backslash, '/'))) }}"
   block:
@@ -47,7 +47,7 @@
       vars:
         folder: "{{ item }}"
       loop:
-        - "{{ vm.vm_folder.split(backslash).1 }}"
+        - "{{ VM_FOLDER.split(backslash).1 }}"
         - "{{ vm.iso_folder.split(backslash).1 }}"
       when: not vm.local
 
@@ -59,7 +59,7 @@
     - name: Check for existing Virtual Hard Disks
       ansible.builtin.include_tasks: ./tasks/task-check-vhdx-exist.yaml
       vars:
-        win_folder: "{{ vm.vm_folder }}"
+        win_folder: "{{ VM_FOLDER }}"
         hostname: "{{ ansible_hostname }}"
         disk_name: "{{ ansible_hostname }}"
 
@@ -118,14 +118,14 @@
             fi
         ) 9>/tmp/mount.lock
       loop:
-        - "{{ vm.vm_folder.split(backslash).1 }}"
+        - "{{ VM_FOLDER.split(backslash).1 }}"
         - "{{ vm.iso_folder.split(backslash).1 }}"
       when: not vm.local
 
 - name: Create and Launch Virtual Machines
   delegate_to: "{{ winrm_host }}"
   vars:
-    vhd_disk: "{{ vm.vm_folder }}\\{{ ansible_hostname }}\\Virtual Hard Disks\\{{ ansible_hostname }}.vhdx"
+    vhd_disk: "{{ VM_FOLDER }}\\{{ ansible_hostname }}\\Virtual Hard Disks\\{{ ansible_hostname }}.vhdx"
   block:
     - name: Unset sparse flag of vhdx file (fix qemu-img conversion issue)
       ansible.windows.win_powershell:
@@ -137,7 +137,7 @@
       ansible.windows.win_powershell:
         script: |
           Resize-VHD -Path "{{ vhd_disk }}" -SizeBytes {{ vm.specs.disk_size }}
-          New-VM -Name {{ ansible_hostname }} -Generation 2 -MemoryStartupBytes {{ vm.specs.ram_size }} -Path "{{ vm.vm_folder }}" -VHDPath "{{ vhd_disk }}" -SwitchName "{{ vm.switch }}"
+          New-VM -Name {{ ansible_hostname }} -Generation 2 -MemoryStartupBytes {{ vm.specs.ram_size }} -Path "{{ VM_FOLDER }}" -VHDPath "{{ vhd_disk }}" -SwitchName "{{ vm.switch }}"
           Add-VMDvdDrive {{ ansible_hostname }} -Path "{{ vm.iso_folder }}\\{{ ansible_hostname }}-seed.iso"
           Set-VMProcessor {{ ansible_hostname }} -Count {{ vm.specs.v_cpu }}
           Set-VMFirmware -VMName {{ ansible_hostname }} -EnableSecureBoot Off

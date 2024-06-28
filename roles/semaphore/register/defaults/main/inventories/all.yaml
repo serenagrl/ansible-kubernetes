@@ -1,5 +1,8 @@
 # All inventory variables.
+INV_ALL_PRESETS:
+  lab_name: "{{ semaphore.project.lab_name }}"
+
 INV_ALL_VARS:
   all:
-    vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `all`)].content') | b64decode |
-                regex_replace('(?<=name: )(.*)(?=-cluster)', name_prefix, multiline=true)) | from_yaml }}"
+    vars: "{{ inventory_var_files | community.general.json_query('results[?contains(source, `all`)].content') | b64decode | from_yaml
+                                  | combine(INV_ALL_PRESETS, recursive=true)}}"

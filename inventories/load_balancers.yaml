@@ -1,8 +1,9 @@
 load_balancers:
   hosts:
     load-balancer-01:
-      ansible_hostname: k8s-ha1
+      ansible_hostname: "{{ lab_name }}-ha1"
       ansible_host: 192.168.0.201
+
     load-balancer-02:
-      ansible_hostname: k8s-ha2
+      ansible_hostname: "{{ lab_name }}-ha2"
       ansible_host: 192.168.0.202

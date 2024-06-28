@@ -1,7 +1,5 @@
 - name: Create default inventories
   vars:
-    name_prefix: "{{ semaphore.project.hostname_prefix | default('k8s') }}"
-
     inventory_default: "{{ INV_ALL_VARS | combine(INVENTORY_LB, recursive=true)
                                         | combine(INVENTORY_INFRA, recursive=true)
                                         | combine(INVENTORY_CP, recursive=true)
