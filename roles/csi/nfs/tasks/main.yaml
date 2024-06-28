@@ -10,7 +10,7 @@
     nfs_client: "{{ item }}"
     nfs_shared: "{{ csi_nfs.shared }}"
   ansible.builtin.include_role:
-    name: nfs/client
+    name: infrastructure/nfs/client
   loop: "{{ fact_active_hosts }}"
 
 - name: Download and configure nfs provisioner

@@ -14,7 +14,7 @@
   roles:
     - role: vm-linux
       when: provision_vm is defined and provision_vm|bool
-    - role: nfs/server
+    - role: infrastructure/nfs/server
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:
