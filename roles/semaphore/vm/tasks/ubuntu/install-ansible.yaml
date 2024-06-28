@@ -19,3 +19,10 @@
     break_system_packages: yes
     name:
       - ansible
+
+- name: Installing dependencies on Ansible host
+  ansible.builtin.pip:
+    break_system_packages: yes
+    name:
+      - pywinrm
+      - jmespath
