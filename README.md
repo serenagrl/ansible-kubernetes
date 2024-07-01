@@ -4,7 +4,7 @@ A collection of Ansible playbooks and roles to create a Kubernetes cluster on Hy
 ## Quick Notes
 * Working knowledge of [Ansible](https://www.ansible.com/) is required to navigate around the playbooks.
 * Playbooks are tested on **Windows 11** and **Windows Server 2022** Hyper-V hosts.
-* Playbooks can provision VMs for **Ubuntu 22.04** or **Red Hat 9.3** Linux.
+* Playbooks can provision VMs for **Ubuntu 22.04/24.04** or **Red Hat 9.3/9.4** Linux.
 * Playbooks default to setup a DNS, 2 HAProxy load balancers and 3 control-plane VMs.
 * The Kubernetes cluster uses **Containerd** as container runtime and **Calico** as CNI.
 * Configure everything in the `/inventories` folder and `roles/vm-linux/setup-vm/vars/main.yaml`.
@@ -25,23 +25,23 @@ Prepare two folders on the Windows Hyper-V host for the playbooks:
 
 ### Virtual Machine Requirements
 
-The computing resources for each VM is depending on how much add-ons you are planning to install and how much capacity your Windows host can provide. You can pool multiple Windows Hyper-V servers together to host the VMs to distribute the load.
+The required computing resources for each VM is dependent on the number of add-ons you are planning to install and how much capacity your Windows host can provide. By default, the VMs created are using **Dynamic Memory**. You can change this behavior in **Hyper-V Manager** to prevent the VMs from exceeding the assigned memory limits.
 
-> [!NOTE]
-> The VMs created are using **Dynamic Memory** as the default. You can change this in **Hyper-V Manager** if you want to prevent the VMs from exceeding the assigned memory limits.
+> [!TIP]
+> You can pool multiple Windows Hyper-V servers together to host the VMs in order to distribute the load but make sure each Hyper-V host is configured correctly.
 
 > [!CAUTION]
-> VM Checkpoints are created to provide recovery in case of installation breaks/errors. **These checkpoints consume additional disk space**. You will need to manually perform housekeeping to keep only checkpoints that are stable if you need to recover the disk space.
+> VM Checkpoints are created to provide recovery in case of installation failures. **These checkpoints consume additional disk space**. Please perform the necessary housekeeping manually to reclaim the disk space or disable checkpoint creation by setting `vm_checkpoint: no` in the `inventories/group_vars/all.yaml` inventory file.
 
 #### Infrastructure Services VMs
 
-There are 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster if you choose to include them. The Load-Balancers will each have their own VM and a separate VM is dedicated to host DNS, NFS and Minio for testing purposes.
+There are 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster (if you choose to include them). The Load-Balancers will each have their own VM and a separate VM is dedicated to host DNS, NFS and Minio.
 
 > [!WARNING]
 > By default, the Infrastructure Services VM will only be created during the provisioning of DNS. NFS and Minio will not provision their own VMs by default. Configure the `provision_vm` variable for each DNS, NFS and Minio to change this behavior.
 
 > [!CAUTION]
-> The Infrastructure Services VMs are purely meant to simulate existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, **do not target them to existing production servers** that are already running. Doing so will corrupt the existing servers.
+> The Infrastructure Services VMs are purely meant to simulate existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, **do not target them to existing production servers** that are already running. **Doing so will corrupt the existing servers.**
 
 Recommendations for **Infrastructure Services** VMs are as follows:
 
@@ -76,26 +76,26 @@ The recommendation for **disk size** is the VM default of **127GB** but when usi
 
 ## Setting Up Your Environment
 
-It is recommended that you download and install [Visual Studio Code](https://code.visualstudio.com/) and enable the [Ansible VS Code Extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.ansible) to work with the playbooks.
+It is recommended that you download and install [Visual Studio Code](https://code.visualstudio.com/) and enable the [Ansible VS Code Extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.ansible) from the marketplace to work with the playbooks.
 
 ### 1. Install Ansible
 
 Open a terminal in the Ubuntu OS of the WSL with **root user access** and execute the following command to install Ansible:
 ```bash
-apt update
-apt install -y python3-pip software-properties-common
-pip install ansible
+sudo apt update
+sudo apt install -y python3-pip software-properties-common
+sudo pip install ansible
 ```
 
 > [!NOTE]
-> You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#pip-install).
+> Refer [here](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#pip-install) for more details.
 
 Use the following command to check the Ansible version:
 ```bash
 ansible --version
 ```
 
-Ensure the Ansible version is atleast **2.17.1** or higher:
+Make sure the Ansible version is atleast **2.17.1** or higher:
 ```bash
 ansible [core 2.17.1]
   config file = /etc/ansible/ansible.cfg
@@ -119,7 +119,7 @@ Use the following command to list the collections in ansible galaxy:
 ansible-galaxy collection list
 ```
 
-Ensure the following ansible galaxy collections match the following versions or higher:
+Make sure the following ansible galaxy collections match the following versions or higher:
 ```bash
 # /usr/share/ansible/collections/ansible_collections
 Collection                               Version
@@ -132,10 +132,10 @@ kubernetes.core                          5.0.0
 
 Open an Ubuntu terminal in the WSL and run the following to install the pre-requisites:
 ```bash
-pip install pywinrm kubernetes jsonpatch jmespath
+sudo pip install pywinrm kubernetes jsonpatch jmespath
 ```
 
-Create a Windows user with Administrator (or proper) proviledges for ansible in the Windows Hyper-V host. Below is an example of a powershell script that you can use to create the user. Please change the username and password accordingly. Open a Powershell command prompt with Administrator rights in the Windows host to execute the script:
+Create a Windows user with Administrator (or proper) priviledges for ansible in the Windows Hyper-V host. You can use the sample script below in a Powershell command prompt with Administrator rights to create the ansible user but please change the password accordingly.
 ```powershell
 $username = "ansible"
 $password = ConvertTo-SecureString "p@ssw0rd" -AsPlainText -Force
@@ -152,18 +152,17 @@ Invoke-WebRequest $setupscript -OutFile winrm-setup.ps1
 .\winrm-setup.ps1
 ```
 > [!NOTE]
-> You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html).
-
+> Refer [here](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html) for detail documentation.
 
 ### 3. Configure WinRM Settings in Playbooks
 
-Clone this repository into a directory in the Ubuntu OS inside the WSL. Necessary access rights may need to be configured for the directory.
+Clone this repository to a directory in the Ubuntu OS inside the WSL. Necessary access rights may need to be configured for the directory.
 
 ```bash
 git clone https://github.com/serenagrl/ansible-kubernetes.git
 ```
 
-Set the WinRM credentials that was created earlier in the `/inventories/winrm.yaml` file:
+In the `/inventories/winrm.yaml` file, set the WinRM credentials that you have created earlier:
 ```yaml
 winrm:
   hosts:
@@ -181,20 +180,20 @@ winrm:
 ```
 
 > [!NOTE]
-> Detail documentation [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html).
+> Refer [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html) for detail documentation.
 
 ### 4. Optional: Configure Playbooks to Use WinRM With Certificates
 
-It is recommended to use certificates to connect to WinRM from your playbooks. Follow these [steps](docs/configure-winrm-certs.md), to enable certificates in WinRM.
+Using certificates to connect to WinRM from the playbooks is recommended. Follow these [steps](docs/configure-winrm-certs.md) if you wish to apply this practice.
 
 ### 5. Testing WinRM Connectivity
 
-Run the `test-winrm-connection.yaml` playbook to verify the winrm connection.
+Run the `test-winrm-connection.yaml` playbook to verify the WinRM connection.
 ```bash
 ansible-playbook test-winrm-connection.yaml
 ```
 
-You should get something similar to the following result if success:
+You should get something similar to the following results if successful:
 ```bash
 PLAY [Test WinRM Connection] *******************************************************************************************
 
@@ -211,9 +210,9 @@ local_machine              : ok=1    changed=1    unreachable=0    failed=0    s
 
 ## Running the Playbooks with Semaphore UI
 
-If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore), you will be pleased to know that these playbooks supports it. Run the `setup-semaphore.yaml` playbook to automatically create and configure a separate VM for Semaphore UI and then run the `setup-semaphore-project.yaml` playbook to automate the creation of a project in the semaphore server based on the cloned version of this repository on the filesystem.
+You can use the `setup-semaphore.yaml` playbook to deploy and configure an independent VM for [Semaphore UI](https://github.com/semaphoreui/semaphore). You can use the `setup-semaphore-project.yaml` playbook to create a project on the Semaphore UI server based on the cloned version of this repository on its filesystem.
 
-**Additional steps are required to support Semaphore UI** - Share the `Installation Files` and `Virtual Machines` folders on the Windows Hyper-V Host and grant full-control access to the `ansible` user created in the earlier section.
+**Additional steps required to support Semaphore UI** - Share the `Installation Files` and `Virtual Machines` folders on the Windows Hyper-V Host and grant full-control access to the `ansible` user created in the earlier section.
 
 ## Running the Playbooks via Command Line
 
