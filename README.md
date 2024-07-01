@@ -232,6 +232,19 @@ lab_name: devops
 > [!TIP]
 > You can change this behaviour manually by hard-coding the hostnames in each of the host inventory files.
 
+Configure the desired VM specifications in the remaining group variable files in the `/inventories/group_vars` folder. Below is example of the VM settings for the `inventories/group_vars/kubernetes_control_planes.yaml` file for the Kubernetes control-planes.
+```yaml
+# The VM settings for each host.
+# Note: Adjust accordingly to the number of add-ons you plan to install. You can manually adjust it in
+#       Hyper-V manager later.
+vm:
+  specs:
+    ram_size: 16GB
+    min_ram_size: 12GB
+    disk_size: 256GB
+    v_cpu: 6
+```
+
 Configure the IP addresses of the VMs in the inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **You should review and change all the other host inventory files accordingly**.
 ```yaml
 kubernetes_control_planes:
