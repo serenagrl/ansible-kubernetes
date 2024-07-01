@@ -1,5 +1,5 @@
 # Kubernetes Lab on Hyper-V
-A collection of Ansible playbooks and roles to provision a bare-metal Kubernetes cluster for on-premise Hyper-V, either for testing/learning purposes or SIT/Proof-of-Concept environments. These playbooks and add-ons were tailored to my working environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
+A collection of Ansible playbooks and roles to create a Kubernetes cluster on Hyper-V, either for testing/learning purposes or SIT/Proof-of-Concept environments. These playbooks and add-ons were tailored to my lab environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
 
 ## Quick Notes
 * Working knowledge of [Ansible](https://www.ansible.com/) is required to navigate around the playbooks.
@@ -84,11 +84,11 @@ Open a terminal in the Ubuntu OS of the WSL with **root user access** and execut
 ```bash
 apt update
 apt install -y python3-pip software-properties-common
-pip install ansible pywinrm jmespath
+pip install ansible
 ```
 
 > [!NOTE]
-> You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu).
+> You can refer to the detail documentation [here](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#pip-install).
 
 Use the following command to check the Ansible version:
 ```bash
@@ -132,7 +132,7 @@ kubernetes.core                          5.0.0
 
 Open an Ubuntu terminal in the WSL and run the following to install the pre-requisites:
 ```bash
-pip install pywinrm kubernetes jsonpatch
+pip install pywinrm kubernetes jsonpatch jmespath
 ```
 
 Create a Windows user with Administrator (or proper) proviledges for ansible in the Windows Hyper-V host. Below is an example of a powershell script that you can use to create the user. Please change the username and password accordingly. Open a Powershell command prompt with Administrator rights in the Windows host to execute the script:
@@ -219,26 +219,50 @@ If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore
 
 ### Configuring the Inventories and Settings
 
-Configure the host names and IP addresses of the VMs in the inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **You should review all the inventory files and make any necessary changes for your lab environment**.
+> [!IMPORTANT]
+> **You should review all inventory files in the `/inventories` folder and make the necessary changes for your lab environment**.
+
+Configure the settings for the Kubernetes Cluster in the `inventories/group_vars/all.yaml` file. You can configure the `lab_name` to allow the playbooks to use it as a prefix when auto generating names for the hosts and VMs in the Infrastructure Services and Kubernetes Cluster. The playbooks will also organize the physical VMs inside a folder based on the `lab_name` for ease of management.
+
+```yaml
+# Will be used as the prefix for all the hostnames
+lab_name: devops
+```
+
+> [!TIP]
+> You can change this behaviour manually by hard-coding the hostnames in each of the host inventory files.
+
+Configure the IP addresses of the VMs in the inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **You should review and change all the other host inventory files accordingly**.
 ```yaml
 kubernetes_control_planes:
   hosts:
     control-plane-01:
-      ansible_hostname: k8s-cp1
+      ansible_hostname: "{{ lab_name }}-cp1"
       ansible_host: 192.168.0.204
 
     control-plane-02:
-      ansible_hostname: k8s-cp2
+      ansible_hostname: "{{ lab_name }}-cp2"
       ansible_host: 192.168.0.205
 
     control-plane-03:
-      ansible_hostname: k8s-cp3
+      ansible_hostname: "{{ lab_name }}-cp3"
       ansible_host: 192.168.0.206
 ```
 
-Next, configure the settings for the Kubernetes Cluster in the `inventories/group_vars/all.yaml` file.
+Finally, configure the settings for the VMs in the `roles/vm-linux/setup-vm/vars/main.yaml` file.
 
-Finally, configure the VM settings in the `roles/vm-linux/setup-vm/vars/main.yaml` file.
+Configure the network settings for your VMs:
+```yaml
+vm:
+  network:
+    # The ipv4 of the gateway.
+    gateway: 192.168.0.1
+    cidr: 24
+    dns: [ 8.8.8.8, 1.1.1.1 ]
+
+  # The hyper-v switch to use
+  switch: LAN
+```
 
 Specify the two folders which you have created earlier in the `vm:` section:
 ```yaml
@@ -275,6 +299,9 @@ vm:
     # Your redhat login password
     password: <password>
 ```
+
+> [!NOTE]
+> For ubuntu, the `setup-vm` role will attempt to automatically download the cloud image as specified in `vm.ubuntu.img_url` but sometimes, it may intermittently take a bit longer due to the designated mirror or connectivity issues. If such cases occur, you can manually download the cloud image file, rename it to `ubuntu-cloud.img` and copy it into the `temp_dir` location that you have specified i.e. `/var/automate`
 
 ### Running the Playbooks
 
