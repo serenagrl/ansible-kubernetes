@@ -9,6 +9,6 @@
 - name: Installing dependency packages (may take a while)
   ansible.builtin.dnf:
     pkg:
-      - python3-pip
+      - python3.12-pip
     state: latest
     update_cache: yes

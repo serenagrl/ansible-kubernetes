@@ -10,19 +10,6 @@
     pkg:
       - software-properties-common
       - python3-pip
+      - python3-venv
     state: latest
     update_cache: yes
-
-- name: Installing ansible on Ansible host
-  become_user:
-  ansible.builtin.pip:
-    break_system_packages: yes
-    name:
-      - ansible
-
-- name: Installing dependencies on Ansible host
-  ansible.builtin.pip:
-    break_system_packages: yes
-    name:
-      - pywinrm
-      - jmespath

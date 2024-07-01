@@ -86,8 +86,8 @@
 
     - name: Installing AWX cli on Ansible host
       ansible.builtin.pip:
-        break_system_packages: yes
         name: awxkit
+        virtualenv: "{{ python_virtual_env }}"
 
     - name: Install AWX Ansible galaxy collection
       community.general.ansible_galaxy_install:

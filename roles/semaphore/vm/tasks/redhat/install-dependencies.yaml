@@ -1,12 +1,13 @@
 # Author: Serena Yeoh
-# Co-Author: Jaryl Lan
 #
 # Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing dependency packages (may take a while)
+# As of coding this task, the python version in rhel is < 3.12.
+# This task will attempt to upgrade it.
+- name: Installing pip
   ansible.builtin.dnf:
     pkg:
       - python3.12-pip

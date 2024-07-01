@@ -11,8 +11,39 @@
 - name: Install ansible and galaxy collection
   block:
     - name: Install ansible
-      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-ansible.yaml"
-      when: semaphore.install_ansible
+      block:
+        - name: Install dependencies
+          ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-dependencies.yaml"
+          when: semaphore.install_ansible
+
+        - name: Create a python virtual environment directory if it does not exist
+          ansible.builtin.file:
+            path: /root/.venv
+            state: directory
+            mode: '0600'
+
+        - name: Add python virtual environment bin folder to PATH
+          ansible.builtin.blockinfile:
+            path: /root/.bashrc
+            marker: "# {mark} python virtual environment PATH"
+            block: 'export PATH="{{ python_virtual_env }}/bin:$PATH"'
+
+        - name: Apply changes
+          ansible.builtin.shell: . ~/.bashrc
+
+        - name: Installing ansible on Ansible host
+          ansible.builtin.pip:
+            name: ansible
+            virtualenv: "{{ python_virtual_env }}"
+            virtualenv_command: "python3 -m venv"
+            virtualenv_site_packages: yes
+
+        - name: Installing dependencies on Ansible host
+          ansible.builtin.pip:
+            name:
+              - pywinrm
+              - jmespath
+            virtualenv: "{{ python_virtual_env }}"
 
     - name: Update ansible dependencies on Ansible host
       vars:
@@ -20,6 +51,8 @@
           type: collection
           dest: /usr/share/ansible/collections
           force: true
+      environment:
+        PATH: '{{ python_virtual_env }}/bin:{{ ansible_env.PATH }}'
       block:
         - name: Updating kubernetes.core Ansible galaxy collection
           community.general.ansible_galaxy_install:
