@@ -76,15 +76,5 @@
     for d in $(kubectl -n strimzi-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n strimzi-system deployment/$d; done;
 
 - name: Install strimzi kafka cli and pre-requisites on Ansible host
-  delegate_to: localhost
-  become_user: root
-  block:
-    - name: Install strimzi kafka cli and pre-requisites on Ansible host
-      ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-cli.yaml"
-      when: strimzi.cli.install
-
-    - name: Installing strimzi kafka cli on Ansible host
-      ansible.builtin.pip:
-        name: strimzi-kafka-cli
-        version: "{{ strimzi.cli.version }}"
-        virtualenv: "{{ python_virtual_env }}"
+  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-cli.yaml"
+  when: strimzi.cli.install

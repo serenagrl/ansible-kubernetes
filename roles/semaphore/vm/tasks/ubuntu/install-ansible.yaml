@@ -5,14 +5,24 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing dependency packages (may take a while)
+- name: Installing dependencies on Ansible host
   ansible.builtin.apt:
     pkg:
+      - software-properties-common
       - python3-pip
     state: latest
     update_cache: yes
 
-- name: Installing AWX cli on Ansible host
+- name: Installing ansible on Ansible host
+  become_user:
   ansible.builtin.pip:
     break_system_packages: yes
-    name: awxkit
+    name:
+      - ansible
+
+- name: Installing dependencies on Ansible host
+  ansible.builtin.pip:
+    break_system_packages: yes
+    name:
+      - pywinrm
+      - jmespath

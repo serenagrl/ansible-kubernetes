@@ -6,9 +6,19 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing dependency packages (may take a while)
-  ansible.builtin.dnf:
-    pkg:
-      - python3.12-pip
-    state: latest
-    update_cache: yes
+- name: Install strimzi kafka cli and pre-requisites on Ansible host
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Installing dependency packages (may take a while)
+      ansible.builtin.dnf:
+        pkg:
+          - python3.12-pip
+        state: latest
+        update_cache: yes
+
+    - name: Installing strimzi kafka cli on Ansible host
+      ansible.builtin.pip:
+        executable: pip3.12
+        name: strimzi-kafka-cli
+        version: "{{ strimzi.cli.version }}"
