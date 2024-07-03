@@ -109,7 +109,7 @@
 - name: Check if helm diff plugin is installed
   become_user: "{{ kube.user }}"
   ansible.builtin.shell: |
-    helm plugin list diff | grep diff
+    helm plugin list | grep diff
   register: helm_plugin_result
   failed_when: false
 
