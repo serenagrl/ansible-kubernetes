@@ -5,24 +5,33 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# As of coding this task, the python version in rhel is < 3.12. 
+# As of coding this task, the python version in rhel is < 3.12.
 # This task will attempt to upgrade it.
-- name: Installing pip
-  ansible.builtin.dnf:
-    pkg:
-      - python3.12-pip
-    state: latest
-    update_cache: yes
 
-- name: Installing ansible on Ansible host
-  ansible.builtin.pip:
-    executable: pip3.12
-    name:
-      - ansible
+- name: Install Ansible and pre-requisites
+  become_user: root
+  block:
+    - name: Enabling Extra Packages for Enterprise Linux (EPEL) repository ...
+      ansible.builtin.shell: |
+        subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
+        dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
 
-- name: Installing dependencies on Ansible host
-  ansible.builtin.pip:
-    executable: pip3.12
-    name:
-      - pywinrm
-      - jmespath
+    - name: Installing Ansible ...
+      ansible.builtin.dnf:
+        pkg:
+          - ansible
+          - ansible-collection-community-general
+        state: latest
+        update_cache: yes
+
+    - name: Installing pip
+      ansible.builtin.dnf:
+        pkg:
+          - python3-pip
+        state: latest
+        update_cache: yes
+
+    - name: Installing dependencies on Ansible host
+      ansible.builtin.pip:
+        name:
+          - jmespath
