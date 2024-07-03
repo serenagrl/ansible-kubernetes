@@ -16,9 +16,18 @@
         state: latest
         update_cache: yes
 
-    - name: Installing strimzi kafka cli on Ansible host
-      ansible.builtin.pip:
-        break_system_packages: yes
-        name: strimzi-kafka-cli
-        version: "{{ strimzi.cli.version }}"
-        extra_args: -I
+    - name: Install strimzi kafka cli
+      vars:
+        has_version_specified: "{{ (strimzi.cli.version is defined and strimzi.cli.version and strimzi.cli.version != 'latest') | bool }}"
+        release: "{{ has_version_specified | ternary(strimzi.cli.version, release_tag.stdout.replace('alpha', 'a')) }}"
+      block:
+        - name: Get latest strimzi kafka cli version
+          ansible.builtin.shell: |
+            curl -s https://api.github.com/repos/SystemCraftsman/strimzi-kafka-cli/releases | jq '[.[]] | sort_by(.tag_name) | reverse | first' | grep tag_name | cut -d '"' -f 4
+          register: release_tag
+          when: not has_version_specified
+
+        # Note: The break_system_packages property in ansible.builtin.pip module requires ansible 2.17.1
+        - name: Installing strimzi kafka cli on Ansible host
+          shell: |
+            pip install strimzi-kafka-cli=={{ release }} -I --break-system-packages

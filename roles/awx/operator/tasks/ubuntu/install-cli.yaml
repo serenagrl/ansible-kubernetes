@@ -12,7 +12,6 @@
     state: latest
     update_cache: yes
 
+# Note: The break_system_packages property in ansible.builtin.pip module requires ansible 2.17.1
 - name: Installing AWX cli on Ansible host
-  ansible.builtin.pip:
-    break_system_packages: yes
-    name: awxkit
+  shell: pip install awxkit --break-system-packages
