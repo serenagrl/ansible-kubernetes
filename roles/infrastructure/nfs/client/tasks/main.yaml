@@ -33,7 +33,7 @@
             (
                 flock -x 9
 
-                cat /etc/exports | grep "{{ nfs_shared }} {{ hostvars[nfs_client].ansible_host }}"
+                cat /etc/exports | grep "{{ nfs_shared }} {{ hostvars[nfs_client].ansible_hostname }}"
                 if [ $? -eq 1 ]
                 then
                   echo "{{ nfs_shared }} {{ hostvars[nfs_client].ansible_hostname }}(rw,no_subtree_check,no_root_squash)" >> /etc/exports
