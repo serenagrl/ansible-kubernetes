@@ -5,8 +5,11 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Install python kubernetes module
-  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-dependencies.yaml"
+- name: Installing kubernetes python module on Ansible host
+  ansible.builtin.pip:
+    break_system_packages: yes
+    name:
+      - kubernetes
 
 - name: Configure kube config
   become_user: "{{ kube.user }}"
