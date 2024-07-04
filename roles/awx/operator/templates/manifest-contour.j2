@@ -6,6 +6,7 @@ metadata:
 spec:
   ingress_type: none
   ingress_path: /awx
+  postgres_data_volume_init: true
 
 {% if not kube.allow_scheduling %}
   tolerations: |

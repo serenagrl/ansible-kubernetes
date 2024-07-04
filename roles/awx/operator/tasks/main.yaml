@@ -60,7 +60,6 @@
           loop:
             - { content: '{{ KUSTOMIZATION_TEMPLATE }}', filename: kustomization.yaml }
             - { content: '{{ PATCH_TOLERATIONS_TEMPLATE }}', filename: patch-tolerations.yaml }
-            - { content: '{{ PATCH_JOB_TOLERATIONS_TEMPLATE }}', filename: patch-job-tolerations.yaml }
 
     - name: Install awx operator and deploy awx
       kubernetes.core.k8s:
