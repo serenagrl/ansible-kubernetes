@@ -10,5 +10,6 @@
   delegate_to: localhost
   become_user: root
   ansible.builtin.pip:
+    executable: "pip{{ redhat_pip_version }}"
     name: strimzi-kafka-cli
     version: "{{ strimzi.cli.version }}"

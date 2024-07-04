@@ -9,6 +9,9 @@ vm_checkpoint: yes          # Creates VM checkpoints at specific stages of autom
 auto_cleanup: yes          # Clean up residue files after installation.
 temp_dir: /var/automate    # The directory for the ansible tasks to store temporary data.
 
+# The version of pip to use.
+redhat_pip_version: 3.12
+
 # Will be used as the prefix for all the hostnames
 lab_name: devops
 

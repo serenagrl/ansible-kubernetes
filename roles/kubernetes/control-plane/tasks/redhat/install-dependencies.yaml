@@ -6,7 +6,8 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing python kubernetes module for Ansible
+- name: Installing kubernetes python module on Ansible host
   ansible.builtin.pip:
+    executable: "pip{{ redhat_pip_version }}"
     name:
       - kubernetes

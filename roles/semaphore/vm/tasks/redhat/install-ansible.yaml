@@ -8,12 +8,13 @@
 - name: Installing python3-pip
   ansible.builtin.dnf:
     pkg:
-      - python3-pip
+      - "python{{ redhat_pip_version }}-pip"
     state: latest
     update_cache: yes
 
 - name: Installing Ansible and dependencies on Ansible host
   ansible.builtin.pip:
+    executable: "pip{{ redhat_pip_version }}"
     name:
       - ansible
       - jmespath
