@@ -16,6 +16,18 @@ A Windows machine or server with sufficient processing power, RAM and disk space
 * [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) installed.
 * Ubuntu 22.04 distribution installed in WSL.
 
+Open an Ubuntu terminal in the WSL and edit the `/etc/wsl.conf` file to configure Ubuntu WSL to always login as root user.
+```
+[boot]
+systemd=true
+
+[user]
+default = root
+```
+
+> [!NOTE]
+> You need to reload the terminal for the changes to take effect.
+
 Prepare two folders on the Windows Hyper-V host for the playbooks:
 * A folder for storing temporary seed iso images i.e. `"D:\Installation Files"`
 * A folder where the Virtual Machines will be created in i.e. `"D:\Virtual Machines"`
@@ -80,59 +92,24 @@ It is recommended that you download and install [Visual Studio Code](https://cod
 
 ### 1. Install Ansible
 
-Open a terminal in the Ubuntu OS of the WSL with **root user access** and execute the following command to install Ansible:
+Open a terminal **(with root access)** in the Ubuntu OS of the WSL and execute the following command to install Ansible:
 ```bash
-sudo apt update
-sudo apt install -y python3-pip software-properties-common
-sudo pip install ansible
+apt update
+apt install software-properties-common python3-pip
+pip install ansible jmespath
 ```
 
 > [!NOTE]
 > Refer [here](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#pip-install) for more details.
 
-Use the following command to check the Ansible version:
-```bash
-ansible --version
-```
-
-Make sure the Ansible version is atleast **2.17.1** or higher:
-```bash
-ansible [core 2.17.1]
-  config file = /etc/ansible/ansible.cfg
-  configured module search path = ['/root/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
-  ansible python module location = /usr/local/lib/python3.10/dist-packages/ansible
-  ansible collection location = /root/.ansible/collections:/usr/share/ansible/collections
-  executable location = /usr/local/bin/ansible
-  python version = 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0] (/usr/bin/python3)
-  jinja version = 3.1.2
-  libyaml = True
-```
-
-Next, update the required ansible galaxy collections:
-```bash
-ansible-galaxy collection install kubernetes.core -p /usr/share/ansible/collections -U
-ansible-galaxy collection install community.grafana -p /usr/share/ansible/collections -U
-```
-
-Use the following command to list the collections in ansible galaxy:
-```bash
-ansible-galaxy collection list
-```
-
-Make sure the following ansible galaxy collections match the following versions or higher:
-```bash
-# /usr/share/ansible/collections/ansible_collections
-Collection                               Version
----------------------------------------- -------
-community.grafana                        2.0.0
-kubernetes.core                          5.0.0
-```
+> [!TIP]
+> For Ubuntu 24.04, add the `--break-system-packages` option to the `pip` commands.
 
 ### 2. Configure Windows Remote Management (WinRM) on Windows Host
 
-Open an Ubuntu terminal in the WSL and run the following to install the pre-requisites:
+Open an Ubuntu terminal **(with root access)** in the WSL and run the following to install the pre-requisites:
 ```bash
-sudo pip install pywinrm kubernetes jsonpatch jmespath
+pip install pywinrm
 ```
 
 Create a Windows user with Administrator (or proper) priviledges for ansible in the Windows Hyper-V host. You can use the sample script below in a Powershell command prompt with Administrator rights to create the ansible user but please change the password accordingly.
