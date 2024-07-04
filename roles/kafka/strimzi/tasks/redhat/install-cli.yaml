@@ -6,18 +6,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Install strimzi kafka cli and pre-requisites on Ansible host
+- name: Installing strimzi kafka cli on Ansible host
   delegate_to: localhost
   become_user: root
-  block:
-    - name: Installing dependency packages (may take a while)
-      ansible.builtin.dnf:
-        pkg:
-          - python3.12-pip
-        state: latest
-        update_cache: yes
-
-    - name: Installing strimzi kafka cli on Ansible host
-      ansible.builtin.pip:
-        name: strimzi-kafka-cli
-        version: "{{ strimzi.cli.version }}"
+  ansible.builtin.pip:
+    name: strimzi-kafka-cli
+    version: "{{ strimzi.cli.version }}"
