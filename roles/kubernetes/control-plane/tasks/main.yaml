@@ -5,9 +5,8 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# Note: The break_system_packages property in ansible.builtin.pip module requires ansible 2.17.1
-- name: Installing python kubernetes module and dependencies for Ansible
-  shell: pip install kubernetes --break-system-packages
+- name: Install python kubernetes module
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-dependencies.yaml"
 
 - name: Configure kube config
   become_user: "{{ kube.user }}"

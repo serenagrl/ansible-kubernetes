@@ -6,13 +6,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing dependency packages (may take a while)
-  ansible.builtin.dnf:
-    pkg:
-      - python3-pip
-    state: latest
-    update_cache: yes
-
-- name: Installing AWX cli on Ansible host
+- name: Installing python kubernetes module for Ansible
   ansible.builtin.pip:
-    name: awxkit
+    name:
+      - kubernetes

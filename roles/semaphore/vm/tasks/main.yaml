@@ -8,11 +8,9 @@
 - name: Gather facts
   ansible.builtin.setup:
 
-- name: Install ansible and galaxy collection
-  block:
-    - name: Install ansible
-      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-ansible.yaml"
-      when: semaphore.install_ansible
+- name: Install ansible
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-ansible.yaml"
+  when: semaphore.install_ansible
 
 - block:
   - name: Install postgres

@@ -19,6 +19,5 @@
 
     - name: Installing strimzi kafka cli on Ansible host
       ansible.builtin.pip:
-        executable: pip3.12
         name: strimzi-kafka-cli
         version: "{{ strimzi.cli.version }}"

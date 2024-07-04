@@ -12,3 +12,4 @@
   ansible.builtin.setup:
     filter:
       - ansible_distribution
+      - distribution_version

@@ -13,6 +13,7 @@
       ansible.builtin.apt:
         pkg:
           - python3-pip
+          - jq
         state: latest
         update_cache: yes
 
@@ -29,5 +30,7 @@
 
         # Note: The break_system_packages property in ansible.builtin.pip module requires ansible 2.17.1
         - name: Installing strimzi kafka cli on Ansible host
+          vars:
+            pip_args: "{{ (hostvars['localhost'].ansible_distribution_version|float >= 24.04) | ternary('--break-system-packages', '') }}"
           shell: |
-            pip install strimzi-kafka-cli=={{ release }} -I --break-system-packages
+            pip install strimzi-kafka-cli=={{ release }} -I {{ pip_args }}

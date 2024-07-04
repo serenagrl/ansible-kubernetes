@@ -1,0 +1,13 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Note: The break_system_packages property in ansible.builtin.pip module requires ansible 2.17.1
+- name: Installing python kubernetes module for Ansible
+  vars:
+    pip_args: "{{ (ansible_distribution_version|float >= 24.04) | ternary('--break-system-packages', '') }}"
+  shell: pip install kubernetes {{ pip_args }}
