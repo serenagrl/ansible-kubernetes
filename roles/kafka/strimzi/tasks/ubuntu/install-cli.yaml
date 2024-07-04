@@ -12,7 +12,6 @@
     - name: Installing dependency packages (may take a while)
       ansible.builtin.apt:
         pkg:
-          - python3-pip
           - jq
         state: latest
         update_cache: yes

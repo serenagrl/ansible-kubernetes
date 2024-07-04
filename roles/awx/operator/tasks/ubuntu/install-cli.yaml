@@ -5,13 +5,6 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing dependency packages (may take a while)
-  ansible.builtin.apt:
-    pkg:
-      - python3-pip
-    state: latest
-    update_cache: yes
-
 # Note: The break_system_packages property in ansible.builtin.pip module requires ansible 2.17.1
 - name: Installing AWX cli on Ansible host
   vars:

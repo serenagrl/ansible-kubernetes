@@ -16,5 +16,6 @@
     pkg:
       - software-properties-common
       - ansible
+      - python3-pip
     state: latest
     update_cache: yes
