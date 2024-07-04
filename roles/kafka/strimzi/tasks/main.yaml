@@ -74,7 +74,3 @@
 - name: Waiting for strimzi kafka operator to be ready
   ansible.builtin.shell: |
     for d in $(kubectl -n strimzi-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n strimzi-system deployment/$d; done;
-
-- name: Install strimzi kafka cli and pre-requisites on Ansible host
-  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-cli.yaml"
-  when: strimzi.cli.install
