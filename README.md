@@ -216,7 +216,8 @@ kubernetes_control_planes:
       ansible_hostname: "{{ lab_name }}-cp3"
       ansible_host: 192.168.0.206
 ```
-If you do not want the hostnames to be auto-generated, you can manually hard-code them here.
+> [!TIP]
+> If you do not want the hostnames to be auto-generated, you can manually hard-code them here.
 
 ### Configuring Common VM Settings
 
