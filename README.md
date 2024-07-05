@@ -155,7 +155,7 @@ Refer [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html
 > [!IMPORTANT]
 > Although optional, it is strongly recommended to use certificates to connect to WinRM. Follow these [steps](docs/configure-winrm-certs.md) if you wish to apply this practice.
 
-### 4. Testing WinRM Connectivity
+### 4. Test WinRM Connectivity
 
 Run the `test-winrm-connection.yaml` playbook to verify the WinRM connection.
 ```bash
@@ -175,16 +175,11 @@ local_machine              : ok=1    changed=1    unreachable=0    failed=0    s
 ```
 
 > [!CAUTION]
->  WinRM setup is crucial for running the playbooks. Please make sure it is configured properly before running the playbooks.
+>  WinRM setup is crucial. Please make sure it is configured properly before running the playbooks.
 
 ## Configuring the Playbooks
 
 All basic/startup configurable items for the Infrastructure Services and Kubernetes Cluster are in the inventory files located in the `/inventories` folder. You are recommended to review them and make the necessary changes for your lab environment.
-
-> [!TIP]
-> If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore), you can use the `setup-semaphore.yaml` playbook to deploy and configure a Semaphore Server VM and then use the `setup-semaphore-project.yaml` playbook to create a project on the Semaphore Server based on the cloned version of this repository on its filesystem.
->
-> **Additional steps required to support Semaphore UI** - Share the `D:\Installation Files` and `D:\Virtual Machines` folders on the Windows Hyper-V Host and grant full-control access to the `ansible` user created in the earlier section.
 
 ### Configuring the Inventories and Settings
 
@@ -291,6 +286,11 @@ The playbooks can be run with the `ansible-playbook` command. i.e.
 ```bash
 ansible-playbook setup-load-balancers.yaml
 ```
+> [!TIP]
+> If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore), you can use the `setup-semaphore.yaml` playbook to deploy and configure a Semaphore Server VM and then use the `setup-semaphore-project.yaml` playbook to create a project on the Semaphore Server based on the cloned version of this repository on its filesystem.
+>
+> **Additional steps required to support Semaphore UI** - Share the `D:\Installation Files` and `D:\Virtual Machines` folders on the Windows Hyper-V Host and grant full-control access to the `ansible` user created in the earlier section.
+
 To setup any **(Optional) Infrastructure Services**, run the following playbooks in sequence:
 
 | No. | Name                        | Description                                                 | Remarks |
