@@ -21,7 +21,7 @@ awx:
     playbook: "hello_world.yml"
 
     # Any inventory variables that you want to add in by default  
-    inventory_vars:
+    inventory_vars: []
 
     # Any job template extra_vars that you want to add in by default  
-    job_template_vars:
+    job_template_vars: []
