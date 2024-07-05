@@ -5,7 +5,7 @@ ansible_become: yes
 # servers.
 winrm_host: local_machine
 
-vm_checkpoint: yes          # Creates VM checkpoints at specific stages of automation.
+vm_checkpoint: yes         # Creates VM checkpoints at specific stages of automation.
 auto_cleanup: yes          # Clean up residue files after installation.
 temp_dir: /var/automate    # The directory for the ansible tasks to store temporary data.
 
