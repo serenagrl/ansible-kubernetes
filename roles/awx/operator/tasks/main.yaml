@@ -67,6 +67,7 @@
       loop:
         - "{{ lookup('kubernetes.core.kustomize', dir=MANIFEST_FOLDER) }}"
         - "{{ MANIFEST_TEMPLATE }}"
+      no_log: yes
 
 - name: Cleanup manifest
   delegate_to: localhost
