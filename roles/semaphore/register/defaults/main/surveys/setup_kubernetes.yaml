@@ -19,14 +19,14 @@ SETUP_KUBERNETES_SURVEYS:
     description: "Setup and configure the primary control plane."
     <<: *enum_bool
 
-  - name: setup_cp_other
-    title: "Setup Secondary Control Planes [Yes]"
-    description: "Setup and join secondary control planes into the cluster."
-    <<: *enum_bool
-
   - name: setup_remote_admin
     title: "Remote Administration [Yes]"
     description: "Enable remote administration of the kubernetes cluster from ansible controller host."
+    <<: *enum_bool
+
+  - name: setup_cp_other
+    title: "Setup Secondary Control Planes [Yes]"
+    description: "Setup and join secondary control planes into the cluster."
     <<: *enum_bool
 
   - name: provision_wk
