@@ -7,7 +7,7 @@ winrm_host: local_machine
 # Comment off this if provisioning individual VMs.
 vm:
   specs:
-    ram_size: 1GB
-    min_ram_size: 1GB
+    ram_size: 4GB
+    min_ram_size: 2GB
     disk_size: 256GB
     v_cpu: 2
