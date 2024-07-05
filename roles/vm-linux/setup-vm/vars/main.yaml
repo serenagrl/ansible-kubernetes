@@ -13,7 +13,7 @@ vm:
   # Valid values for now are:
   # ubuntu - for ubuntu
   # redhat - Red Hat Enterprise Linux
-  os: redhat
+  os: ubuntu
 
   # RHEL images cannot be downloaded without signing in. Therefore, you will need to manually
   # download it and place it somewhere.
@@ -48,7 +48,7 @@ vm:
   local: yes
 
   # The location where the seed isos will be placed
-  iso_folder: "D:\\Installation Files\\RedHat"
+  iso_folder: "D:\\Installation Files"
 
   # The location where the VMs will be created
   vm_folder: "D:\\Virtual Machines\\Kubernetes"
