@@ -181,7 +181,7 @@ local_machine              : ok=1    changed=1    unreachable=0    failed=0    s
 
 All basic/startup configurable items for the Infrastructure Services and Kubernetes Cluster are in the inventory files located in the `/inventories` folder. You are recommended to review them and make the necessary changes for your lab environment.
 
-### Configuring the Inventory Settings
+### Configuring Inventory Settings
 
 Configure the settings for the Kubernetes Cluster in the `inventories/group_vars/all.yaml` file. Configure the `lab_name` to allow the playbooks to use it as a prefix when auto-generating names for the hosts and VMs for the Infrastructure Services and Kubernetes Cluster. The playbooks will also organize the physical VMs inside a folder based on the `lab_name` for ease of management.
 
@@ -218,7 +218,7 @@ kubernetes_control_planes:
 ```
 If you do not want the hostnames to be auto-generated, you can manually hard-code them here.
 
-### Configuring the Common VM Settings
+### Configuring Common VM Settings
 
 Common VM settings are configured in the `roles/vm-linux/setup-vm/vars/main.yaml` file and are applied to all VMs.
 
