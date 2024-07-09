@@ -5,5 +5,5 @@ vm:
   specs:
     ram_size: 16GB
     min_ram_size: 12GB
-    disk_size: 256GB
+    disk_size: 127GB
     v_cpu: 6
