@@ -1,10 +1,10 @@
-# Kubernetes Lab on Hyper-V
+# Kubernetes Cluster on Hyper-V
 A collection of Ansible playbooks and roles to create a Kubernetes cluster on Hyper-V, either for testing/learning purposes or SIT/Proof-of-Concept environments. These playbooks and add-ons were tailored to my lab environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
 
 ## Quick Notes
-* Working knowledge of [Ansible](https://www.ansible.com/) is required to navigate around the playbooks.
+* Knowledge of [Ansible](https://www.ansible.com/) is required to work with the playbooks.
 * Playbooks are tested on **Windows 11** and **Windows Server 2022** Hyper-V hosts.
-* Playbooks can provision VMs for **Ubuntu 22.04/24.04** or **Red Hat 9.3/9.4** Linux.
+* Playbooks can provision VMs for **Ubuntu 22.04/24.04** or **Red Hat 9.3** Linux.
 * Playbooks default to setup a DNS, 2 HAProxy load balancers and 3 control-plane VMs.
 * The Kubernetes cluster uses **Containerd** as container runtime and **Calico** as CNI.
 * Configure everything in the `/inventories` folder and `roles/vm-linux/setup-vm/vars/main.yaml`.
@@ -17,8 +17,8 @@ A Windows machine or server with sufficient processing power, RAM and disk space
 * Ubuntu 22.04 or 24.04 distribution installed in WSL.
 
 > [!NOTE]
-> For convenience, you can edit the `/etc/wsl.conf` file configure Ubuntu WSL to always login as root user.
-> ```
+> Edit the `/etc/wsl.conf` file to configure Ubuntu WSL to always login as root user.
+> ```ini
 > [boot]
 > systemd=true
 >
@@ -27,7 +27,7 @@ A Windows machine or server with sufficient processing power, RAM and disk space
 > ```
 > You need to reload the terminal for the changes to take effect.
 
-Prepare two folders on the Windows Hyper-V host:
+Prepare two folders in the Windows Hyper-V host:
 * A folder to store temporary seed iso images i.e. `"D:\Installation Files"`
 * A folder where the Virtual Machines will be created in i.e. `"D:\Virtual Machines"`
 
@@ -41,14 +41,14 @@ The required computing resources for each VM is dependent on the number of add-o
 You can pool multiple Windows Hyper-V servers together to distribute the load of hosting the VMs but make sure each Hyper-V host is configured correctly.
 
 > [!CAUTION]
-> VM Checkpoints are created to provide recovery in case of installation failures. **These checkpoints consume additional disk space**. Please perform the necessary housekeeping manually to reclaim the disk space or disable checkpoint creation by setting `vm_checkpoint: no` in the `inventories/group_vars/all.yaml` inventory file.
+> VM _Checkpoints_ are created to provide recovery in case of installation failures. **These checkpoints consume additional disk space**. Please perform the necessary housekeeping manually to reclaim the disk space or disable checkpoint creation by setting `vm_checkpoint: no` in the `inventories/group_vars/all.yaml` inventory file.
 
 #### INFRASTRUCTURE SERVICES VMs
 
-There are 3 VMs that are optional to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster (if you choose to include them). The Load-Balancers will each have their own VM and a separate VM is dedicated to host DNS, NFS and Minio.
+There are 3 VMs that are _optional_ to support the Kubernetes Cluster and these are categorized as **Infrastructure Services**. These VMs need to be provisioned and configured first, before setting up the Kubernetes Cluster (if you choose to include them). The Load-Balancers will each have their own VM and a separate VM is dedicated to host DNS, NFS and Minio.
 
 > [!CAUTION]
-> The Infrastructure Services VMs are purely meant to simulate existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, **do not target them to existing production servers** that are already running. **Doing so will corrupt the existing servers.**
+> The Infrastructure Services VMs are purely meant to _simulate_ existing infrastructure in a real-world network topology. While you can use them as starting points to configure a production environment, **do not target them to existing production servers** that are already running. **Doing so will corrupt the existing servers.**
 
 Recommendations for **Infrastructure Services** VMs are as follows:
 
@@ -64,7 +64,7 @@ Recommendations for **Infrastructure Services** VMs are as follows:
 
 #### KUBERNETES CLUSTER VMs
 
-The **Kubernetes Cluster** requires a minimum of 3 VMs for the control planes. Worker nodes are optional - you can determine the number and size of worker nodes base on your needs.
+The **Kubernetes Cluster** requires a minimum of 3 VMs for the control planes. Worker nodes are _optional_ - you can determine the number and size of worker nodes base on your needs.
 
 Recommendations for **Kubernetes Cluster** VMs are as follows:
 
@@ -78,7 +78,7 @@ Recommendations for **Kubernetes Cluster** VMs are as follows:
 | Test/SIT Environment        | 3             | 8    | 24GB      | 32GB | 2 (or more) | 4    | 4GB       | 8GB  |
 
 > [!WARNING]
-> Both Longhorn and Rook-Ceph CSIs can consume a lot of resources but offers a good learning path and discipline for managing clustered storage. You may need to utilize more than 1 Hyper-V hosts with more RAM if you have insufficient computing resources.
+> Both **Longhorn** and **Rook-Ceph** CSIs can consume a lot of resources but offers a good learning path and discipline for managing clustered storage. You may need to utilize more than 1 Hyper-V hosts with more RAM if you have insufficient computing resources.
 
 #### Disk Size
 
@@ -108,7 +108,7 @@ Open an Ubuntu terminal **(with root access)** in the WSL and run the following 
 pip install pywinrm
 ```
 
-Create a **Windows user** with Administrator (or proper) priviledges for ansible in the Windows Hyper-V host. You can use the sample script below in a Powershell command prompt with Administrator rights to create the ansible user but please change the password accordingly.
+Create a **Windows user** with Administrator (or proper) priviledges for ansible in the Windows Hyper-V host. You can use the sample script below in a Powershell command prompt with _Administrator rights_ to create the `ansible` user but please change the password accordingly.
 ```powershell
 $username = "ansible"
 $password = ConvertTo-SecureString "p@ssw0rd" -AsPlainText -Force
@@ -128,18 +128,18 @@ Refer [here](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html
 
 ### 3. Configure WinRM Settings in Playbooks
 
-Clone this repository to a directory in the Ubuntu OS inside the WSL. Configure the necessary access rights to the directory if required.
+**Clone this repository** to a directory in the Ubuntu OS inside the WSL. Configure the necessary access rights to the directory if required.
 
 ```bash
 git clone https://github.com/serenagrl/ansible-kubernetes.git
 ```
 
-In the `/inventories/winrm.yaml` file, set the WinRM credentials that you have created earlier:
+In the `/inventories/winrm.yaml` file, set the WinRM host IP address and the credentials that was created earlier:
 ```yaml
 winrm:
   hosts:
     local_machine:
-      ansible_host: 192.168.0.118
+      ansible_host: 192.168.0.118      # IP Address of your WinRM (Hyper-V) host
       ansible_user: ansible            # Create a user in your Windows
       ansible_password: p@ssw0rd       # Provide the password for the user
       ansible_become_method: runas
@@ -179,7 +179,7 @@ local_machine              : ok=1    changed=1    unreachable=0    failed=0    s
 
 ## Configuring the Playbooks
 
-All basic/startup configurable items for the Infrastructure Services and Kubernetes Cluster are in the inventory files located in the `/inventories` folder. You are recommended to review them and make the necessary changes for your lab environment.
+All basic/startup configurable items for the Infrastructure Services and Kubernetes Cluster are in the inventory files located in the `/inventories` folder. It is recommended to review all the inventory files and make the necessary changes for your lab environment.
 
 ### Configuring Inventory Settings
 
@@ -190,17 +190,17 @@ Configure the settings for the Kubernetes Cluster in the `inventories/group_vars
 lab_name: devops
 ```
 
-The **VM specifications** can be configured in the remaining group variable files in the `/inventories/group_vars` folder. Below is an example of the VM settings in the `inventories/group_vars/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **Please review the others**.
+The **VM specifications** can be configured in the remaining group variable files in the `/inventories/group_vars` folder. Below is an example of the VM settings in the `inventories/group_vars/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **Please review the other files as well**.
 ```yaml
 vm:
   specs:
     ram_size: 16GB
     min_ram_size: 12GB
-    disk_size: 256GB
+    disk_size: 127GB
     v_cpu: 6
 ```
 
-The **IP addresses** of the VMs can be configured in the inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **You should review and change all the other host inventory files accordingly**.
+The **IP addresses** of the VMs can be configured in the host inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **You should review and change all the other host inventory files accordingly**.
 ```yaml
 kubernetes_control_planes:
   hosts:
@@ -217,7 +217,7 @@ kubernetes_control_planes:
       ansible_host: 192.168.0.206
 ```
 > [!TIP]
-> If you do not want the hostnames to be auto-generated, you can manually hard-code them here.
+> If you do not want the hostnames to be auto-generated, you can manually hard-code them in `ansible_hostname`.
 
 ### Configuring Common VM Settings
 
@@ -236,7 +236,7 @@ vm:
   switch: LAN
 ```
 
-Specify the two folders which you have created earlier:
+Specify the two folders that was created earlier:
 ```yaml
 vm:
   # The location where the seed isos will be placed
@@ -248,7 +248,7 @@ vm:
 
 Configure the desired OS for the VMs. Current supported OS are `ubuntu` (default) or `redhat`.
 
-For `ubuntu`, specify the url to the cloud image and the playbooks will automatically download it for you:
+For `ubuntu`, specify the url to the cloud image and the playbooks will automatically download it:
 ```yaml
 vm:
   ubuntu:
@@ -257,7 +257,7 @@ vm:
 ```
 
 > [!NOTE]
-> Sometimes the download may take a bit longer due to the designated mirror or connectivity issues. If such cases occur, you can manually download the cloud image file, rename it to `ubuntu-cloud.img` and copy it into the `temp_dir` location that you have specified i.e. `/var/automate`
+> Sometimes the download may take longer due to designated mirrors or connectivity issues. In such cases, manually download the cloud image file, rename it to `ubuntu-cloud.img` and copy it into the location specified in `temp_dir` (i.e. `/var/automate`) in the Ubuntu WSL.
 
 For `redhat`:
 * Please download the **Red Hat Enterprise Linux Guest Image** and specify it in `vm.redhat.kvm_image`.
@@ -265,9 +265,6 @@ For `redhat`:
 
 ```yaml
 vm:
-  # Valid values for now are:
-  # ubuntu - for ubuntu
-  # redhat - Red Hat Enterprise Linux
   os: redhat
 
   # RHEL images cannot be downloaded without signing in. Therefore, you will need to manually
@@ -344,6 +341,25 @@ Below is an example of installing some basic add-ons with csi/longhorn as the st
         - name: monitoring
         - name: metrics-server
         - name: csi/longhorn
+```
+
+Each role contains customizable values in its `/var/main.yaml` file. You do not need to modify the default values in the file directly as they can be passed in to the `add_ons:` collection. Below is an example of customizing the values for `csi/longhorn` to use a different `vm_folder` location and disk `size`:
+
+```yaml
+- name: Install Kubernetes add-ons
+  hosts: kubernetes_control_planes[0]
+  become_user: "{{ kube.user }}"
+  gather_facts: yes
+
+  roles:
+    - role: kubernetes/add-on
+      add_ons:
+        - name: csi/longhorn
+          vars:
+            longhorn:
+              disk:
+                vm_folder: "E:\\Virtual Machines\\Kubernetes"
+                size: 512GB
 ```
 
 > [!WARNING]
