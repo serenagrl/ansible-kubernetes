@@ -343,7 +343,7 @@ Below is an example of installing some basic add-ons with csi/longhorn as the st
         - name: csi/longhorn
 ```
 
-Each role contains customizable values in its `/var/main.yaml` file. You do not need to modify the default values in the file directly as they can be passed in to the `add_ons:` collection. Below is an example of customizing the values for `csi/longhorn` to use a different `vm_folder` location and disk `size`:
+Each role contains customizable values in its `/vars/main.yaml` file. You do not need to modify the default values in the file directly as they can be passed in to the `add_ons:` collection. Below is an example of customizing the values for `csi/longhorn` to use a different `vm_folder` location and disk `size`:
 
 ```yaml
 - name: Install Kubernetes add-ons
