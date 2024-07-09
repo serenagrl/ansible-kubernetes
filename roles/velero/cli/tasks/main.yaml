@@ -8,6 +8,7 @@
 
 - name: Install velero cli to ansible controller
   delegate_to: localhost
+  become_user: root
   vars:
     repo_path: vmware-tanzu/velero
     release: "{% if velero.cli_version is defined and velero.cli_version and velero.cli_version != 'latest' %}v{{ velero.cli_version }}{% else %}{{ release_tag.stdout }}{% endif %}"
