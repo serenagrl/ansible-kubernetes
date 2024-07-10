@@ -5,21 +5,29 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Create logging namespace
   kubernetes.core.k8s:
     kind: Namespace
     name: logging
 
-- name: Create minio tenant for Loki
-  ansible.builtin.include_role:
-    name: logging/loki/minio-tenant
-  when: loki.external_minio
+- name: Setup minio-tenant
+  block:
+    - name: Create minio tenant for Loki
+      vars:
+        minio_tenant: "{{ loki.external_minio }}"
+      ansible.builtin.include_role:
+        name: devops/minio/create-tenant
 
-- name: Get minio credentials
-  ansible.builtin.shell: |
-    kubectl get secret -n logging {{ loki.external_minio.secret_name }} -ojsonpath='{.data}'
-  register: minio_secret
-  when: loki.external_minio
+    - name: Get minio credentials
+      vars:
+        secret_name: "{{ loki.external_minio.tenant_name }}-secret"
+      ansible.builtin.shell: |
+        kubectl get secret -n logging {{ secret_name }} -ojsonpath='{.data}'
+      register: minio_secret
+  when: loki.external_minio.enabled
 
 - name: Add grafana chart repo
   kubernetes.core.helm_repository:
@@ -32,10 +40,12 @@
     minio_credentials:
       accesskey: "{{ credentials.accesskey | default() | b64decode }}"
       secretkey: "{{ credentials.secretkey | default() | b64decode }}"
+    tenant_endpoint: "http://{{ loki.external_minio.tenant_name }}-hl:9000/"
     version: "{% if loki.version is defined and loki.version and loki.version != 'latest' %}{{ loki.version }}{% endif %}"
   kubernetes.core.helm:
     name: loki
     atomic: no
+    force: yes
     chart_ref: grafana/loki
     chart_version: "{{ version }}"
     namespace: logging
@@ -60,7 +70,7 @@
                 operator: Exists
             nodeSelector:
               node-role.kubernetes.io/control-plane: ""
-  when: not _kube.allow_scheduling
+  when: not kube.allow_scheduling
 
 - name: Waiting for loki deployments to be ready
   ansible.builtin.shell: |

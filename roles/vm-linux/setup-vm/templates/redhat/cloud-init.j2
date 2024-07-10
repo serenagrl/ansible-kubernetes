@@ -1,0 +1,61 @@
+#cloud-config
+chpasswd:
+  expire: false
+  users:
+    - name: root
+      password: '{{ vm.root_pwd }}'
+ssh_pwauth: true
+disable_root_opts: ""
+ssh_authorized_keys:
+  - {{ id_rsa_pub }}
+timezone: UTC
+
+users:
+  - default
+  - name: {{ kube.user }}
+    gecos: K8s Admin
+    groups: users, admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    passwd: '{{ kube.pwd }}'
+    lock_passwd: false
+    ssh_authorized_keys:
+      - {{ id_rsa_pub }}
+
+rh_subscription:
+  username: {{ vm.redhat.username }}
+  password: '{{ vm.redhat.password }}'
+  auto-attach: true
+  service-level: self-support
+
+write_files:
+  - path: /etc/cloud/cloud.cfg.d/99-enable-ssh-pwauth.cfg
+    content: |
+      ssh_pwauth: true
+  - path: /etc/NetworkManager/system-connections/eth0.nmconnection
+    content: |
+      [connection]
+      id=eth0
+      uuid=5fb06bd0-0bb0-7ffb-45f1-d6edd65f3e03
+      type=ethernet
+      interface-name=eth0
+      autoconnect-priority=120
+
+      [ipv4]
+      method=manual
+      address1={{ ansible_host }}/{{ vm.network.cidr }}
+      gateway={{ vm.network.gateway }}
+      dns={{ kube.cluster.use_dns_server | ternary([hostvars.dns_server.ansible_host] + vm.network.dns, vm.network.dns) | join(';') }}
+      dns-search={{ kube.cluster.domain }}
+
+      [ipv6]
+      method=disabled
+
+runcmd:
+  - sudo chmod 600 /etc/NetworkManager/system-connections/eth0.nmconnection
+  - sudo chown root:root /etc/NetworkManager/system-connections/eth0.nmconnection
+  - sudo nmcli connection reload
+  - sudo sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
+  - sudo systemctl restart sshd
+  - sudo dnf update -y
+  - sudo reboot

@@ -1,0 +1,3 @@
+# Trivy environment variables.
+TRIVY_VARS:
+  - { name: trivy, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/trivy/vars`)].content') | b64decode | from_yaml }}" }

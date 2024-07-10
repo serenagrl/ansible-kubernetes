@@ -1,0 +1,23 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check for kafka installation
+  vars:
+    is_installed: "{{ kafka_result.resources | length > 0 }}"
+  block:
+    - name: Check kafka availability
+      kubernetes.core.k8s_info:
+        api_version: kafka.strimzi.io/v1beta2
+        kind: Kafka
+        name: kafka
+        namespace: kafka
+      register: kafka_result
+
+    - name: Kafka is{{ is_installed | ternary(' ', ' not ') }}installed
+      ansible.builtin.set_fact:
+        fact_has_addon_kafka: "{{ is_installed }}"

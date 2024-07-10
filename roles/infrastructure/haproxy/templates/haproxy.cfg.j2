@@ -1,10 +1,10 @@
-frontend {{ _kube.cluster.name }}-apiserver
+frontend {{ kube.cluster.name }}-apiserver
    bind *:6443
    mode tcp
    option tcplog
-   default_backend {{ _kube.cluster.name }}-apiserver-backend
+   default_backend {{ kube.cluster.name }}-apiserver-backend
 
-backend {{ _kube.cluster.name }}-apiserver-backend
+backend {{ kube.cluster.name }}-apiserver-backend
    mode tcp
    balance roundrobin
    option tcp-check
@@ -14,7 +14,7 @@ listen stats
    bind *:{{ haproxy.port }}
    mode http
    stats enable
-   stats uri /haproxy
+   stats uri /
    stats refresh 5s
    stats realm Haproxy\ Statistics
    stats auth {{ haproxy.username }}:{{ haproxy.password }}

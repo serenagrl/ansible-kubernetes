@@ -1,2 +1,2 @@
-CRDS_MANIFEST_FILE: "{{ _work_dir }}/crds.yaml"
-OPERATOR_MANIFEST_FILE: "{{ _work_dir }}/operator.yaml"
+CRDS_MANIFEST_FILE: "{{ temp_dir }}/crds.yaml"
+OPERATOR_MANIFEST_FILE: "{{ temp_dir }}/operator.yaml"

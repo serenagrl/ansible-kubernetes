@@ -7,5 +7,5 @@ HTTP_PROXY_TEMPLATES:
   # Uncomment the below line if you are installing the registry.
   # -  "{{ lookup('template', 'ingress-contour-registry.j2') | from_yaml }}"
 
-INGRESS_SETUP: "{{ 'ingress-' + _kube.ingress_type + '.yaml' }}"
-VALUES_FILE: "{{ lookup('template', 'values-' + _kube.ingress_type + '.j2') | from_yaml }}"
+INGRESS_SETUP: "{{ 'ingress-' + kube.ingress_type + '.yaml' }}"
+VALUES_FILE: "{{ lookup('template', 'values-' + kube.ingress_type + '.j2') | from_yaml }}"

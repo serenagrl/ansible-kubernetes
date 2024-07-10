@@ -20,7 +20,7 @@
               nodeSelector:
                 node-role.kubernetes.io/control-plane: ""
               \1
-  when: not _kube.allow_scheduling
+  when: not kube.allow_scheduling
 
 - name: Install kafka controller
   kubernetes.core.k8s:
@@ -35,4 +35,4 @@
   ansible.builtin.file:
     path: "{{ manifest }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup

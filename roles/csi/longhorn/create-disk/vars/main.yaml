@@ -1,0 +1,6 @@
+virtual_disk:
+  vm_folder: "{{ notdefined | mandatory(msg='vm_folder is required.') }}"
+  name: "{{ notdefined | default('cluster-storage-1') }}"
+  size: "{{ notdefined | default('256GB') }}"
+  mount_point: "{{ notdefined | default('/data-1') }}"
+  tags: "{{ notdefined | default(['ssd', 'external', 'virtual-disk']) }}"

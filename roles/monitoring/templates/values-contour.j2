@@ -1,0 +1,106 @@
+fullnameOverride: monitoring
+
+alertmanager:
+  fullnameOverride:
+  ingress:
+    enabled: false
+
+  alertmanagerSpec:
+    routePrefix: /alerts
+    replicas: {{ monitoring.alertmanager.replicas }}
+
+{% if not kube.allow_scheduling %}
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+grafana:
+  enabled: true
+
+  replicas: 1
+
+  ingress:
+    enabled: false
+
+  sidecar:
+    datasources:
+      enabled: true
+      url: http://monitoring-prometheus:9090/prometheus/
+
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+  grafana.ini:
+    server:
+      root_url: "/grafana/"
+      serve_from_sub_path: true
+
+prometheusOperator:
+  enabled: true
+
+{% if not kube.allow_scheduling %}
+  admissionWebhooks:
+    deployment:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+    patch:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+prometheus:
+  enabled: true
+
+  ingress:
+    enabled: false
+
+  prometheusSpec:
+    replicas: {{ monitoring.prometheus.replicas }}
+    externalUrl: /prometheus
+    routePrefix: /prometheus
+
+{% if not kube.allow_scheduling %}
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+kube-state-metrics:
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+{% endif %}

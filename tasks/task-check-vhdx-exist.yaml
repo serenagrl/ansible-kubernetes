@@ -1,19 +1,17 @@
 - name: Check for existing virtual hard disk
-  delegate_to: localhost
-  become_user: root
+  delegate_to: "{{ winrm_host }}"
   vars:
-    backslash: '\'
-    linux_dir: "{{ is_local | default(true) | ternary('/mnt/' + (win_folder[0] | lower) + (win_folder[2:] | replace( backslash, '/')),
-                                                      '/mnt/' + hostvars[winrm_host]['ansible_host'] + '/' + (win_folder[3:] | replace( backslash, '/'))) }}"
-    vhd_disk: "{{ win_folder }}\\{{ host_name }}\\Virtual Hard Disks\\{{ disk_name }}.vhdx"
+    vhd_disk: "{{ win_folder }}\\{{ hostname }}\\Virtual Hard Disks\\{{ disk_name }}.vhdx"
   block:
     - name: Checking for existing vhdx file on hosts
-      ansible.builtin.find:
-        paths: "{{ linux_dir }}/{{ host_name }}/Virtual Hard Disks/"
-        patterns: "{{ disk_name }}.vhdx"
+      ansible.windows.win_powershell:
+        script: |
+          Test-Path "{{ vhd_disk }}"
+        error_action: stop
       register: file_exist
 
-    - name: File Check (Skipped when passed)
+    - name: File Check
       ansible.builtin.fail:
         msg: "{{ vhd_disk }} already exist. Please detach it from Hyper-V and perform the necessary backup/deletion before proceeding."
-      when: file_exist.matched > 0
+      failed_when: file_exist.output.0|bool
+      changed_when: false

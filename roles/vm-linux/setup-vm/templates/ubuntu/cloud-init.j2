@@ -1,0 +1,52 @@
+#cloud-config
+chpasswd:
+  expire: false
+  users:
+    - name: root
+      password: '{{ vm.root_pwd }}'
+ssh_pwauth: True
+disable_root_opts: ""
+ssh_authorized_keys:
+  - {{ id_rsa_pub }}
+
+users:
+  - default
+  - name: {{ kube.user }}
+    gecos: K8s Admin
+    groups: users, admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    passwd: '{{ kube.pwd }}'
+    lock_passwd: false
+    ssh_authorized_keys:
+      - {{ id_rsa_pub }}
+
+write_files:
+  - path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    content: |
+      network: {config: disabled}
+  - path: /etc/netplan/99-custom.yaml
+    content: |
+      network:
+        version: 2
+        ethernets:
+          eth0:
+            link-local: [ ipv4 ]
+            dhcp4: false
+            addresses:
+              - {{ ansible_host }}/{{ vm.network.cidr }}
+            nameservers:
+              addresses: {{ kube.cluster.use_dns_server | ternary([hostvars.dns_server.ansible_host] + vm.network.dns, vm.network.dns) }}
+              search: [{{ kube.cluster.domain }}]
+            routes:
+              - to: default
+                via: {{ vm.network.gateway }}
+
+runcmd:
+  - sudo netplan apply
+  - sudo apt update -y && sudo apt full-upgrade -y
+  - sed -i '/#PermitRootLogin/a\\PermitRootLogin yes' /etc/ssh/sshd_config
+  - systemctl restart ssh
+  - sudo apt install ntp ntpdate -y
+  - sudo update-initramfs -u
+  - sudo reboot -f

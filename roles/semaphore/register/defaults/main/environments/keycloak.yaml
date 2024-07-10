@@ -1,0 +1,3 @@
+# Keycloak environment variables.
+KEYCLOAK_VARS:
+  - { name: keycloak, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/keycloak/vars`)].content') | b64decode | from_yaml }}" }

@@ -1,0 +1,85 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
+- name: Register DNS entry
+  vars:
+    domain_prefix: "{{ host_entry }}"
+  ansible.builtin.include_role:
+    name: common/dns-register
+  loop:
+    - "{{ minio_tenant.domain_name }}"
+    - "{{ minio_tenant.console_domain_name }}"
+  loop_control:
+    loop_var: host_entry
+
+- name: Create minio tenant for {{ in_name }}
+  block:
+    - name: Add minio chart repo
+      kubernetes.core.helm_repository:
+        name: minio
+        repo_url: "https://operator.min.io/"
+
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: "{{ minio_tenant.tenant_name }}"
+        certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+    # Notes: Uses own domain names.
+    - name: Setup ingress
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+
+    - name: Deploying minio tenant for {{ minio_tenant.name }}
+      vars:
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+        version: "{% if minio_tenant.version is defined and minio_tenant.version and minio_tenant.version != 'latest' %}{{ minio_tenant.version }}{% endif %}"
+      kubernetes.core.helm:
+        name: "{{ minio_tenant.tenant_name }}"
+        atomic: yes
+        force: yes
+        chart_ref: minio/tenant
+        chart_version: "{{ version }}"
+        namespace: "{{ minio_tenant.namespace }}"
+        create_namespace: yes
+        values: "{{ VALUES_FILE }}"
+        timeout: 10m0s
+        wait: yes
+
+    - name: Waiting for {{ minio_tenant.name }} minio tenant to be ready
+      ansible.builtin.shell: kubectl wait --for=jsonpath='{.status.currentState}'='Initialized' tenant {{ minio_tenant.tenant_name }} -n {{ minio_tenant.namespace }} --timeout=300s
+
+- name: Get minio credentials
+  vars:
+    tenant_endpoint: "http://{{ minio_tenant.tenant_name }}-hl:9000/"
+    overrides:
+      "{% if not kube.allow_scheduling %}
+        --overrides='{\"spec\":{\"nodeSelector\":{\"node-role.kubernetes.io/control-plane\":\"\"},\"tolerations\":[{\"effect\": \"NoSchedule\", \"key\": \"node-role.kubernetes.io/control-plane\", \"operator\": \"Exists\"}]}}'
+      {% endif %}"
+
+  ansible.builtin.shell: |
+    kubectl run --rm -i mc -n {{ minio_tenant.namespace }} --restart=Never --image=minio/mc {{ overrides }} --command -- bash -c "sleep 5 && mc alias set {{ minio_tenant.tenant_name }} {{ tenant_endpoint }} minio minio123 && mc admin user svcacct add {{ minio_tenant.tenant_name }} minio"
+  register: minio_credentials
+
+- name: Get minio access and secret keys
+  vars:
+    accesskey: "{{ minio_credentials.stdout | regex_search('Access Key: (.+)', '\\1') | first }}"
+    secretkey: "{{ minio_credentials.stdout | regex_search('Secret Key: (.+)', '\\1') | first }}"
+  block:
+    - name: Create minio storage secret for {{ minio_tenant.name }}
+      vars:
+        tenant_endpoint: "http://{{ minio_tenant.tenant_name }}-hl:9000/"
+      kubernetes.core.k8s:
+        definition: "{{ STORAGE_SECRET_MANIFEST_TEMPLATE }}"
+
+    - name: Create minio secret for {{ minio_tenant.name }}
+      vars:
+        secret_name: "{{ minio_tenant.tenant_name }}-secret"
+      ansible.builtin.shell: |
+        kubectl delete secret {{ secret_name }} -n {{ minio_tenant.namespace }} --ignore-not-found
+        kubectl create secret generic {{ secret_name }} -n {{ minio_tenant.namespace }} --from-literal=accesskey={{ accesskey }} --from-literal=secretkey={{ secretkey }}

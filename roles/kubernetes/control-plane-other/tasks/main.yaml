@@ -8,7 +8,7 @@
 - name: Register to Load Balancer
   vars:
     in_backend_port: 6443
-    in_backend_name: "{{ _kube.cluster.name }}-apiserver"
+    in_backend_name: "{{ kube.cluster.name }}-apiserver"
   ansible.builtin.include_role:
     name: infrastructure/haproxy/register
   when: register_to_load_balancer
@@ -24,7 +24,7 @@
   ansible.builtin.shell: |
     {{ join_command.stdout }}
 
-- become_user: "{{ _kube.user }}"
+- become_user: "{{ kube.user }}"
   delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   name: Waiting for calico to be ready
   ansible.builtin.shell: |

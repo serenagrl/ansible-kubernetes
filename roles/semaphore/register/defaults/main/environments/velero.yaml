@@ -1,0 +1,7 @@
+# Velero environment variables.
+VELERO_CLI_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/cli/vars`)].content') | b64decode | from_yaml }}"
+VELERO_SVR_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/server/vars`)].content') | b64decode | from_yaml }}"
+VELERO_BSL_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/velero/storage-location/vars`)].content') | b64decode | from_yaml }}"
+VELERO_VARS:
+  - { name: velero, vars: "{{ VELERO_CLI_VARS | combine(VELERO_SVR_VARS, recursive=true) 
+                                              | combine(VELERO_BSL_VARS, recursive=true) }}" }

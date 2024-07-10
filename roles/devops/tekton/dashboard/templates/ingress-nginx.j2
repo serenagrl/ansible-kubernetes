@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ name }}-ingress
+  namespace: {{ namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: {{ ingress_name }}
+  rules:
+    - host: {{ ingress_host }}
+      http:
+        paths:
+          - path: /tekton(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: tekton-dashboard
+                port:
+                  number: 9097

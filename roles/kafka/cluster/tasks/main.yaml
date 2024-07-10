@@ -40,18 +40,25 @@
                     template:
                       pod:
                         tolerations:
-                          - effect: NoSchedule
-                            key: node-role.kubernetes.io/control-plane
-                            operator: Exists
+                          {{ kafka.cluster.tolerations }}
                         affinity:
-                          nodeAffinity:
-                            requiredDuringSchedulingIgnoredDuringExecution:
-                              nodeSelectorTerms:
-                              - matchExpressions:
-                                - key: node-role.kubernetes.io/control-plane
-                                  operator: Exists
+                          {{ kafka.cluster.affinity }}
 
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
+
+    - name: Configure kafka storage size
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(kafka:*\n(.+\n)*?)^\s*(storage:*\n(.+\n)*?)^\s*(volumes:*\n(.+\n)*?)^\s*(size: .*?\n)'
+        replace: |8-
+                  \1    \3      \5        size: {{ kafka.cluster.storage_size }}\n
+
+    - name: Configure zookeeper storage size
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(zookeeper:*\n(.+\n)*?)^\s*(storage:*\n(.+\n)*?)^\s*(size: .*?\n)'
+        replace: |8-
+                  \1    \3      size: {{ kafka.cluster.zookeeper.storage_size }}\n
 
 - name: Create namespace
   kubernetes.core.k8s:
@@ -71,9 +78,9 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup
 
 - name: Waiting for kafka cluster to be ready
   ansible.builtin.shell: |
-    kubectl wait --for=condition=Ready kafkas kafka -n kafka --timeout=300s
+    kubectl wait --for=condition=Ready kafkas {{ kafka.name }} -n {{ kafka.namespace }} --timeout=300s
     for d in $(kubectl -n {{ kafka.namespace }} get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n {{ kafka.namespace }} deployment/$d; done;

@@ -1,0 +1,23 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check for ingress installation
+  vars:
+    is_installed: "{{ ingress_result.resources | length > 0 }}"
+  block:
+    - name: Check ingress availability
+      vars:
+        services:
+          contour: get-httpproxy.yaml
+          nginx: get-ingress-class.yaml
+        ingress: "{{ services[kube.ingress_type] }}"
+      ansible.builtin.include_tasks: "{{ services[kube.ingress_type] }}"
+
+    - name: Ingress ({{ kube.ingress_type }}) is{{ is_installed | ternary(' ', ' not ') }}installed
+      ansible.builtin.set_fact:
+        fact_has_addon_ingress: "{{ is_installed }}"

@@ -1,0 +1,16 @@
+# Infrastructure inventory variables.
+INV_INFRA: "{{ inventory_files | community.general.json_query('results[?contains(source, `infrastructure_services`)].content') | b64decode | from_yaml }}"
+
+INV_INFRA_VARS:
+  infrastructure_services:
+    vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `infrastructure_services`)].content') | b64decode | from_yaml) }}"
+
+INV_INFRA_SERVERS_VARS:
+  infrastructure_services:
+    hosts:
+      nfs_server: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `nfs_server`)].content') | b64decode | from_yaml) }}"
+      dns_server: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `dns_server`)].content') | b64decode | from_yaml) }}"
+      minio_server: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `minio_server`)].content') | b64decode | from_yaml) }}"
+
+INVENTORY_INFRA: "{{ INV_INFRA | ansible.utils.remove_keys(target='vars') | combine(INV_INFRA_VARS, recursive=true)
+                               | combine(INV_INFRA_SERVERS_VARS, recursive=true) }}"

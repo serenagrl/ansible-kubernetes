@@ -1,23 +1,37 @@
+# input parameters:
+# name          - name of the component
+# namespace     - the namespace of the component
+# in_create     - determine whether to add to the root httpproxy
+# in_definition - the httpproxy definition
+
 - name: Get root HTTPProxy
-  shell: kubectl get HTTPProxy -n projectcontour -o jsonpath='{.items[0].metadata.name}'
-  register: ingress_result
+  kubernetes.core.k8s_info:
+    kind: HTTPProxy
+    namespace: projectcontour
+  register: ingress_class
 
 - block:
     - name: Create HTTPProxy
       kubernetes.core.k8s:
+        apply: yes
+        force: yes
         definition: |
-          {{ definition }}
+          {{ in_definition }}
 
     - name: Patch root HTTPProxy
+      vars:
+        index: "{{ ingress_class.resources[0].spec.includes | ansible.utils.index_of('eq', name + '-httpproxy', 'name') }}"
+        is_exist: "{{ index != [] and (index | int) >= 0 }}"
       kubernetes.core.k8s_json_patch:
         kind: HTTPProxy
         namespace: projectcontour
         name: root-httpproxy
         patch:
-          - op: add
-            path: /spec/includes/-
-            value: 
+          - op: "{{ is_exist | ternary('replace', 'add') }}"
+            path: "/spec/includes/{{ is_exist | ternary(index, '-') }}"
+            value:
               name: "{{ name }}-httpproxy"
               namespace: "{{ namespace }}"
+      when: in_create | default(true)
 
-  when: ingress_result.stdout != ''
+  when: ingress_class.resources[0].metadata.name != ''

@@ -16,7 +16,7 @@
   block:
     - name: Get ingress service information
       vars:
-        item: "{{ services[_kube.ingress_type] }}"
+        item: "{{ services[kube.ingress_type] }}"
       kubernetes.core.k8s_info:
         kind: Service
         namespace: "{{ item.namespace }}"

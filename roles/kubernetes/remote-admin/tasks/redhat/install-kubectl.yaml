@@ -1,0 +1,45 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check if kubectl is installed
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.shell: rpm -qa kubectl
+  register: kubectl_result
+
+- name: Install kubectl
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Get latest kubernetes release
+      ansible.builtin.shell: |
+          curl -s "https://api.github.com/repos/kubernetes/kubernetes/releases/latest" | grep tag_name | cut -d '"' -f 4
+      register: release_tag
+
+    - name: Add Kubernetes repository
+      vars:
+          repo_version: "{{ release_tag.stdout.split('.')[:2]|join('.') }}"
+      ansible.builtin.copy:
+        dest: "/etc/yum.repos.d/kubernetes.repo"
+        content: |
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://pkgs.k8s.io/core:/stable:/{{ repo_version }}/rpm/
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://pkgs.k8s.io/core:/stable:/{{ repo_version }}/rpm/repodata/repomd.xml.key
+          exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+
+    - name: Installing kubectl
+      ansible.builtin.dnf:
+        name:
+          - kubectl
+        state: latest
+        disable_excludes: kubernetes
+        update_cache: yes
+  when: not kubectl_result.stdout

@@ -1,0 +1,17 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: opentelemetry-httpproxy
+  namespace: tracing
+spec:
+  virtualhost:
+    fqdn: otel.{{ kube.cluster.domain }}
+    tls:
+      secretName: opentelemetry-ingress-tls
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: opentelemetry-collector
+          port: 4317
+          protocol: h2c

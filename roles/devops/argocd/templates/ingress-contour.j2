@@ -1,16 +1,12 @@
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: argocd-server-httpproxy
-  namespace: argocd
+  name: {{ name }}-httpproxy
+  namespace: {{ namespace }}
 spec:
-  virtualhost:
-    fqdn: argocd.{{ _kube.cluster.domain }}
-    tls:
-      secretName: argocd-ingress-tls
   routes:
     - conditions:
-        - prefix: /
+        - prefix: /argocd
       services:
         - name: argocd-server
           port: 443

@@ -1,0 +1,1 @@
+MANIFEST_FILE: "{{ temp_dir }}/tekton-pipelines.yaml"

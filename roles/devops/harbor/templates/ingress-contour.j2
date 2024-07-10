@@ -5,7 +5,7 @@ metadata:
   namespace: harbor-system
 spec:
   virtualhost:
-    fqdn: core.harbor.{{ _kube.cluster.domain }}
+    fqdn: core.harbor.{{ kube.cluster.domain }}
     tls:
       secretName: harbor-ingress-tls
   routes:

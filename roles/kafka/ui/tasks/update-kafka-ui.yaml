@@ -1,0 +1,40 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Get kafka ui configmap
+  become_user: "{{ kube.user }}"
+  kubernetes.core.k8s_info:
+    name: kafka-ui-fromvalues
+    kind: ConfigMap
+    namespace: kafka
+  register: configmap_data
+
+- name: Patch kafka ui configmap
+  become_user: "{{ kube.user }}"
+  vars:
+    config_yaml: "{{ configmap_data.resources[0].data['config.yml'] | from_yaml }}"
+    updated_yaml: "{{ config_yaml | combine(updated_data, list_merge='replace', recursive=true) }}"
+    new_clusters:
+      - bootstrapServers: '{{ kafka.name }}-kafka-brokers.{{ kafka.namespace }}.svc.cluster.local:9092'
+        name: '{{ kafka.name }}'
+    updated_data:
+      kafka:
+        clusters: "{{ config_yaml.kafka.clusters | community.general.lists_mergeby(new_clusters, 'name', recursive=true) }}"
+  kubernetes.core.k8s:
+    kind: ConfigMap
+    name: kafka-ui-fromvalues
+    namespace: kafka
+    apply: yes
+    force: yes
+    state: patched
+    definition:
+      data:
+        config.yml: |-
+          {{ updated_yaml | to_nice_yaml(sort_keys=false, indent=2) }}
+
+- name: Restart kafka ui
+  ansible.builtin.shell: kubectl rollout restart deployment -n kafka kafka-ui

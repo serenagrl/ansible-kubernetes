@@ -8,17 +8,18 @@
 - delegate_to: "{{ item }}"
   become_user: root
   block:
-    - name: Configure Haproxy for ingress
-      ansible.builtin.blockinfile:
-        path: /etc/haproxy/haproxy.cfg
-        marker: ""
-        insertbefore: "listen stats"
-        block: |
-          {{ HAPROXY_CONFIG_TEMPLATE }}
+    - name: Update section
+      vars:
+        in_section: "{{ section }}"
+      ansible.builtin.include_tasks: "update-haproxy-sections.yaml"
+      loop:
+        - { name: ingress-http-backend, port: "{{ in_ingress.nodePort.http }}" }
+        - { name: ingress-https-backend, port: "{{ in_ingress.nodePort.https }}" }
+      loop_control:
+        loop_var: section
 
     - name: Restart Haproxy to let changes take effect
       ansible.builtin.systemd:
         enabled: yes
         state: restarted
         name: haproxy
-

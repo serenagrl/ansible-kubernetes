@@ -1,0 +1,60 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
+- become_user: root
+  delegate_to: localhost
+  block:
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "tekton dashboard"
+        namespace: "tekton"
+        repo_path: "tektoncd/dashboard"
+        pkg_version: "{{ tekton.dashboard.version | default }}"
+        version_prefix: "v"
+        dest: "{{ MANIFEST_FILE }}"
+        urls: ["https://storage.googleapis.com/tekton-releases/dashboard/previous/{{ release }}/release-full.yaml"]
+
+    - name: Configure to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane: ""
+                  \1
+      when: not kube.allow_scheduling
+
+- name: Install tekton dashboard
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    namespace: tekton-pipelines
+    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+
+- name: Cleanup manifest file
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ MANIFEST_FILE }}"
+    state: absent
+  when: auto_cleanup
+
+# Notes: Use cluster's domain name and with custom route /tekton
+- name: Setup ingress
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: tekton-dashboard
+    namespace: tekton-pipelines
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: yes

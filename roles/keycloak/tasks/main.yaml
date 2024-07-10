@@ -1,0 +1,126 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
+- name: Prepare keycloak manifests
+  become_user: root
+  delegate_to: localhost
+  block:
+    - name: Create manifest directory
+      ansible.builtin.file:
+        path: "{{ MANIFEST_DIR }}"
+        state: directory
+
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "keycloak"
+        repo_path: "keycloak/keycloak"
+        pkg_version: "{{ keycloak.version | default }}"
+        version_prefix: ""
+        dest: "{{ MANIFEST_DIR }}"
+        manifest_url: "https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{ release }}/kubernetes"
+        urls:
+          - "{{ manifest_url }}/{{ OPERATOR_CRD }}"
+          - "{{ manifest_url }}/{{ OPERATOR_REALM_IMPORTS_CRD }}"
+          - "{{ manifest_url }}/{{ MANIFEST_FILE }}"
+
+    - name: Configure to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_DIR }}/{{ MANIFEST_FILE }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane: ""
+                  \1
+      when: not kube.allow_scheduling
+
+- name: Apply manifests
+  block:
+    - name: Create keycloak namespace
+      kubernetes.core.k8s:
+        kind: Namespace
+        name: keycloak
+
+    - name: Installing keycloak operator
+      kubernetes.core.k8s:
+        namespace: keycloak
+        definition: "{{ lookup('file', MANIFEST_DIR + '/' + item) | from_yaml_all }}"
+        wait: yes
+      loop:
+        - "{{ OPERATOR_CRD }}"
+        - "{{ OPERATOR_REALM_IMPORTS_CRD }}"
+        - "{{ MANIFEST_FILE }}"
+
+    - name: Cleanup manifest files
+      delegate_to: localhost
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ MANIFEST_DIR }}"
+        state: absent
+      when: auto_cleanup
+
+    - name: Waiting for keycloak operator to be ready
+      ansible.builtin.shell: |
+        for d in $(kubectl -n keycloak get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n keycloak deployment/$d; done;
+
+- name: Install and configure postgres database
+  block:
+    - name: Install postgres
+      kubernetes.core.k8s:
+        namespace: keycloak
+        definition: |
+          {{ item }}
+      loop:
+        - "{{ POSTGRES_TEMPLATE }}"
+        - "{{ POSTGRES_SERVICE_TEMPLATE }}"
+        - "{{ DATABASE_SECRET_TEMPLATE }}"
+
+    - name: Waiting for postgres to be ready
+      ansible.builtin.shell: |
+        kubectl rollout status -n keycloak statefulset keycloak-db
+
+- name: Register DNS entry
+  vars:
+    domain_prefix: keycloak
+  ansible.builtin.include_role:
+    name: common/dns-register
+
+- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: keycloak
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+# Notes: Uses own domain names.
+- name: Setup ingress
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: keycloak
+    namespace: keycloak
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: no
+
+- name: Install keycloak
+  kubernetes.core.k8s:
+    namespace: keycloak
+    definition: |
+      {{ KEYCLOAK_TEMPLATE }}
+
+- name: Waiting for keycloak to be ready
+  ansible.builtin.shell: |
+    kubectl wait --for=jsonpath='{.status.conditions[?(@.type=="Ready")].status}'="True" keycloak keycloak -n keycloak --timeout=600s
+    kubectl rollout status -n keycloak statefulset keycloak
+
+- ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
+  vars:
+    name: "keycloak admin password"
+    command: "kubectl get secret keycloak-initial-admin -n keycloak -o jsonpath='{.data.password}'"

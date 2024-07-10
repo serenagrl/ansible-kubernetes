@@ -1,0 +1,16 @@
+- delegate_to: "{{ item }}"
+  become_user: root
+  vars:
+    cert_store: "/usr/local/share/ca-certificates"
+  block:
+    - name: Copy ca certificate to shared certificate directory
+      ansible.builtin.copy:
+        src: "{{ CRT_FILE }}"
+        dest: "{{ cert_store }}/{{ kube.cluster.name }}-ca.crt"
+        mode: 0777
+
+    - name: Update certificates
+      ansible.builtin.shell: update-ca-certificates
+
+  ignore_errors: yes
+  ignore_unreachable: yes

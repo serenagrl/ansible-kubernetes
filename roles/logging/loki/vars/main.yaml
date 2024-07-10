@@ -8,12 +8,51 @@ loki:
   # Set to 3 for high-availability (will use more resources)
   replicas: 3
 
+  # Make sure minio operator is installed before setting this to yes.
+  # Note: You can use the minio role to setup the operator.
   external_minio:
     enabled: yes
-    secret_name: loki-minio-secret
-    tenant_endpoint: http://loki-minio-hl:9000/
+    # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+    # releases with breaking changes. Try reducing the version number if errors occur during installation.
+    version: latest
+
+    name: loki
+    tenant_name: loki-minio
+    namespace: logging
+    domain_name: loki.minio
+    console_domain_name: console.loki.minio
+
+    pools:
+      servers: 2
+      volumes_per_server: 2
+      size: 10Gi
+
+    buckets:
+      - name: chunks
+      - name: ruler
+      - name: admin
+
+  chunks_cache:
+    # Resources were reduced for lab environment.
+    # Original Helm chart values are 9830Mi for limits and requests.
+    resources:
+      limits:
+        memory: 550Mi
+      requests:
+        cpu: 500m
+        memory: 550Mi
+
+  results_cache:
+    # Resources were reduced for lab environment.
+    # Original Helm chart values are 1229Mi for limits and requests.
+    resources:
+      limits:
+        memory: 550Mi
+      requests:
+        cpu: 500m
+        memory: 550Mi
 
   grafana:
-    url: "http://{{ _kube.cluster.name }}.{{ _kube.cluster.domain }}/grafana"
+    url: "https://{{ kube.cluster.name }}.{{ kube.cluster.domain }}/grafana"
     username: "admin"
-    password: "admin"
+    password: "prom-operator"

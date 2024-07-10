@@ -8,17 +8,17 @@
 # Configure Worker nodes
 - name: Join worker nodes
   hosts: kubernetes_worker_nodes
-  gather_facts: no
+  gather_facts: yes
 
   roles:
     - kubernetes/worker-node
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
-- hosts: kubernetes_cluster
+- hosts: kubernetes_cluster, dns_server
   gather_facts: no
 
   tasks:
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Worker node configured."
-      when: _checkpoint and (groups['kubernetes_worker_nodes'] | length > 0)
+      when: vm_checkpoint|bool and (groups['kubernetes_worker_nodes'] | length > 0)

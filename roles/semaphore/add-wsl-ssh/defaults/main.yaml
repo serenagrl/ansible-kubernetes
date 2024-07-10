@@ -1,0 +1,1 @@
+PRIVATE_KEY: "{{ temp_dir }}/semaphore_rsa_key"

@@ -1,0 +1,3 @@
+# Launch setup-vm.
+- ansible.builtin.include_role:
+    name: vm-linux/setup-vm

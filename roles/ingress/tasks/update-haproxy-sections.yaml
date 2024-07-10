@@ -1,0 +1,21 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Get haproxy config file from HAProxy load-balancer
+  ansible.builtin.slurp:
+    src: /etc/haproxy/haproxy.cfg
+  register: haproxy_config_file
+
+- name: "{{ action | capitalize }} ingress section in haproxy"
+  vars:
+    config: "{{ haproxy_config_file['content'] | b64decode }}"
+    regex: '^\s*(backend {{ kube.cluster.name }}-{{ in_section.name }}.*\n(?:^.+\n)*)$'
+    is_exist: "{{ config | regex_search(regex, multiline=True) }}"
+    action: "{{ is_exist | ternary('update', 'create') }}"
+    in_hosts: "{{ fact_active_hosts }}"
+  ansible.builtin.include_tasks: "{{ action }}-ingress-haproxy.yaml"

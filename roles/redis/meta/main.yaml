@@ -1,0 +1,6 @@
+dependencies:
+  - role: common/check-dependencies
+    vars:
+      depends_on:
+        - cert-mgr
+        - prometheus

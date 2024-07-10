@@ -1,0 +1,3 @@
+# Istio environment variables.
+ISTIO_VARS:
+  - { name: istio, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/istio/vars`)].content') | b64decode | from_yaml }}" }

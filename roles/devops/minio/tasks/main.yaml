@@ -5,6 +5,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Register DNS entry
   vars:
     domain_prefix: minio
@@ -31,12 +34,16 @@
     # Notes: Uses own domain names.
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: minio-console
+        namespace: minio-operator
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: no
 
     - name: Deploying minio
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if minio.version is defined and minio.version and minio.version != 'latest' %}{{ minio.version }}{% endif %}"
-        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: minio-operator
         atomic: yes

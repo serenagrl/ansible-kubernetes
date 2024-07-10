@@ -1,0 +1,7 @@
+# K8s inventory variables.
+INV_K8S: "{{ (inventory_files | community.general.json_query('results[?contains(source, `kubernetes_cluster`)].content') | b64decode | from_yaml) }}"
+INV_K8S_VARS:
+  kubernetes_cluster:
+    vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `kubernetes_cluster`)].content') | b64decode | from_yaml) }}"
+
+INVENTORY_K8S: "{{ INV_K8S | combine(INV_K8S_VARS, recursive=true) }}"

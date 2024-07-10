@@ -5,6 +5,10 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Configure fs.inotify.max_user_instances
+  ansible.builtin.include_tasks: update-sysctl.yaml
+  loop: "{{ fact_active_hosts }}"
+
 - name: Add grafana chart repo
   kubernetes.core.helm_repository:
     name: grafana
@@ -16,6 +20,7 @@
   kubernetes.core.helm:
     name: promtail
     atomic: yes
+    force: yes
     chart_ref: grafana/promtail
     chart_version: "{{ version }}"
     namespace: logging

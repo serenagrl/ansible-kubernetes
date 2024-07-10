@@ -5,7 +5,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 - name: Get default AWX password from secret (if none provided)
-  shell: |
+  ansible.builtin.shell: |
     kubectl get secret -n awx awx-admin-password -o jsonpath='{.data.password}' | base64 --decode
   register: password_result
 
@@ -18,24 +18,24 @@
       nginx:
         name: ingress-nginx-controller
         namespace: ingress-nginx
-    ingress: "{{ services[_kube.ingress_type] }}"
-  shell: | 
+    ingress: "{{ services[kube.ingress_type] }}"
+  ansible.builtin.shell: |
     kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
   register: ingress_host_result
 
 - name: Setup AWX environment
   delegate_to: localhost
   vars:
-    ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
     host_uri: "https://{{ ingress_host }}/awx/"
   block:
-    - name: Checking/waiting for awx host
-      uri:
-        url: "{{ host_uri }}"
-      register: result
-      until: result.status == 200
-      retries: 15
-      delay: 30
+    - name: Waiting for AWX deployments to be ready
+      ansible.builtin.shell: |
+        kubectl wait --for=jsonpath='{.status.conditions[?(@.type=="Running")].reason}'="Successful" awx awx -n awx --timeout=600s
+        kubectl wait --for=jsonpath='{.status.conditions[?(@.type=="Successful")].reason}'="Successful" awx awx -n awx --timeout=600s
+        kubectl wait --for=jsonpath='{.status.conditions[?(@.type=="Successful")].status}'="True" awx awx -n awx --timeout=600s
+        for d in $(kubectl -n awx get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx deployment/$d; done;
+        for d in $(kubectl -n awx get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n awx statefulset/$d; done;
 
     - name: Get authentication token
       vars:

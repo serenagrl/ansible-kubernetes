@@ -4,50 +4,15 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Installing python kubernetes module and dependencies for Ansible
+
+- name: Installing kubernetes python module on Ansible host
   ansible.builtin.pip:
+    break_system_packages: yes
     name:
-      - pyyaml
       - kubernetes
-      - jsonpatch
-
-- name: Install Helm
-  become_user: root
-  block:
-    - name: Get helm gpg
-      ansible.builtin.get_url:
-        url: https://baltocdn.com/helm/signing.asc
-        dest: /tmp/helm.gpg
-        mode: '0644'
-        force: true
-
-    - name: De-armor helm gpg
-      ansible.builtin.shell: gpg --dearmor < /tmp/helm.gpg > /usr/share/keyrings/helm.gpg
-
-    - name: Register helm repository
-      ansible.builtin.apt_repository:
-        filename: helm
-        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
-        update_cache: yes
-
-    - name: Installing helm
-      vars:
-        release: "{% if helm.version is defined and helm.version and helm.version != 'latest' %}={{ helm.version }}-1{% endif %}"
-      ansible.builtin.apt:
-        pkg:
-          - "helm{{ release }}"
-        state: latest
-        allow_downgrade: yes
-        update_cache: yes
-
-# Prevents warnings when running ansible helm commands.
-- name: Install helm diff
-  become_user: "{{ _kube.user }}"
-  ansible.builtin.shell: |
-    helm plugin install https://github.com/databus23/helm-diff
 
 - name: Configure kube config
-  become_user: "{{ _kube.user }}"
+  become_user: "{{ kube.user }}"
   block:
     - name: Create .kube in home directory
       ansible.builtin.file:
@@ -59,10 +24,10 @@
       become_user: root
       ansible.builtin.copy:
         src: /etc/kubernetes/admin.conf
-        dest: "/home/{{ _kube.user }}/.kube/config"
+        dest: "/home/{{ kube.user }}/.kube/config"
         remote_src: yes
         mode: 0600
-        owner: "{{ _kube.user }}"
+        owner: "{{ kube.user }}"
 
     - name: Add autocomplete and aliases to shell
       ansible.builtin.blockinfile:
@@ -72,7 +37,7 @@
     - name: Apply changes
       ansible.builtin.shell: . ~/.bashrc
 
-- become_user: "{{ _kube.user }}"
+- become_user: "{{ kube.user }}"
   block:
     - name: Add labels to control planes
       ansible.builtin.shell: kubectl label nodes {{ ansible_hostname }} {{ item }}
@@ -80,4 +45,4 @@
 
     - name: Remove taint to allow scheduling on control plane nodes
       ansible.builtin.shell: kubectl taint nodes {{ ansible_hostname }} node-role.kubernetes.io/control-plane-
-      when: _kube.allow_scheduling
+      when: kube.allow_scheduling

@@ -1,1 +1,1 @@
-MANIFEST_FILE: "{{ _work_dir }}/rmq-cluster-operator.yaml"
+MANIFEST_FILE: "{{ temp_dir }}/rmq-cluster-operator.yaml"

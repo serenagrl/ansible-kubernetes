@@ -1,0 +1,34 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
+- name: Add aqua chart repo
+  kubernetes.core.helm_repository:
+    name: aqua
+    repo_url: "https://aquasecurity.github.io/helm-charts/"
+
+- name: Deploy trivy operator
+  vars:
+    version: "{% if trivy.version is defined and trivy.version and trivy.version != 'latest' %}{{ trivy.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: trivy-operator
+    atomic: yes
+    chart_ref: aqua/trivy-operator
+    chart_version: "{{ version }}"
+    namespace: trivy-operator
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    wait: yes
+
+- name: Install trivy grafana dashboard
+  ansible.builtin.include_role:
+    name: monitoring/grafana-dashboard
+  vars:
+    dashboards: "{{ trivy.grafana_dashboards }}"
+    namespace: trivy-operator

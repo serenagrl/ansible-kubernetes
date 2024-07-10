@@ -1,0 +1,46 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Gather facts
+  ansible.builtin.setup:
+
+- name: Install minio
+  vars:
+    has_version_specified: "{{ (minio.version is defined and minio.version and minio.version != 'latest') | bool }}"
+    release: "{{ has_version_specified | ternary(minio.version, release_tag.stdout) | replace('RELEASE.','') | replace('-','') | replace('T','') | replace('Z','') }}"
+    repo_path: minio/minio
+  block:
+    - name: Get latest minio release
+      ansible.builtin.shell: |
+        curl -s https://api.github.com/repos/{{ repo_path }}/releases/latest | grep tag_name | cut -d '"' -f 4
+      register: release_tag
+      when: not has_version_specified
+
+    - name: Install minio
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-minio.yaml"
+
+- name: Setup minio-user
+  shell: |
+    mkdir {{ minio.volume }}
+    groupadd -r minio-user
+    useradd -M -r -g minio-user minio-user
+    chown minio-user:minio-user {{ minio.volume }}
+
+- name: Configure minio environment variable
+  become_user: root
+  ansible.builtin.blockinfile:
+    create: yes
+    path: /etc/default/minio
+    block: |
+      {{ MINIO_TEMPLATE }}
+
+- name: Restart minio to let changes take effect
+  ansible.builtin.systemd:
+    enabled: yes
+    state: restarted
+    name: minio

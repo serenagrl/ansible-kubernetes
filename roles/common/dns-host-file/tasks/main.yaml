@@ -11,6 +11,6 @@
     path: /etc/hosts
     insertafter: "127.0.0.1 localhost"
     line: "{{ in_host_entry }}"
-  loop: "{{ fact_active_hosts + ['localhost'] }}"
+  loop: "{{ servers | default(fact_active_hosts + ['localhost']) }}"
   ignore_errors: yes
   ignore_unreachable: yes

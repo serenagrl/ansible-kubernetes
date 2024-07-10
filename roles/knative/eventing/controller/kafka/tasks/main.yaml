@@ -6,6 +6,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
   become_user: root
   delegate_to: localhost
@@ -14,7 +17,7 @@
     namespace: "knative-eventing"
     repo_path: "knative-extensions/eventing-kafka-broker"
     pkg_version: "{{ knative.eventing.kafka.version | default }}"
-    dest: "{{ _work_dir }}"
+    dest: "{{ temp_dir }}"
     version_prefix: "knative-v"
     manifest_url: "https://github.com/{{ repo_path }}/releases/download/{{ release }}"
     urls:

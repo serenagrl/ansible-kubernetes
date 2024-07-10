@@ -6,7 +6,8 @@
 #
 - name: Provision Virtual Machines for Kubernetes Control Planes
   hosts: kubernetes_control_planes
+  any_errors_fatal: yes
   gather_facts: no
 
   roles:
-    - role: vm-ubuntu
+    - role: vm-linux

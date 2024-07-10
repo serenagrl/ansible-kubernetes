@@ -1,0 +1,22 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Set authorized key for users on {{ item }}
+  delegate_to: "{{ item }}"
+  vars:
+    ansible_ssh_common_args: '-o ProxyCommand="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -W %h:%p -q root@{{ hostvars["semaphore_server"].ansible_host }}"'
+    ansible_ssh_private_key_file: "{{ PRIVATE_KEY }}"
+  ansible.posix.authorized_key:
+    user: "{{ user }}"
+    state: present
+    key: "{{ wsl_key.content | b64decode }}"
+  loop:
+    - root
+    - "{{ kube.user }}"
+  loop_control:
+    loop_var: user
+  ignore_unreachable: true

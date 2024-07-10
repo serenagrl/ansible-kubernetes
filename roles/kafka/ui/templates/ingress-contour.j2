@@ -5,7 +5,7 @@ metadata:
   namespace: {{ kafka.namespace }}
 spec:
   virtualhost:
-    fqdn: kafka.{{ _kube.cluster.domain }}
+    fqdn: kafka.{{ kube.cluster.domain }}
     tls:
       secretName: kafka-ingress-tls
   routes:

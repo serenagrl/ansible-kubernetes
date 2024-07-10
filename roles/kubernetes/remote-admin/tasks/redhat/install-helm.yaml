@@ -1,0 +1,40 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check if helm is installed
+  ansible.builtin.stat:
+    path: /usr/bin/helm
+  register: file_stats
+
+- name: Install Helm
+  block:
+    - name: Get latest helm release
+      ansible.builtin.shell: |
+          curl -s "https://api.github.com/repos/helm/helm/releases/latest" | grep tag_name | cut -d '"' -f 4
+      register: release_tag
+
+    - name: Create directory
+      ansible.builtin.file:
+        path: "/tmp/helm"
+        state: directory
+
+    - name: Download and extract helm
+      ansible.builtin.unarchive:
+        src: "https://get.helm.sh/helm-{{ release_tag.stdout }}-linux-amd64.tar.gz"
+        dest: "/tmp/helm"
+        remote_src: yes
+
+    - name: Move Helm executable
+      ansible.builtin.shell: mv linux-amd64/helm /usr/bin/helm
+      args:
+        chdir: /tmp/helm
+
+    - name: Cleanup directory
+      ansible.builtin.file:
+        path: "/tmp/helm"
+        state: absent
+  when: not file_stats.stat.exists

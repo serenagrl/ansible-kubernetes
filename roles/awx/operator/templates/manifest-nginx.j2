@@ -8,8 +8,9 @@ spec:
   ingress_class_name: {{ ingress_name }}
   hostname: {{ ingress_host }}
   ingress_path: /awx
+  postgres_data_volume_init: true
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations: |
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane

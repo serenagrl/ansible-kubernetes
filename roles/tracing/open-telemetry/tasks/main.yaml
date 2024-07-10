@@ -1,0 +1,54 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
+- name: Add opentelemetry chart repo
+  kubernetes.core.helm_repository:
+    name: open-telemetry
+    repo_url: "https://open-telemetry.github.io/opentelemetry-helm-charts"
+
+- name: Create tracing namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: tracing
+
+- name: Setup Ingress
+  block:
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: opentelemetry
+        certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+    - name: Setup ingress
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: opentelemetry
+        namespace: tracing
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: no
+  when: open_telemetry.ingress_enabled
+
+- name: Deploy opentelemetry collector
+  vars:
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+    version: "{% if open_telemetry.version is defined and open_telemetry.version and open_telemetry.version != 'latest' %}{{ open_telemetry.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: opentelemetry-collector
+    atomic: yes
+    force: yes
+    chart_ref: open-telemetry/opentelemetry-collector
+    chart_version: "{{ version }}"
+    namespace: tracing
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    wait: yes
+
+- name: Create Prometheus Exporter ServiceMonitor
+  kubernetes.core.k8s:
+    definition: "{{ SERVICE_MONITOR_TEMPLATE }}"

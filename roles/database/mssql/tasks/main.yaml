@@ -4,6 +4,10 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Create namespace
   kubernetes.core.k8s:
     kind: Namespace

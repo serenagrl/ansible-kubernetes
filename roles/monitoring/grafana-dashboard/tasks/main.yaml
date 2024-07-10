@@ -1,0 +1,48 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Download dashboard json model to ansible controller host
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Create dashboard download directory
+      ansible.builtin.file:
+        path: "{{ DASHBOARDS_TEMP_DIR }}"
+        state: directory
+
+    - name: Download rabbitmq grafana dashboard json model
+      ansible.builtin.get_url:
+        url: "{{ item.url }}"
+        dest: "{{ DASHBOARDS_TEMP_DIR }}/{{ item.name | replace(' ', '-') | lower }}.json"
+        force: yes
+      loop: "{{ dashboards }}"
+
+- name: Create dashboard configmap
+  vars:
+    file_name: "{{ item | basename }}"
+    file_content: "{{ lookup('file', item) }}"
+    config_map_data: "{{ [{'key': file_name, 'value': file_content | to_nice_json} ] | items2dict }}"
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: ConfigMap
+    name: "{{ file_name | splitext | first }}-grafana"
+    namespace: "{{ namespace }}"
+    definition:
+      metadata:
+        labels:
+          grafana_dashboard: "1"
+      data: |
+        {{ config_map_data }}
+  loop: "{{ q('fileglob', DASHBOARDS_TEMP_DIR + '/*.json') }}"
+
+- name: Cleanup manifest
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ DASHBOARDS_TEMP_DIR }}"
+    state: absent
+  when: auto_cleanup

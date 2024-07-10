@@ -1,5 +1,0 @@
-- name: Create httpproxies for minio services
-  kubernetes.core.k8s:
-    apply: yes
-    force: yes
-    definition: "{{ HTTP_PROXY_TEMPLATE }}"

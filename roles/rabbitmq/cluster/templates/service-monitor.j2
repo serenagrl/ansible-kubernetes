@@ -1,0 +1,63 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "{{ rabbitmq.name }}"
+  namespace: "{{ rabbitmq.namespace }}"
+  labels:
+    app.kubernetes.io/component: rabbitmq
+    release: monitoring
+spec:
+  endpoints:
+{% if rabbitmq.enable_tls%}
+  - port: prometheus-tls
+    scheme: https
+    interval: 15s
+    scrapeTimeout: 14s
+    tlsConfig:
+      insecureSkipVerify: false
+      ca:
+        secret:
+          key: ca.crt
+          name: rabbitmq-tls-secret
+      serverName: '*.{{ rabbitmq.name }}-nodes.{{ rabbitmq.namespace }}.svc.cluster.local'
+
+  - port: prometheus-tls
+    scheme: https
+    path: /metrics/detailed
+    params:
+      family:
+        - queue_coarse_metrics
+        - queue_metrics
+    interval: 15s
+    scrapeTimeout: 14s
+    tlsConfig:
+      insecureSkipVerify: false
+      ca:
+        secret:
+          key: ca.crt
+          name: rabbitmq-tls-secret
+      serverName: '*.{{ rabbitmq.name }}-nodes.{{ rabbitmq.namespace }}.svc.cluster.local'
+
+{% else %}
+  - port: prometheus
+    scheme: http
+    interval: 15s
+    scrapeTimeout: 14s
+
+  - port: prometheus
+    scheme: http
+    path: /metrics/detailed
+    params:
+      family:
+        - queue_coarse_metrics
+        - queue_metrics
+    interval: 15s
+    scrapeTimeout: 14s
+{% endif %}
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: rabbitmq
+  namespaceSelector:
+    matchNames:
+      - {{ rabbitmq.namespace }}

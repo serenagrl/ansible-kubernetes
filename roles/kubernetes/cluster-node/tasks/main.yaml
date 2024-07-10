@@ -4,46 +4,29 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- name: Gather facts
-  ansible.builtin.setup:
-
-- name: Configure the user to be used for kubernetes commands
-  block:
-    - name: Allow {{ _kube.user }} to use sudo without password
-      ansible.builtin.lineinfile:
-        dest: /etc/sudoers
-        line: '{{ _kube.user }} ALL=(ALL) NOPASSWD: ALL'
-        validate: 'visudo -cf %s'
-
-    - name: Set up authorized keys for {{ _kube.user }}
-      ansible.posix.authorized_key:
-        user: "{{ _kube.user }}"
-        key: "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
-
 - name: Configure DNS entries
   block:
     - name: Add kubernetes cluster DNS entry to /etc/hosts
       ansible.builtin.lineinfile:
         path: /etc/hosts
         insertafter: "127.0.0.1 localhost"
-        line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
+        line: "{{ kube.cluster.address }} {{ kube.cluster.name }}"
 
     - name: Add kubernetes nodes DNS entries to /etc/hosts
       vars:
           node: "{{ hostvars[item] }}"
       ansible.builtin.lineinfile:
         path: /etc/hosts
-        insertafter: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
+        insertafter: "{{ kube.cluster.address }} {{ kube.cluster.name }}"
         line: "{{ node.ansible_host }} {{ node.ansible_hostname }}"
       when: node.ansible_hostname != ansible_hostname
       loop: "{{ groups['kubernetes_cluster'] }}"
-  when: not _kube.cluster.use_dns_server
+  when: not kube.cluster.use_dns_server
 
 - name: Disable swap
   ansible.builtin.shell: |
           swapoff -a
           sed -i '/swap/ s/^\(.*\)$/#\1/g' /etc/fstab
-          update-initramfs -u
 
 - name: Enable modprobe modules
   ansible.builtin.shell: |
@@ -68,87 +51,16 @@
 - name: Reload sysctl
   ansible.builtin.command: sysctl --system
 
-- name: Installing dependency packages (may take a while)
-  ansible.builtin.apt:
-    pkg:
-      - curl
-      - apt-transport-https
-      - ca-certificates
-      - software-properties-common
-      - python3-pip
-      - jq
-    state: latest
-    update_cache: yes
+- name: Install dependency packages
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-packages.yaml"
 
 - name: Install kubernetes
-  vars:
-    has_version_specified: "{{ (kubernetes.version is defined and kubernetes.version and kubernetes.version != 'latest') | bool }}"
-    release: "{{ has_version_specified | ternary('v' + kubernetes.version, release_tag.stdout) }}"
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-kubernetes.yaml"
+
+- name: Install and configure containerd
   block:
-    - name: Get latest kubernetes release
-      ansible.builtin.shell: |
-          curl -s "https://api.github.com/repos/kubernetes/kubernetes/releases/latest" | grep tag_name | cut -d '"' -f 4
-      register: release_tag
-      when: not has_version_specified
-
-    - name: Get kubernetes key
-      ansible.builtin.get_url:
-        url:  https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
-        dest: /tmp/kubernetes.gpg.key
-        mode: '0644'
-        force: true
-
-    - name: De-armor kubernetes gpg
-      ansible.builtin.shell: gpg --dearmor < /tmp/kubernetes.gpg.key > /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-
-    - name: Register kubernetes repository
-      vars:
-         repo_version: "{{ release.split('.')[:2]|join('.') }}"
-      ansible.builtin.apt_repository:
-        filename: kubernetes
-        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ repo_version }}/deb/ /"
-        update_cache: yes
-
-    - name: Installing kubernetes ({{ release }})
-      vars:
-        apt_release: "{% if kubernetes.version is defined and kubernetes.version and kubernetes.version != 'latest' %}={{ kubernetes.version }}-1.1{% endif %}"
-      ansible.builtin.apt:
-        pkg:
-          - "kubelet{{ apt_release }}"
-          - "kubeadm{{ apt_release }}"
-          - "kubectl{{ apt_release }}"
-        state: latest
-        update_cache: yes
-
-    - name: Hold kubernetes
-      ansible.builtin.shell: apt-mark hold kubelet kubeadm kubectl
-
-- name: Install containerd
-  block:
-    - name: Get containerd gpg
-      ansible.builtin.get_url:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        dest: /tmp/containerd.gpg
-        mode: '0644'
-        force: true
-
-    - name: De-armor containerd gpg
-      ansible.builtin.shell: gpg --dearmor < /tmp/containerd.gpg > /usr/share/keyrings/containerd.gpg
-
-    - name: Register containerd repository
-      ansible.builtin.apt_repository:
-        filename: containerd
-        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/containerd.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-        update_cache: yes
-
-    - name: Installing containerd ({{ containerd.version }})
-      vars:
-          release: "{% if containerd.version is defined and containerd.version and containerd.version != 'latest' %}={{ containerd.version }}{% endif %}"
-      ansible.builtin.apt:
-        pkg:
-          - "containerd.io{{ release }}"
-        state: latest
-        update_cache: yes
+    - name: Install containerd
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-containerd.yaml"
 
     - name: Create containerd certificate directory
       ansible.builtin.file:
@@ -186,28 +98,25 @@
                   image-endpoint: unix:///run/containerd/containerd.sock
 
 - name: Configure DNS Server (if required)
-  become_user: root
   vars:
-    register_dns: "{{ _kube.cluster.use_dns_server | default(false) }}"
-  block:
-    - name: Register to DNS server
-      ansible.builtin.include_role:
-        name: infrastructure/dns/register
-
-    - name: Installing dns utility package
-      ansible.builtin.apt:
-        pkg:
-          - resolvconf
-        state: latest
-        update_cache: yes
-
-    - name: Add nameserver entry in resolvconf
-      ansible.builtin.lineinfile:
-        path: /etc/resolvconf/resolv.conf.d/head
-        line: "nameserver {{ hostvars.dns_server.ansible_host }}"
-
-    - name: Update resolveconf
-      ansible.builtin.shell: |
-        sudo resolvconf -u
-        sudo systemctl restart systemd-resolved
+    register_dns: "{{ kube.cluster.use_dns_server | default(false) }}"
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/register-to-dns.yaml"
   when: register_dns
+
+- name: Install Helm
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-helm.yaml"
+
+- name : Install helm diff
+  become_user: "{{ kube.user }}"
+  block:
+    - name: Check if helm diff plugin is installed
+      ansible.builtin.shell: |
+        helm plugin list | grep diff
+      register: helm_plugin_result
+      failed_when: false
+
+    # Prevents warnings when running ansible helm commands.
+    - name: Install helm diff
+      ansible.builtin.shell: |
+        helm plugin install https://github.com/databus23/helm-diff
+      when: helm_plugin_result.stdout == ''

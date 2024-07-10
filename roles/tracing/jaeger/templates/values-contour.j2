@@ -1,0 +1,156 @@
+fullnameOverride: ""
+
+provisionDataStore:
+  cassandra: false
+  elasticsearch: false
+  kafka: false
+
+allInOne:
+  enabled: false
+
+agent:
+  enabled: false
+
+storage:
+  type: elasticsearch
+  elasticsearch:
+    scheme: {{ jaeger.elasticsearch.scheme }}
+    host: {{ jaeger.elasticsearch.host }}
+    port: {{ jaeger.elasticsearch.port }}
+    anonymous: false
+    user: {{ jaeger.elasticsearch.user }}
+    usePassword: true
+    password: {{ jaeger.elasticsearch.password }}
+
+{% if not kube.allow_scheduling %}
+  kafka:
+    brokers: {{ jaeger.kafka.broker_endpoints }}
+    topic: {{ jaeger.kafka.topic }}
+{% endif %}
+
+esIndexCleaner:
+  enabled: true
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+esRollover:
+  enabled: true
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+esLookback:
+  enabled: true
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+ingester:
+  enabled: {{ jaeger.kafka.enabled }}
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+collector:
+  ingress:
+    enabled: false
+
+  service:
+    otlp:
+      grpc:
+        name: otlp-grpc
+        port: 4317
+      http:
+        name: otlp-http
+        port: 4318
+
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+query:
+  basePath: /jaeger
+
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: monitoring
+
+  ingress:
+    enabled: false
+    health:
+      exposed: false
+
+  extraEnv:
+    - name: METRICS_STORAGE_TYPE
+      value: prometheus
+    - name: PROMETHEUS_SERVER_URL
+      value: {{ jaeger.prometheus.endpoint }}
+    - name: PROMETHEUS_QUERY_NORMALIZE_CALLS
+      value: "true"
+    - name: PROMETHEUS_QUERY_NORMALIZE_DURATION
+      value: "true"
+
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+spark:
+  enabled: true
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+hotrod:
+  enabled: {{ jaeger.hotrod.enabled }}
+  ingress:
+    enabled: false
+
+  extraEnv:
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: {{ jaeger.hotrod.exporter_endpoint }}
+
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}

@@ -1,16 +1,9 @@
-ansible_user: root
-ansible_become: yes
-
-# You can also set this in individual host if you are splitting the nodes to different physical
-# servers.
-winrm_host: local_machine
-
 # The VM settings for each host.
-host_specs:
-  ram_size: 4GB
-  min_ram_size: 4GB
-  disk_size: 127GB
-  v_cpu: 2
-
-# Indicates whether to automatically register the control-planes to the HAproxy load balancers config file.
-register_to_load_balancer: yes
+# Note: Adjust accordingly to the number of workloads you plan to deploy. You can manually adjust it in
+#       Hyper-V manager later.
+vm:
+  specs:
+    ram_size: 4GB
+    min_ram_size: 4GB
+    disk_size: 127GB
+    v_cpu: 2

@@ -1,0 +1,2 @@
+# Winrm inventory variables.
+INV_WINRM: "{{ (inventory_files | community.general.json_query('results[?contains(source, `winrm`)].content') | b64decode | from_yaml) }}"

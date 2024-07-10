@@ -1,0 +1,4 @@
+# Gitlab environment variables.
+GITLAB_VARS:
+  - { name: devops/gitlab, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab/vars`)].content') | b64decode | from_yaml }}" }
+  - { name: devops/gitlab-runner, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/gitlab-runner/vars`)].content') | b64decode | from_yaml }}" }

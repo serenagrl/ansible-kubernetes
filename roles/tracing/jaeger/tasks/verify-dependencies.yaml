@@ -1,0 +1,31 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Check if ingress is installed
+  ansible.builtin.fail:
+    msg: Dependency check failed. Please make sure ingress is installed.
+  failed_when: not fact_has_addon_ingress|bool
+  changed_when: false
+
+- name: Check if prometheus is installed
+  ansible.builtin.fail:
+    msg: Dependency check failed. Please make sure prometheus is installed.
+  failed_when: not fact_has_addon_prometheus|bool
+  changed_when: false
+
+- name: Check if elasticsearch is installed
+  ansible.builtin.fail:
+    msg: Dependency check failed. Please make sure elasticsearch is installed.
+  failed_when: not fact_has_addon_elasticsearch|bool
+  changed_when: false
+
+- name: Check if kafka is installed
+  ansible.builtin.fail:
+    msg: Dependency check failed. Please make sure kafka is installed.
+  failed_when: jaeger.kafka.enabled|bool and not fact_has_addon_kafka|bool
+  changed_when: false

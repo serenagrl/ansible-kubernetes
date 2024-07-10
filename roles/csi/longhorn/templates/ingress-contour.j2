@@ -1,0 +1,15 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: longhorn-httpproxy
+  namespace: longhorn-system
+spec:
+  routes:
+    - conditions:
+        - prefix: /longhorn
+      services:
+        - name: longhorn-frontend
+          port: 80
+      pathRewritePolicy:
+        replacePrefix:
+          - replacement: /

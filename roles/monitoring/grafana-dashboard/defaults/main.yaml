@@ -1,0 +1,1 @@
+DASHBOARDS_TEMP_DIR: "{{ temp_dir }}/{{ namespace }}-grafana-dashboards"

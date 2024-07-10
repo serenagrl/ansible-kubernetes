@@ -1,0 +1,19 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: "Configure {{ (item == 'localhost') | ternary('ansible controller host', item) }} to trust ca certificate"
+  delegate_to: "{{ item }}"
+  delegate_facts: yes
+  become_user: root
+  block:
+    - name: "Gathering facts for {{ (item == 'localhost') | ternary('ansible controller host', item) }}"
+      ansible.builtin.setup:
+        filter:
+          - ansible_distribution
+
+    - name: "Configure {{ (item == 'localhost') | ternary('ansible controller host', item) }} to trust ca certificate"
+      ansible.builtin.include_tasks: "{{ hostvars[item].ansible_distribution | lower }}/trust-cert.yaml"

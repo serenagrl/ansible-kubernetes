@@ -1,0 +1,13 @@
+# Knative environment variables.
+KNATIVE_OPERATOR_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/operator/vars`)].content') | b64decode | from_yaml }}"
+KNATIVE_SERVING_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/serving/vars`)].content') | b64decode | from_yaml }}"
+KNATIVE_EVENTING_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/eventing/vars`)].content') | b64decode | from_yaml }}"
+KNATIVE_EVENTING_RABBITMQ_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/eventing/controller/rabbitmq/vars`)].content') | b64decode | from_yaml }}"
+KNATIVE_EVENTING_KAFKA_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/eventing/controller/kafka/vars`)].content') | b64decode | from_yaml }}"
+KNATIVE_CLI_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/knative/cli/vars`)].content') | b64decode | from_yaml }}"
+KNATIVE_VARS:
+  - { name: knative, vars: "{{ KNATIVE_OPERATOR_VARS | combine(KNATIVE_SERVING_VARS, recursive=true)
+                                                      | combine(KNATIVE_EVENTING_VARS, recursive=true)
+                                                      | combine(KNATIVE_EVENTING_RABBITMQ_VARS, recursive=true)
+                                                      | combine(KNATIVE_EVENTING_KAFKA_VARS, recursive=true)
+                                                      | combine(KNATIVE_CLI_VARS, recursive=true) }}" }

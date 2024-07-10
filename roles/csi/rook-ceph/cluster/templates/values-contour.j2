@@ -1,0 +1,251 @@
+configOverride: |
+  [global]
+  clog_to_syslog = false
+  clog_to_syslog_level = "warn"
+  clog_to_syslog_facility = "daemon"
+  mon_cluster_log_file = "/dev/null"
+  mon_cluster_log_file_level = "warn"
+  mon_cluster_log_to_stderr = false
+  mon_cluster_log_to_syslog = false
+  mon_cluster_log_to_syslog_level = "warn"
+  mon_cluster_log_to_syslog_facility = "daemon"
+  mon_health_to_clog = false
+  mon_health_detail_to_clog = false
+  restapi_log_level = "warn"
+  log_to_stderr = false
+  log_to_syslog = false
+  err_to_syslog = false
+  debug_alienstore = "0/0"
+  debug_asok = "0/0"
+  debug_auth = "0/0"
+  debug_bdev = "0/0"
+  debug_bluefs = "0/0"
+  debug_bluestore = "0/0"
+  debug_buffer = "0/0"
+  debug_cephfs_mirror = "0/0"
+  debug_cephsqlite = "0/0"
+  debug_civetweb = "0/0"
+  debug_client = "0/0"
+  debug_compressor = "0/0"
+  debug_context = "0/0"
+  debug_crush = "0/0"
+  debug_crypto = "0/0"
+  debug_dpdk = "0/0"
+  debug_eventtrace = "0/0"
+  debug_filer = "0/0"
+  debug_filestore = "0/0"
+  debug_finisher = "0/0"
+  debug_fuse = "0/0"
+  debug_heartbeatmap = "0/0"
+  debug_immutable_obj_cache = "0/0"
+  debug_javaclient = "0/0"
+  debug_journal = "0/0"
+  debug_journaler = "0/0"
+  debug_kstore = "0/0"
+  debug_leveldb = "0/0"
+  debug_lockdep = "0/0"
+  debug_mclock = "0/0"
+  debug_mds = "0/0"
+  debug_mds_balancer = "0/0"
+  debug_mds_locker = "0/0"
+  debug_mds_log = "0/0"
+  debug_mds_log_expire = "0/0"
+  debug_mds_migrator = "0/0"
+  debug_memdb = "0/0"
+  debug_mgr = "0/0"
+  debug_mgrc = "0/0"
+  debug_mon = "0/0"
+  debug_monc = "0/0"
+  debug_ms = "0/0"
+  debug_none = "0/0"
+  debug_objclass = "0/0"
+  debug_objectcacher = "0/0"
+  debug_objecter = "0/0"
+  debug_optracker = "0/0"
+  debug_osd = "0/0"
+  debug_paxos = "0/0"
+  debug_perfcounter = "0/0"
+  debug_prioritycache = "0/0"
+  debug_rados = "0/0"
+  debug_rbd = "0/0"
+  debug_rbd_mirror = "0/0"
+  debug_rbd_pwl = "0/0"
+  debug_rbd_replay = "0/0"
+  debug_refs = "0/0"
+  debug_reserver = "0/0"
+  debug_rgw = "0/0"
+  debug_rgw_datacache = "0/0"
+  debug_rgw_sync = "0/0"
+  debug_rocksdb = "0/0"
+  debug_seastore = "0/0"
+  debug_seastore_cache = "0/0"
+  debug_seastore_cleaner = "0/0"
+  debug_seastore_device = "0/0"
+  debug_seastore_journal = "0/0"
+  debug_seastore_lba = "0/0"
+  debug_seastore_odata = "0/0"
+  debug_seastore_omap = "0/0"
+  debug_seastore_onode = "0/0"
+  debug_seastore_tm = "0/0"
+  debug_striper = "0/0"
+  debug_test = "0/0"
+  debug_throttle = "0/0"
+  debug_timer = "0/0"
+  debug_tp = "0/0"
+
+toolbox:
+  enabled: true
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+{% endif %}
+{% if not rook_ceph.cluster.enable_request_limit %}
+  resources: null
+{% endif %}
+
+cephClusterSpec:
+  dashboard:
+    urlPrefix: /ceph
+{% if not kube.allow_scheduling %}
+  placement:
+    all:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: Exists
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+{% endif %}
+{% if not rook_ceph.cluster.enable_request_limit %}
+  resources:
+    mgr: null
+    mon: null
+    osd: null
+    prepareosd: null
+    mgr-sidecar: null
+    crashcollector: null
+    logcollector: null
+    cleanup: null
+    exporter: null
+{% endif %}
+
+# Due to modifying a value in the collection, all values need to be specified.
+cephFileSystems:
+  - name: ceph-filesystem
+    spec:
+      metadataPool:
+        replicated:
+          size: 3
+      dataPools:
+        - failureDomain: host
+          replicated:
+            size: 3
+          name: data0
+      metadataServer:
+        activeCount: 1
+        activeStandby: true
+{% if rook_ceph.cluster.enable_request_limit %}
+        resources:
+          limits:
+            memory: "4Gi"
+          requests:
+            cpu: "1000m"
+            memory: "4Gi"
+{% endif %}
+        priorityClassName: system-cluster-critical
+{% if not kube.allow_scheduling %}
+        placement:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+          tolerations:
+            - effect: NoSchedule
+              key: node-role.kubernetes.io/control-plane
+              operator: Exists
+{% endif %}
+    storageClass:
+      enabled: true
+      isDefault: false
+      name: ceph-filesystem
+      pool: data0
+      reclaimPolicy: Delete
+      allowVolumeExpansion: true
+      volumeBindingMode: "Immediate"
+      mountOptions: []
+      parameters:
+        csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
+        csi.storage.k8s.io/provisioner-secret-namespace: "rook-ceph"
+        csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
+        csi.storage.k8s.io/controller-expand-secret-namespace: "rook-ceph"
+        csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
+        csi.storage.k8s.io/node-stage-secret-namespace: "rook-ceph"
+        csi.storage.k8s.io/fstype: ext4
+
+# Due to modifying a value in the collection, all values need to be specified.
+cephObjectStores:
+  - name: ceph-objectstore
+    spec:
+      metadataPool:
+        failureDomain: host
+        replicated:
+          size: 3
+      dataPool:
+        failureDomain: host
+        erasureCoded:
+          dataChunks: 2
+          codingChunks: 1
+      preservePoolsOnDelete: true
+      gateway:
+        port: 80
+{% if rook_ceph.cluster.enable_request_limit %}
+        resources:
+          limits:
+            memory: "2Gi"
+          requests:
+            cpu: "1000m"
+            memory: "1Gi"
+{% endif %}
+        instances: 1
+        priorityClassName: system-cluster-critical
+{% if not kube.allow_scheduling %}
+        placement:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+          tolerations:
+            - effect: NoSchedule
+              key: node-role.kubernetes.io/control-plane
+              operator: Exists
+{% endif %}
+    storageClass:
+      enabled: true
+      isDefault: false
+      name: ceph-bucket
+      reclaimPolicy: Delete
+      volumeBindingMode: "Immediate"
+      parameters:
+        region: us-east-1
+    ingress:
+      enabled: false
+
+ingress:
+  dashboard: {}

@@ -1,9 +1,10 @@
 # Author: Serena Yeoh
 #
-# Disclaimer: 
+# Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
 - name: Get join command
   delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   ansible.builtin.shell: echo $(kubeadm token create --print-join-command)
@@ -14,7 +15,7 @@
   ansible.builtin.shell: |
     {{ join_command.stdout }}
 
-- become_user: "{{ _kube.user }}"
+- become_user: "{{ kube.user }}"
   delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
   block:
     - name: Wait for node to be ready
@@ -24,3 +25,69 @@
     - name: Add labels to node
       ansible.builtin.shell: kubectl label nodes {{ ansible_hostname }} {{ item }}
       loop: "{{ kubernetes.worker_node_labels }}"
+
+- name: Configure ingress section in HAProxy load-balancer
+  vars:
+    services:
+      contour:
+        name: envoy
+        namespace: projectcontour
+      nginx:
+        name: ingress-nginx-controller
+        namespace: ingress-nginx
+    ingress: "{{ services[kube.ingress_type] }}"
+  block:
+    - name: Check if ingress is installed
+      become_user: "{{ kube.user }}"
+      delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
+      ansible.builtin.shell: kubectl get ns {{ ingress.namespace }} -o json | jq .status.phase -r
+      register: ingress_status
+      ignore_errors: yes
+
+    - name: Configure ingress section in HAProxy load-balancer
+      block:
+        - name: Get ingress http node port
+          become_user: "{{ kube.user }}"
+          delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
+          ansible.builtin.shell: |
+            kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}'
+          register: ingress_http_port_result
+
+        - name: Get ingress https node port
+          become_user: "{{ kube.user }}"
+          delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
+          ansible.builtin.shell: |
+            kubectl get svc -n {{ ingress.namespace }} {{ ingress.name }} -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}'
+          register: ingress_https_port_result
+
+        - name: Configure HAProxy load-balancers to expose ingress
+          vars:
+            in_sections:
+              - { name: ingress-http-backend, port: "{{ ingress_http_port_result.stdout }}" }
+              - { name: ingress-https-backend, port: "{{ ingress_https_port_result.stdout }}" }
+            in_hosts: ['{{ inventory_hostname }}']
+          ansible.builtin.include_tasks: "update-haproxy.yaml"
+          loop: "{{ groups['load_balancers'] }}"
+      when: ingress_status.stdout == 'Active'
+  when: register_to_load_balancer
+
+- name: Configure worker node to trust ca certificate
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/trust-cert.yaml"
+
+- become_user: "{{ kube.user }}"
+  delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
+  block:
+    - name: Get harbor dependency
+      vars:
+        depends_on:
+          - harbor
+      ansible.builtin.include_role:
+        name: common/check-dependencies
+
+    - name: Register DNS entry
+      vars:
+        domain_prefix: core.harbor
+        servers: ["{{ inventory_hostname }}"]
+      ansible.builtin.include_role:
+        name: common/dns-register
+      when: fact_has_addon_harbor and not kube.cluster.use_dns_server

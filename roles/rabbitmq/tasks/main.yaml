@@ -11,3 +11,7 @@
 # Install cluster.
 - ansible.builtin.include_role:
     name: rabbitmq/cluster
+
+# Install grafana dashboard.
+- ansible.builtin.include_role:
+    name: rabbitmq/grafana-dashboard

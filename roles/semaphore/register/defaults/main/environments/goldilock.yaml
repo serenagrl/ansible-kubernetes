@@ -1,0 +1,3 @@
+# Goldilock environment variables.
+GOLDILOCKS_VARS:
+  - { name: goldilocks, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/goldilocks/vars`)].content') | b64decode | from_yaml }}" }

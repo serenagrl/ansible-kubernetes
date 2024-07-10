@@ -1,0 +1,21 @@
+kafka:
+  cluster:
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+    # Size was reduced for lab environment.
+    # Original manifest value is 100Gi.
+    storage_size: 10Gi
+    zookeeper:
+      # Size was reduced for lab environment.
+      # Original manifest value is 100Gi.
+      storage_size: 10Gi

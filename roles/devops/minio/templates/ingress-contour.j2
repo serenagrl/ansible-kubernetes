@@ -5,7 +5,7 @@ metadata:
   namespace: minio-operator
 spec:
   virtualhost:
-    fqdn: minio.{{ _kube.cluster.domain }}
+    fqdn: minio.{{ kube.cluster.domain }}
     tls:
       secretName: minio-console-ingress-tls
   routes:

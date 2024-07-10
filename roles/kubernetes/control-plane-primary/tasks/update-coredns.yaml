@@ -1,0 +1,52 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Get coredns configmap
+  become_user: "{{ kube.user }}"
+  kubernetes.core.k8s_info:
+    name: coredns
+    kind: ConfigMap
+    namespace: kube-system
+  register: corefile_data
+
+- delegate_to: localhost
+  become_user: root
+  block:
+    - name: Export coredns configmap
+      ansible.builtin.copy:
+        content: "{{ corefile_data.resources.0.data.Corefile }}"
+        dest: "{{ TEMP_CONFIG_FILE }}"
+
+    - name: Add dns server entry into coredns
+      ansible.builtin.blockinfile:
+        path: "{{ TEMP_CONFIG_FILE }}"
+        block: |2
+          {{ kube.cluster.domain }}:53 {
+              errors
+              cache 30
+              forward . {{ hostvars.dns_server.ansible_host }}
+          }
+
+- name: Patch coredns configmap
+  become_user: "{{ kube.user }}"
+  kubernetes.core.k8s:
+    kind: ConfigMap
+    name: coredns
+    namespace: kube-system
+    apply: yes
+    force: yes
+    state: patched
+    definition:
+      data:
+        Corefile: |
+          {{ lookup('file', TEMP_CONFIG_FILE) }}
+
+- name: Cleanup files
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ TEMP_CONFIG_FILE }}"
+    state: absent

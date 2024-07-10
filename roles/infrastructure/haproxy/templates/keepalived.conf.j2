@@ -17,7 +17,7 @@ vrrp_script chk_haproxy {
   weight 2
 }
 
-vrrp_instance {{ _kube.cluster.name }}-haproxy-vip {
+vrrp_instance {{ kube.cluster.name }}-haproxy-vip {
   state BACKUP
   priority 100
   interface eth0                       # Network card

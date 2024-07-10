@@ -1,0 +1,10 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Copy Redhat kvm image
+  ansible.builtin.copy:
+    src: "{{ vm.redhat.kvm_image }}"
+    dest: "{{ temp_dir }}/{{ vm.os }}-cloud.img"

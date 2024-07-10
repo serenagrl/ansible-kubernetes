@@ -1,0 +1,23 @@
+replicas: {{ metrics.replicas }}
+
+defaultArgs:
+  - --cert-dir=/tmp
+  - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+  - --kubelet-use-node-status-port
+  - --metric-resolution=15s
+  - --kubelet-insecure-tls
+
+metrics:
+  enabled: {{ metrics.prometheus }}
+
+serviceMonitor:
+  enabled: {{ metrics.prometheus }}
+
+{% if not kube.allow_scheduling %}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""
+{% endif %}

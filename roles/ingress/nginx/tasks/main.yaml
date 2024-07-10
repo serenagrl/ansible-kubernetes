@@ -4,15 +4,19 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Create a ingress-nginx namespace
   kubernetes.core.k8s:
     name: ingress-nginx
     kind: Namespace
 
-- include_tasks: ./tasks/task-create-certificate.yaml
+- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
   vars:
     name: ingress-nginx
-    ingress_host: "{{ ingress_nginx.metallb.enabled | ternary(ingress_nginx.metallb.hostname, _kube.cluster.name) }}.{{ _kube.cluster.domain }}"
+    ingress_host: "{{ ingress_nginx.metallb.enabled | ternary(ingress_nginx.metallb.hostname, kube.cluster.name) }}.{{ kube.cluster.domain }}"
     certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
 
 - become_user: root
@@ -45,7 +49,7 @@
                       operator: Exists
                   \1
                     node-role.kubernetes.io/control-plane: ""
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
 - name: Install ingress nginx
   kubernetes.core.k8s:
@@ -59,7 +63,7 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup
 
 - name: Scale ingress controller pods = {{ ingress_nginx.scale }}
   vars:
@@ -90,4 +94,4 @@
   vars:
     name: ingress-nginx-controller
     namespace: ingress-nginx
-    ingress: "{{ ingress_nginx }}"
+    in_ingress: "{{ ingress_nginx }}"

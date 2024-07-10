@@ -5,6 +5,10 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+- name: Create logging namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: logging
 
 - name: Configure vm.max_map_count (elasticsearch pre-requisite)
   ansible.builtin.include_tasks: update-sysctl.yaml
@@ -27,10 +31,9 @@
           {{ ELASTICSEARCH_CRD_TEMPLATE }}
 
 - name: Waiting for elasticsearch to be ready
-  shell: kubectl wait --for=jsonpath='{.status.health}'=green elasticsearch elasticsearch -n logging --timeout=300s && kubectl wait --for=condition=ready pods -n logging -l common.k8s.elastic.co/type=elasticsearch --timeout=300s
+  ansible.builtin.shell: kubectl wait --for=jsonpath='{.status.health}'=green elasticsearch elasticsearch -n logging --timeout=300s && kubectl wait --for=condition=ready pods -n logging -l common.k8s.elastic.co/type=elasticsearch --timeout=300s
 
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "Elastic password"
     command: kubectl get secret elasticsearch-es-elastic-user -n logging -o=jsonpath='{.data.elastic}'
-

@@ -1,0 +1,2 @@
+TEMP_CERT_DIR: "{{ temp_dir }}/{{ kube.cluster.name }}"
+CR_CERT_DIR: "/etc/containerd/certs.d/core.harbor.{{ kube.cluster.domain }}"

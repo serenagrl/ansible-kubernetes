@@ -1,4 +1,0 @@
-METADATA_DIR: "{{ _work_dir }}/{{ ansible_hostname }}-metadata"
-
-# Warning: The cloud-init file is very sensitive. Becareful when you mess with it.
-CLOUD_INIT_TEMPLATE: "{{ lookup('template', 'cloud-init.j2') }}"

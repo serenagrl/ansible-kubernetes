@@ -1,0 +1,3 @@
+# Launches the selected CSI role.
+- ansible.builtin.include_role:
+    name: "{{ 'csi/' + (csi.name | lower ) }}"

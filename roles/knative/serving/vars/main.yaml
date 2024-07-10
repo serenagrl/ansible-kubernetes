@@ -4,4 +4,4 @@ knative:
     register: yes
     ca_url: "https://core.harbor.k8s.local/api/v2.0/systeminfo/getcert"
     host: core.harbor.k8s.local
-    ip: "{{ _kube.cluster.address }}"
+    ip: "{{ kube.cluster.address }}"

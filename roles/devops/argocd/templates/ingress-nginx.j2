@@ -3,26 +3,23 @@ kind: Ingress
 metadata:
   name: argocd-server-ingress
   namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-server-ingress
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+
 spec:
   ingressClassName: {{ ingress_name }}
   rules:
-    - host: argocd.{{ _kube.cluster.domain }}
+    - host: {{ ingress_host }}
       http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /argocd
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: argocd-server
                 port:
                   name: https
-{% if has_issuer %}
-  tls:
-    - hosts:
-        - argocd.{{ _kube.cluster.domain }}
-      secretName: argocd-ingress-tls
-{% endif %}

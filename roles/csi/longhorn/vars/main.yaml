@@ -1,0 +1,35 @@
+longhorn:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  version: latest
+
+  # Log format - plain or json
+  log_format: plain
+
+  # Create Prometheus ServiceMonitor to scrap metrics (Requires prometheus to be installed)
+  prometheus:
+    enabled: yes
+    grafana_dashboards:
+        # 3rd-party dashboard.
+      - { name: "Longhorn Dashboard",
+          url: "https://grafana.com/api/dashboards/16888/revisions/9/download" }
+
+  # External Virtual Hardisk mounted to the nodes.
+  disk:
+    create: yes
+    vm_folder: "D:\\Virtual Machines\\Kubernetes"
+    name: cluster-storage-1
+    size: 256GB
+    mount_point: /data-1
+    tags:
+      - ssd
+      - external
+      - virtual-disk
+
+  # External minio for storing backups (and testing).
+  minio:
+    enabled: no
+    endpoint: http://<minio-server-url>:9000
+    access_key_id: <minio-access-key-id>
+    secret_access_key: <minio-secret-access-key>
+    bucket_name: backupbucket

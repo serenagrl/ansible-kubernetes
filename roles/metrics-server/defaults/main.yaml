@@ -1,1 +1,1 @@
-    MANIFEST_FILE: "{{ _work_dir }}/metrics-server-components.yaml"
+    VALUES_FILE: "{{ lookup('template', 'values.j2') | from_yaml }}"

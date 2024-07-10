@@ -1,2 +1,5 @@
 dependencies:
-  - role: logging/elasticsearch
+  - role: common/check-dependencies
+    vars:
+      depends_on:
+        - ingress

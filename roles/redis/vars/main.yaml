@@ -42,3 +42,12 @@ redis:
     name: redis-sentinel
     masterset: redismaster
     replica: 3
+
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+
+  # Empty value is required to prevent ansible from converting undefined value to None.
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""

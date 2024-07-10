@@ -1,0 +1,62 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- become_user: root
+  delegate_to: localhost
+  block:
+    - name: Create manifest directory
+      ansible.builtin.file:
+        path: "{{ MANIFEST_DIR }}"
+        state: directory
+
+    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
+      vars:
+        name: "tekton triggers"
+        namespace: "tekton"
+        repo_path: "tektoncd/triggers"
+        pkg_version: "{{ tekton.triggers.version | default }}"
+        version_prefix: "v"
+        dest: "{{ MANIFEST_DIR }}"
+        manifest_url: "https://storage.googleapis.com/tekton-releases/triggers/previous/{{ release }}"
+        urls:
+          - "{{ manifest_url }}/{{ MANIFEST_TRIGGER_FILE }}"
+          - "{{ manifest_url }}/{{ MANIFEST_INTERCEPTOR_FILE }}"
+
+    - name: Configure to run on control-planes only
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: '^\s*(containers:)$'
+        replace: |4-
+                  tolerations:
+                    - effect: NoSchedule
+                      key: node-role.kubernetes.io/control-plane
+                      operator: Exists
+                  nodeSelector:
+                    node-role.kubernetes.io/control-plane: ""
+                  \1
+      loop:
+        - "{{ MANIFEST_DIR }}/{{ MANIFEST_TRIGGER_FILE }}"
+        - "{{ MANIFEST_DIR }}/{{ MANIFEST_INTERCEPTOR_FILE }}"
+      when: not kube.allow_scheduling
+
+- name: Installing tekton triggers
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    wait: yes
+    namespace: "tekton-pipelines"
+    definition: "{{ lookup('file', item) | from_yaml_all }}"
+  loop:
+    - "{{ MANIFEST_DIR }}/{{ MANIFEST_TRIGGER_FILE }}"
+    - "{{ MANIFEST_DIR }}/{{ MANIFEST_INTERCEPTOR_FILE }}"
+
+- name: Cleanup manifest files
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ MANIFEST_DIR }}"
+    state: absent
+  when: auto_cleanup

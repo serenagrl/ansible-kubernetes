@@ -1,0 +1,4 @@
+# Awx environment variables.
+AWX_REG_VARS:
+  - { name: awx/operator, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/operator/vars`)].content') | b64decode | from_yaml }}" }
+  - { name: awx/register, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/awx/register/vars`)].content') | b64decode | from_yaml }}" }

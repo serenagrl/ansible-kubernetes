@@ -1,7 +1,7 @@
 fullnameOverride: gitlab
 global:
   hosts:
-    domain: {{ _kube.cluster.domain }}
+    domain: {{ kube.cluster.domain }}
   ingress:
     enabled: false
     configureCertmanager: false
@@ -61,14 +61,16 @@ prometheus:
 registry:
   enabled: false
 
-{% if not _kube.allow_scheduling %}
 upgradeCheck:
   enabled: false
+{% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
       operator: Exists
+{% endif %}
 
+{% if not kube.allow_scheduling %}
 shared-secrets:
   tolerations:
     - effect: NoSchedule
@@ -77,18 +79,6 @@ shared-secrets:
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
 
-postgresql:
-  primary: # Change this accordingly in new versions
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-
-  persistence:
-      size: {{ gitlab.postgres.storage_size }}
-
 minio:
   tolerations:
     - effect: NoSchedule
@@ -96,44 +86,73 @@ minio:
       operator: Exists
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+postgresql:
+  primary: # Change this accordingly in new versions
+    persistence:
+      size: {{ gitlab.postgres.storage_size }}
+{% if not kube.allow_scheduling %}
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
 
 redis:
   master:
+    persistence:
+      size: {{ gitlab.redis.master.storage_size }}
+{% if not kube.allow_scheduling %}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+{% endif %}
 
   replica:
+    persistence:
+      size: {{ gitlab.redis.replica.storage_size }}
+{% if not kube.allow_scheduling %}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+{% endif %}
 
 gitlab:
+{% if not kube.allow_scheduling %}
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
+{% endif %}
 
+{% if not kube.allow_scheduling or gitlab.external_minio %}
   toolbox:
+  {%- if not kube.allow_scheduling +%}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
         operator: Exists
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
+  {%- endif +%}
 
-{% if gitlab.external_minio %}
+  {%- if gitlab.external_minio +%}
     backups:
       objectStorage:
         config:
           secret: gitlab-storage-secret
           key: connection
+  {%- endif +%}
 {% endif %}
 
+{% if not kube.allow_scheduling %}
   migrations:
     tolerations:
       - effect: NoSchedule
@@ -158,14 +177,6 @@ gitlab:
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
 
-  gitaly:
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-    nodeSelector:
-      node-role.kubernetes.io/control-plane: ""
-
   gitlab-exporter:
     tolerations:
       - effect: NoSchedule
@@ -183,6 +194,18 @@ gitlab:
       node-role.kubernetes.io/control-plane: ""
 
   kas:
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+  gitaly:
+    persistence:
+      size: {{ gitlab.gitaly.storage_size }}
+{% if not kube.allow_scheduling %}
     tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane

@@ -1,0 +1,24 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install tektoncd cli to ansible controller host
+  delegate_to: localhost
+  become_user: root
+  vars:
+    has_version_specified: "{{ (tekton.cli.version is defined and tekton.cli.version and tekton.cli.version != 'latest') | bool }}"
+    release: "{{ has_version_specified | ternary(tekton.cli.version, release_tag.stdout) }}"
+    repo_path: tektoncd/cli
+  block:
+    - name: Get latest tektoncd cli release
+      ansible.builtin.shell: |
+        curl -s https://api.github.com/repos/{{ repo_path }}/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
+      register: release_tag
+      when: not has_version_specified
+
+    - name: Installing tektoncd cli
+      ansible.builtin.shell:  rpm -Uvh --force https://github.com/tektoncd/cli/releases/download/v{{ release }}/tektoncd-cli-{{ release }}_Linux-64bit.rpm

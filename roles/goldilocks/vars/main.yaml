@@ -1,0 +1,13 @@
+goldilocks:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  version: latest
+
+  # Determines whether goldilocks in enabled for all namespaces by default. Otherwise, you will need to
+  # label your namespaces manually i.e. kubectl label namespace default goldilocks.fairwinds.com/enabled=true
+  on_by_default: no
+
+  # Determines whether goldilocks should use metrics from prometheus.
+  prometheus:
+    enabled: yes
+    url: http://monitoring-prometheus.monitoring.svc.cluster.local:9090/prometheus

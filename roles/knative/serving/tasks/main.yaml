@@ -6,16 +6,8 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-# Istio is required for knative-serving
-- name: Check if istio is installed
-  ansible.builtin.shell: kubectl get ns istio-system -o json | jq .status.phase -r
-  register: istio_status
-  ignore_errors: yes
-
-- name: Istio check (Skipped when passed)
-  ansible.builtin.fail:
-    msg: "Please install istio before attempting to setup knative-serving."
-  when: istio_status.stdout != 'Active'
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
 
 - name: Create a knative-serving namespace
   kubernetes.core.k8s:
@@ -63,7 +55,7 @@
       data:
         kubernetes.podspec-nodeselector: "enabled"
         kubernetes.podspec-tolerations: "enabled"
-  when: not _kube.allow_scheduling
+  when: not kube.allow_scheduling
 
 - name: Set to allow configuring auto scaler
   kubernetes.core.k8s:
@@ -89,4 +81,4 @@
               - hostnames:
                   - {{ knative.registry.host }}
                 ip: {{ knative.registry.ip }}
-  when: not _kube.cluster.use_dns_server and knative.registry.register
+  when: not kube.cluster.use_dns_server and knative.registry.register

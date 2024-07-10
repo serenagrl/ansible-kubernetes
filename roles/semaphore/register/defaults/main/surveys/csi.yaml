@@ -1,0 +1,13 @@
+SETUP_CSI_SURVEYS:
+  - name: "csi_name"
+    title: "CSI Name"
+    description: "Install the selected CSI."
+    type: "enum"
+    required: true
+    values:
+      - name: "Longhorn (Recommended)"
+        value: "longhorn"
+      - name: "Rook Ceph (High resource consumption)"
+        value: "rook-ceph"
+      - name: "NFS (Less resource consumption)"
+        value: "nfs"

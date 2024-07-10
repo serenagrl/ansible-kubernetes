@@ -1,0 +1,14 @@
+- name: Increase maximum user instances
+  delegate_to: "{{ item }}"
+  become_user: root
+  block:
+    # To maintain configuration after reboot
+    - name: Configure max_user_instances in /etc/sysctl.conf
+      ansible.builtin.lineinfile:
+        path: /etc/sysctl.conf
+        line: "fs.inotify.max_user_instances=512"
+
+    # Update max_user_instances value without rebooting VM
+    - name: Configure max_user_instances
+      ansible.builtin.shell: |
+        sysctl -w fs.inotify.max_user_instances=512

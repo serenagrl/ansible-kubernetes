@@ -5,7 +5,7 @@ metadata:
   namespace: sonarqube
 spec:
   dnsNames:
-    - sonarqube.{{ _kube.cluster.domain }}
+    - sonarqube.{{ kube.cluster.domain }}
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}

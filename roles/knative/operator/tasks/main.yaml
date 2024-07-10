@@ -6,11 +6,6 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Create a knative namespace
-  kubernetes.core.k8s:
-    name: knative
-    kind: Namespace
-
 - become_user: root
   delegate_to: localhost
   block:
@@ -23,12 +18,6 @@
         version_prefix: "knative-v"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://github.com/{{ repo_path }}/releases/download/{{ release }}/operator.yaml"]
-
-    - name: Set oerator namespace in manifest
-      ansible.builtin.replace:
-        path: "{{ MANIFEST_FILE }}"
-        regexp: "namespace: default"
-        replace: "namespace: knative"
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
@@ -43,7 +32,7 @@
                     node-role.kubernetes.io/control-plane: ""
                   \1
 
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
 - name: Install knative operator
   kubernetes.core.k8s:
@@ -57,7 +46,7 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup
 
 - name: Waiting for knative to be ready
   ansible.builtin.shell: |

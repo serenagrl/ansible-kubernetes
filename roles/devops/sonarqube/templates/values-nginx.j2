@@ -4,20 +4,18 @@ nginx:
 ingress:
   enabled: true
   hosts:
-    - name: sonarqube.{{ _kube.cluster.domain }}
+    - name: sonarqube.{{ kube.cluster.domain }}
       path: /
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "8m"
 
   ingressClassName: {{ ingress_name }}
-{% if has_issuer %}
   tls:
     - secretName: sonarqube-ingress-tls
       hosts:
-        - sonarqube.{{ _kube.cluster.domain }}
-{% endif %}
+        - sonarqube.{{ kube.cluster.domain }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 tolerations:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane
@@ -27,6 +25,8 @@ nodeSelector:
   node-role.kubernetes.io/control-plane: ""
 
 postgresql:
+  persistence:
+    size: {{ sonarqube.storage_size }}
   primary:
     tolerations:
       - effect: NoSchedule

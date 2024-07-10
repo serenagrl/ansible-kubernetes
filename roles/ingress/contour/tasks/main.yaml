@@ -4,6 +4,10 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - become_user: root
   delegate_to: localhost
   block:
@@ -29,7 +33,7 @@
                   nodeSelector:
                     node-role.kubernetes.io/control-plane: ""
                   \1
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
 - name: Install contour
   kubernetes.core.k8s:
@@ -43,11 +47,11 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup
 
 - name: Setup root HTTPProxy
   vars:
-    ingress_host: "{{ contour.metallb.enabled | ternary(contour.metallb.hostname, _kube.cluster.name) }}.{{ _kube.cluster.domain }}"
+    ingress_host: "{{ contour.metallb.enabled | ternary(contour.metallb.hostname, kube.cluster.name) }}.{{ kube.cluster.domain }}"
   block:
     - ansible.builtin.import_tasks: ./tasks/task-create-certificate.yaml
       vars:
@@ -70,4 +74,4 @@
   vars:
     name: envoy
     namespace: projectcontour
-    ingress: "{{ contour }}"
+    in_ingress: "{{ contour }}"

@@ -1,0 +1,3 @@
+# Metallb environment variables.
+METALLB_VARS:
+  - { name: metallb, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/metallb/vars`)].content') | b64decode | from_yaml }}" }

@@ -5,11 +5,8 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Register DNS entry
-  vars:
-    domain_prefix: argocd
-  ansible.builtin.include_role:
-    name: common/dns-register
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
 
 - name: Create argocd namespace
   kubernetes.core.k8s:
@@ -41,7 +38,7 @@
                   nodeSelector:
                     node-role.kubernetes.io/control-plane: ""
                   \1
-      when: not _kube.allow_scheduling
+      when: not kube.allow_scheduling
 
 - name: Install argocd
   kubernetes.core.k8s:
@@ -61,37 +58,42 @@
   ansible.builtin.file:
     path: "{{ MANIFEST_FILE }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup
 
 - ansible.builtin.import_tasks: ./tasks/task-get-secret.yaml
   vars:
     name: "ArgoCD portal password"
     command: "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}'"
 
-- name: Install ingress ({{ _kube.ingress_type }})
-  vars:
-    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
-    has_issuer: issuer_status.stdout == "Ready"
+- name: Setup ingress for portal
   block:
-    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+    - name: Configure subpath
+      kubernetes.core.k8s:
+        state: patched
+        kind: ConfigMap
+        name: argocd-cmd-params-cm
+        namespace: argocd
+        definition: |
+          data:
+            server.basehref: /argocd
+            server.rootpath: /argocd
+
+    - name: Restart deployment
+      ansible.builtin.shell: |
+        kubectl rollout restart -n argocd deployment/argocd-server
+
+      # Notes: Use cluster's domain name and with custom route /argocd
+    - name: Setup ingress
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
       vars:
         name: argocd
-        certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
-
-    - name: Check for ingress availability
-      kubernetes.core.k8s_info:
-        kind: IngressClass
-      register: ingress_class
-      when: _kube.ingress_type == "nginx"
-
-    - name: Create ingress ({{ _kube.ingress_type }}) for argocd server
-      kubernetes.core.k8s:
-        apply: yes
-        force: yes
-        definition: "{{ INGRESS_TEMPLATE }}"
+        namespace: argocd
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: yes
 
 - name: Install argocd cli to ansible controller
   delegate_to: localhost
+  become_user: root
   vars:
     has_version_specified: "{{ (argocd.version is defined and argocd.version and argocd.version != 'latest') | bool }}"
     release: "{{ has_version_specified | ternary('v' + argocd.version, release_tag.stdout) }}"
@@ -104,7 +106,6 @@
       when: not has_version_specified
 
     - name: Download argocd cli
-      become_user: root
       ansible.builtin.shell: |
         curl -sSL -o /usr/local/bin/argocd https://github.com/{{ repo_path }}/releases/download/{{ release }}/argocd-linux-amd64
         chmod +x /usr/local/bin/argocd

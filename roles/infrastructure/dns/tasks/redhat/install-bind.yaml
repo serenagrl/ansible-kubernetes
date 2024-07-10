@@ -1,0 +1,59 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Installing bind and dns utility packages
+  ansible.builtin.dnf:
+    name:
+      - bind
+      - bind-utils
+    state: latest
+    update_cache: yes
+
+- name: Insert DNS Server IP
+  ansible.builtin.replace:
+    path: /etc/named.conf
+    regexp: '^\s*(listen-on port 53 { 127.0.0.1;)\s*(};\n)'
+    replace: |2-
+              \1 {{ hostvars.dns_server.ansible_host }}; \2
+
+- name: Configure query to allow any
+  ansible.builtin.replace:
+    path: /etc/named.conf
+    regexp: '^\s*(allow-query     {)\s*(localhost;)\s*(};\n)'
+    replace: |2-
+              \1 any; \3
+
+- name: Configure name.conf.local
+  ansible.builtin.blockinfile:
+    path: "/etc/named.conf"
+    create: yes
+    backup: yes
+    marker: "// {mark} {{ kube.cluster.domain }} zone"
+    block: |
+      {{ NAMED_CONF_LOCAL_TEMPLATE }}
+
+- name: Configure forward lookup
+  ansible.builtin.blockinfile:
+    path: "/var/named/forward.{{ kube.cluster.domain }}"
+    create: yes
+    marker: "; {mark} Forward lookup for {{ kube.cluster.domain }}"
+    block: |
+      {{ FORWARD_LOOKUP_TEMPLATE }}
+
+- name: Configure reverse lookup
+  ansible.builtin.blockinfile:
+    path: "/var/named/reverse.{{ kube.cluster.domain }}"
+    create: yes
+    marker: "; {mark} Reverse lookup for {{ kube.cluster.domain }}"
+    block: |
+      {{ REVERSE_LOOKUP_TEMPLATE }}
+
+- name: Restart bind service to let changes take effect
+  ansible.builtin.systemd:
+    enabled: yes
+    state: restarted
+    name: named

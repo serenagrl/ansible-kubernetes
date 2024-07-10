@@ -2,19 +2,15 @@ semaphore:
   project:
     # Name of the Project to create in Semaphore.
     name: "Ansible-Kubernetes"
-    hostname_prefix: k8s-lab
+    lab_name: k8s
 
     # The root folder for the playbooks.
     local_repo_dir: /ansible-playbooks/ansible-kubernetes
 
-    # Specify whether miscellaneous environments and playbooks are automatically created.
-    # You may want to disable this to remove clutter if you are already familiar with Semaphore.
-    create:
-      component_environments: yes
-      component_playbooks: yes # requires component_environments to be yes
-      setup_semaphore_project: yes
+    # Indicates not create project if a repo already exist in the path, otherwise, it will overwrite the contents.
+    abort_if_repo_exist: yes
 
   # The login credentials to use to login to the Semaphore API.
   api_login:
-      username: admin
-      password: p@ssw0rd
+    username: admin
+    password: p@ssw0rd

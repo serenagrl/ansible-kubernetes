@@ -1,0 +1,10 @@
+INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + kube.ingress_type + '.yaml' }}"
+INGRESS_CREATE: "{{ kube.ingress_type == 'contour' }}"
+VALUES_FILE: "{{ lookup('template', 'values-' + kube.ingress_type + '.j2') | from_yaml }}"
+
+INGRESS_TEMPLATES:
+  # Not creating anything for ingress, so passing a '' into the shared task.
+  nginx: ['']
+  contour:
+    -  "{{ lookup('template', 'ingress-contour-query.j2') | from_yaml }}"
+    -  "{{ lookup('template', 'ingress-contour-hotrod.j2') | from_yaml }}"

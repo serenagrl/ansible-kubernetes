@@ -6,6 +6,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Install kibana
   vars:
     has_version_specified: "{{ (kibana.version is defined and kibana.version and kibana.version != 'latest') | bool }}"
@@ -30,4 +33,5 @@
   vars:
     name: kibana
     namespace: logging
-    definition: "{{ INGRESS_TEMPLATE }}"
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: yes

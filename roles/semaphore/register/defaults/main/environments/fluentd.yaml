@@ -1,0 +1,3 @@
+# Fluentd environment variables.
+FLUENTD_VARS:
+  - { name: logging/fluentd, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/fluentd/vars`)].content') | b64decode | from_yaml }}" }

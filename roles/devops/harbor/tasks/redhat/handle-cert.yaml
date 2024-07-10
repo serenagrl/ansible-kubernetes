@@ -1,0 +1,17 @@
+- delegate_to: "{{ item }}"
+  become_user: root
+  block:
+    - name: Create a containerd certificate directory (if not exist)
+      ansible.builtin.file:
+        path: "{{ CR_CERT_DIR }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy ca certificate to containerd certificate directory
+      ansible.builtin.copy:
+        src: "/etc/pki/ca-trust/source/anchors/{{ kube.cluster.name }}-ca.crt"
+        dest: "{{ CR_CERT_DIR }}/{{ kube.cluster.name }}-ca.crt"
+        mode: 0777
+
+  ignore_errors: yes
+  ignore_unreachable: yes

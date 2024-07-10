@@ -1,11 +1,15 @@
 fullnameOverride: loki
 
 loki:
-{% if loki.external_minio.enabled %}
+{% if loki.external_minio %}
   storage:
+    bucketNames:
+      chunks: chunks
+      ruler: ruler
+      admin: admin
     type: s3
     s3:
-      endpoint: {{ loki.external_minio.tenant_endpoint }}
+      endpoint: {{ tenant_endpoint }}
       region: us-east-1
       accessKeyId: {{ minio_credentials.accesskey }}
       secretAccessKey: {{ minio_credentials.secretkey }}
@@ -16,10 +20,38 @@ loki:
   commonConfig:
     replication_factor: {{ loki.replicas }}
 
-minio:
- enabled: {{ not loki.external_minio.enabled }}
+  schemaConfig:
+    configs:
+      - from: "{{ now(utc=true,fmt='%Y-%m-%d') }}"
+        object_store: "s3"
+        store: "tsdb"
+        schema: "v13"
+        index:
+          prefix: "index_"
+          period: "24h"
 
-{% if not _kube.allow_scheduling %}
+chunksCache:
+  resources: {{ loki.chunks_cache.resources }}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+resultsCache:
+  resources: {{ loki.results_cache.resources }}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+minio:
+  enabled: {{ not loki.external_minio }}
+
+{% if not kube.allow_scheduling %}
 write:
   replicas: {{ loki.replicas }}
   tolerations:
@@ -63,15 +95,6 @@ monitoring:
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
 
-singleBinary:
-  replicas: {{ loki.replicas }}
-  tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/control-plane
-      operator: Exists
-  nodeSelector:
-    node-role.kubernetes.io/control-plane: ""
-
 gateway:
   replicas: {{ loki.replicas }}
   tolerations:
@@ -81,4 +104,3 @@ gateway:
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
 {% endif %}
-

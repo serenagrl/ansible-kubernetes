@@ -5,6 +5,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Register DNS entry
   vars:
     domain_prefix: core.harbor
@@ -31,12 +34,16 @@
     # Notes: Uses own domain names.
     - name: Setup ingress
       ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: harbor
+        namespace: harbor-system
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: no
 
     - name: Deploying harbor
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if harbor.version is defined and harbor.version and harbor.version != 'latest' %}{{ harbor.version }}{% endif %}"
-        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: harbor
         atomic: yes
@@ -52,33 +59,6 @@
       ansible.builtin.shell: |
           for d in $(kubectl -n harbor-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n harbor-system deployment/$d; done;
 
-    - name: Waiting for Harbor api to be up
-      ansible.builtin.uri:
-        url: "https://core.harbor.{{ _kube.cluster.domain }}/api/v2.0/systeminfo/getcert"
-        validate_certs: no
-        return_content: true
-      register: result
-      until: result.status == 200
-      retries: 15
-      delay: 30
-
-- name: Get harbor registry certificate
-  delegate_to: localhost
-  become_user: root
-  ansible.builtin.copy:
-    content: "{{ result.content }}"
-    dest: "{{ CERT_FILE }}"
-
-- name: Configure kubernetes nodes to trust registry certificate
-  ansible.builtin.include_tasks: trust-cert.yaml
+- name: Copy ca certificate to kubernetes nodes containerd certificate directory
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/handle-cert.yaml"
   loop: "{{ fact_active_hosts }}"
-
-- name: Cleanup files
-  delegate_to: localhost
-  become_user: root
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - "{{ CERT_FILE }}"
-  when: _cleanup

@@ -1,1 +1,3 @@
-MANIFEST_FILE: "{{ _work_dir }}/metallb.yaml"
+VALUES_FILE: "{{ lookup('template', 'values.j2') | from_yaml }}"
+ADDRESS_POOL_TEMPLATE: "{{ lookup('template', 'ip-address-pool.j2') | from_yaml }}"
+L2_ADVERTISEMENT_TEMPLATE: "{{ lookup('template', 'l2-advertisement.j2') | from_yaml }}"

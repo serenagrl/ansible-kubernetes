@@ -1,0 +1,49 @@
+app:
+{% if not kube.allow_scheduling %}
+  scheduling:
+    nodeSelector:
+      node-role.kubernetes.io/control-plane:
+
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+{% endif %}
+
+  ingress:
+    enabled: false
+
+{% if not kube.allow_scheduling %}
+kong:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+
+auth:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+
+api:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+
+web:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+
+metricsScraper:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane:
+{% endif %}
+
+metrics-server:
+  enabled: false
+
+cert-manager:
+  enabled: false
+
+nginx:
+  enabled: false

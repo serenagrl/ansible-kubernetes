@@ -15,5 +15,5 @@ spec:
   default: {{ is_default | default(false) }}
   objectStorage:
     bucket: velero
-    prefix: {{ _kube.cluster.name }}
+    prefix: {{ kube.cluster.name }}
   provider: aws

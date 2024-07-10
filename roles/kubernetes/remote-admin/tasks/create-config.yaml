@@ -1,0 +1,24 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Create .kube in home directory
+  ansible.builtin.file:
+    path: /root/.kube
+    state: directory
+    mode: 0700
+
+- name: Copy admin.conf to home directory kube config
+  delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
+  ansible.builtin.fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    flat: yes
+
+- name: Replace default cluster name with {{ kube.cluster.name }}
+  ansible.builtin.replace:
+    path: /root/.kube/config
+    regexp: 'kubernetes'
+    replace: "{{ kube.cluster.name }}"

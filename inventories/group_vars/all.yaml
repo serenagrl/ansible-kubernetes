@@ -1,0 +1,49 @@
+ansible_user: root
+ansible_become: yes
+
+# You can also set this in individual host if you are splitting the nodes to different physical
+# servers.
+winrm_host: local_machine
+
+vm_checkpoint: yes         # Creates VM checkpoints at specific stages of automation.
+auto_cleanup: yes          # Clean up residue files after installation.
+temp_dir: /var/automate    # The directory for the ansible tasks to store temporary data.
+
+# The version of pip to use.
+redhat_pip_version: 3.12
+
+# Will be used as the prefix for all the hostnames
+lab_name: devops
+
+# Kubernetes configuration settings.
+# The user account to create. This account will be used to setup kubernetes.
+kube:
+  user: k8s-admin
+  # Password is p@ssw0rd
+  pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
+  cluster:
+    # The DNS domain name
+    domain: k8s.local
+
+    # The name of your k8s cluster.
+    # Will be appended with domain to form FQDN i.e. serena.k8s.local
+    name: serena
+
+    # The virtual ip address if you are running with load balancers, or the ip address of the 1st control plane.
+    address: 192.168.0.200
+
+    # The internal network of your kubernetes cluster.
+    cidr_network: 10.1.0.0/16
+
+    # Indicates whether to use the provisioned dns server for naming.
+    # yes - will attempt to register hostnames to dns server.
+    # no - will use host file.
+    use_dns_server: yes
+
+  # Specify which ingress type to use - nginx or contour
+  ingress_type: nginx
+
+  # This setting has the following effect:
+  #   yes - Remove the taints on all control-planes and allow all pods (including user applications) to be scheduled on any nodes.
+  #   no - Keep the taints on all control-planes but will configure tolerations on add-on components to run on the control-planes.
+  allow_scheduling: no

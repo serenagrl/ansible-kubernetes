@@ -1,0 +1,10 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install Semaphore UI
+  ansible.builtin.apt:
+    deb: https://github.com/semaphoreui/semaphore/releases/download/v{{ release }}/semaphore_{{ release }}_linux_amd64.deb

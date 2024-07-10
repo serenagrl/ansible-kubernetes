@@ -13,27 +13,23 @@ tls:
   certFilename: tls.crt
   certKeyFilename: tls.key
   certCAFilename: ca.crt
-{% endif %}  
+{% endif %}
 
 persistence:
   size: {{ redis.storage_size }}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 redis:
   tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/control-plane
-      operator: Exists
+    {{ redis.tolerations }}
   nodeSelector:
-    node-role.kubernetes.io/control-plane: ""
+    {{ redis.nodeSelector }}
 
 updateJob:
   tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/control-plane
-      operator: Exists
+    {{ redis.tolerations }}
   nodeSelector:
-    node-role.kubernetes.io/control-plane: ""
+    {{ redis.nodeSelector }}
 {% endif %}
 
 metrics:

@@ -1,0 +1,13 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install RabbitMQ grafana dashboard
+  ansible.builtin.include_role:
+    name: monitoring/grafana-dashboard
+  vars:
+    dashboards: "{{ rabbitmq.grafana_dashboards }}"
+    namespace: rabbitmq-system

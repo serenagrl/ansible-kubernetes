@@ -1,0 +1,1 @@
+VM_FOLDER: "{{ virtual_disk.vm_folder }}\\{{ lab_name }}"

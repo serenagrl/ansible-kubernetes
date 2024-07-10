@@ -1,21 +1,27 @@
-- name: Create nginx tls certificate
-  block:
-    - name: Get Ingress class name
-      shell: kubectl get ingressclass -o jsonpath='{.items[0].metadata.name}'
-      register: ingress_result
+# input parameters:
+# name          - name of the component
+# namespace     - namespace of the component
+# in_create     - determine whether to create the ingress
+# in_definition - the ingress definition
 
-    - name: Get ingress host
-      shell: kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
-      register: ingress_host_result
+- name: Get ingress class
+  kubernetes.core.k8s_info:
+    kind: IngressClass
+  register: ingress_class
 
-    - name: Create ingress for {{ namespace }}
-      vars:
-        ingress_name: "{{ ingress_result.stdout }}"
-        ingress_host: "{{ ingress_host_result.stdout | default(_kube.cluster.name + '.' + _kube.cluster.domain, true) }}"
-      kubernetes.core.k8s:
-        apply: yes
-        force: yes
-        definition: |
-          {{ definition }}
-      when:
-        - ingress_name != ""
+- name: Get ingress host
+  ansible.builtin.shell: kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.metadata.annotations.ansible-kubernetes/ingress-host}'
+  register: ingress_host_result
+
+- name: Create ingress for {{ namespace }}
+  vars:
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
+  kubernetes.core.k8s:
+    apply: yes
+    force: yes
+    definition: |
+      {{ in_definition }}
+  when:
+    - in_create | default(true)
+    - ingress_name != ""

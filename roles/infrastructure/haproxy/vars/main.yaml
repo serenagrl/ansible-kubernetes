@@ -1,12 +1,12 @@
 haproxy:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
-  version: 2.8
+  version: "3.0"
   username: haproxy
   password: p@ssw0rd
-  port: 80
+  port: 18080
 
 keepalived:
   email: ""
-  vip_address: "{{ _kube.cluster.address }}"
+  vip_address: "{{ kube.cluster.address }}"
   vip_cidr: 24

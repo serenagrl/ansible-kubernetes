@@ -4,12 +4,13 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
 - name: Install and configure nfs clients
   vars:
     nfs_client: "{{ item }}"
     nfs_shared: "{{ csi_nfs.shared }}"
   ansible.builtin.include_role:
-    name: nfs/client
+    name: infrastructure/nfs/client
   loop: "{{ fact_active_hosts }}"
 
 - name: Download and configure nfs provisioner
@@ -28,7 +29,7 @@
     - name: Configure nfs provisioner
       ansible.builtin.shell: |
               sed -i 's/nfs-subdir-external-provisioner$/nfs-provisioner/g' deployment.yaml
-              sed -i "s/10.3.243.101$/{{ hostvars['nfs_server'].ansible_host }}/g" deployment.yaml
+              sed -i "s/10.3.243.101$/{{ hostvars['nfs_server'].ansible_hostname }}/g" deployment.yaml
               sed -i "s/\/ifs\/kubernetes$/\{{ csi_nfs.shared }}/g" deployment.yaml
               sed -i 's/nfs-subdir-external-provisioner/nfs-provisioner/g' class.yaml
               sed -i 's/nfs-client/{{ csi_nfs.storage_name }}/g' class.yaml
@@ -103,4 +104,4 @@
   ansible.builtin.file:
     path: "{{ REPO_DIR }}"
     state: absent
-  when: _cleanup
+  when: auto_cleanup

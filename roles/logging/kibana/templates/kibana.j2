@@ -3,7 +3,7 @@ kind: Kibana
 metadata:
   name: kibana
   namespace: logging
-spec:  
+spec:
   version: {{ release }}
   count: 1
   elasticsearchRef:
@@ -16,7 +16,7 @@ spec:
             - name: SERVER_BASEPATH
               value: /kibana
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane

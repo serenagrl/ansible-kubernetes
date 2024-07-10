@@ -1,0 +1,28 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Gather facts
+  ansible.builtin.setup:
+
+- name: Install NFS server
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-nfs.yaml"
+
+- name: Create shared directory
+  ansible.builtin.file:
+    path: "{{ nfs.shared }}"
+    state: directory
+    mode: '0777'
+
+- name: Enable nfs
+  ansible.builtin.shell: |
+    sudo systemctl enable --now nfs-server
+    sudo systemctl start nfs-server
+    sudo exportfs -ar
+
+- name: Configure DNS Server
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/register-to-dns.yaml"
+  when: kube.cluster.use_dns_server|bool and hostvars['dns_server'].ansible_hostname != ansible_hostname

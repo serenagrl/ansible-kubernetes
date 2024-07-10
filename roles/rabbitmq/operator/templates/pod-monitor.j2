@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: rabbitmq-cluster-operator
+  namespace: rabbitmq-system
+  labels:
+    app.kubernetes.io/component: rabbitmq-operator
+    release: monitoring
+spec:
+  podMetricsEndpoints:
+  - port: metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: rabbitmq-operator
+  namespaceSelector:
+    matchNames:
+    - rabbitmq-system

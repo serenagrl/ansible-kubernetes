@@ -5,6 +5,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
 - name: Register DNS entry
   vars:
     domain_prefix: gitlab
@@ -16,9 +19,12 @@
     kind: Namespace
     name: gitlab
 
-- ansible.builtin.include_role:
-    name: devops/gitlab/minio-tenant
-  when: gitlab.external_minio
+- name: Create minio tenant for Gitlab
+  vars:
+    minio_tenant: "{{ gitlab.external_minio }}"
+  ansible.builtin.include_role:
+    name: devops/minio/create-tenant
+  when: gitlab.external_minio.enabled
 
 - name: Install Gitlab
   block:
@@ -40,7 +46,6 @@
       vars:
         ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
         version: "{% if gitlab.version is defined and gitlab.version and gitlab.version != 'latest' %}{{ gitlab.version }}{% endif %}"
-        has_issuer: issuer_status.stdout == "Ready"
       kubernetes.core.helm:
         name: gitlab
         atomic: yes
@@ -49,7 +54,7 @@
         namespace: gitlab
         create_namespace: yes
         values: "{{ VALUES_FILE }}"
-        timeout: 10m0s
+        timeout: 20m0s
         wait: yes
 
     - name: Waiting for Gitlab deployments to be ready
@@ -67,5 +72,3 @@
     command:
       "echo accesskey=$(kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.accesskey}' | base64 -d);
        echo -n secretkey=; kubectl get secret -n gitlab gitlab-minio-secret -ojsonpath='{.data.secretkey}'"
-
-

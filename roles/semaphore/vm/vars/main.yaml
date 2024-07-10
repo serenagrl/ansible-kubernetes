@@ -7,17 +7,16 @@ semaphore:
   install_postgres: yes
 
   db_password: p@ssw0rd
-  install_dir: /usr/local/bin
   config_dir: /root/semaphore
 
   tmp_path: /tmp/semaphore
-  port: 3000
+  port: 80
 
   admin:
     login: admin
     name: "Default Admin"
     email: "admin@example.com"
-    password: "p@ssw0rd" 
+    password: "p@ssw0rd"
 
   email:
     alert: false

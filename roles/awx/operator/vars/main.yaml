@@ -1,4 +1,6 @@
 awx:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
-  version: latest #0.28.0
+  version: latest # versions older than 24.0.0 are not supported
+  operator:
+    version: latest # versions older than 2.13.1 are not supported

@@ -1,1 +1,2 @@
 ALIASES_TEMPLATE: "{{ lookup('template', 'roles/kubernetes/control-plane/templates/aliases.j2') }}"
+KUBE_CONFIG_TEMPLATE: "{{ lookup('template', 'kube-config.j2') | from_yaml }}"

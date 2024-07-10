@@ -26,16 +26,9 @@ spec:
 {% endif %}
       management.path_prefix = /{{ rabbitmq.namespace }}/rabbitmq
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
   tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/control-plane
-      operator: Exists
+    {{ rabbitmq.tolerations }}
   affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: node-role.kubernetes.io/control-plane
-            operator: Exists
+    {{ rabbitmq.affinity }}
 {% endif %}

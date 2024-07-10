@@ -1,0 +1,37 @@
+excludeNamespaces: {{ trivy.excludeNamespaces }}
+
+targetWorkloads: {{ trivy.targetWorkloads }}
+
+operator:
+  builtInTrivyServer: true
+
+trivy:
+  mode: ClientServer
+
+serviceMonitor:
+  enabled: {{ trivy.prometheus }}
+  labels:
+    release: monitoring
+
+{% if not kube.allow_scheduling %}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""
+
+trivyOperator:
+  scanJobTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  scanJobNodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+
+nodeCollector:
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+{% endif %}

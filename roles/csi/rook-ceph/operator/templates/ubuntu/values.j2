@@ -1,0 +1,144 @@
+{% if not rook_ceph.operator.enable_request_limit %}
+resources: null
+{% endif %}
+
+logLevel: WARNING
+
+{% if not kube.allow_scheduling %}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+csi:
+{% if not kube.allow_scheduling %}
+  provisionerTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  provisionerNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  pluginTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  pluginNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  rbdProvisionerTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  rbdProvisionerNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  rbdPluginTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  rbdPluginNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  cephFSProvisionerTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  cephFSProvisionerNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  cephFSPluginTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  cephFSPluginNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  nfsProvisionerTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nfsProvisionerNodeAffinity: "node-role.kubernetes.io/control-plane="
+
+  nfsPluginTolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nfsPluginNodeAffinity: "node-role.kubernetes.io/control-plane="
+{% endif %}
+
+{% if not rook_ceph.operator.enable_request_limit %}
+  csiRBDProvisionerResource: |
+    - name : csi-provisioner
+      resource: {}
+    - name : csi-resizer
+      resource: {}
+    - name : csi-attacher
+      resource: {}
+    - name : csi-snapshotter
+      resource: {}
+    - name : csi-rbdplugin
+      resource: {}
+    - name : csi-omap-generator
+      resource: {}
+    - name : liveness-prometheus
+      resource: {}
+
+  csiRBDPluginResource: |
+    - name : driver-registrar
+      resource: {}
+    - name : csi-rbdplugin
+      resource: {}
+    - name : liveness-prometheus
+      resource: {}
+
+  csiCephFSProvisionerResource: |
+    - name : csi-provisioner
+      resource: {}
+    - name : csi-resizer
+      resource: {}
+    - name : csi-attacher
+      resource: {}
+    - name : csi-snapshotter
+      resource: {}
+    - name : csi-cephfsplugin
+      resource: {}
+    - name : liveness-prometheus
+      resource: {}
+
+  csiCephFSPluginResource: |
+    - name : driver-registrar
+      resource: {}
+    - name : csi-cephfsplugin
+      resource: {}
+    - name : liveness-prometheus
+      resource: {}
+
+  csiNFSProvisionerResource: |
+    - name : csi-provisioner
+      resource: {}
+    - name : csi-nfsplugin
+      resource: {}
+    - name : csi-attacher
+      resource: {}
+
+  csiNFSPluginResource: |
+    - name : driver-registrar
+      resource: {}
+    - name : csi-nfsplugin
+      resource: {}
+{% endif %}
+
+discover:
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+{% endif %}
+{% if not rook_ceph.operator.enable_request_limit %}
+  resources: {}
+{% endif %}

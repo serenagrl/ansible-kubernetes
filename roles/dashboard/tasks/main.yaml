@@ -4,57 +4,45 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
-- become_user: root
-  delegate_to: localhost
-  block:
-    - ansible.builtin.import_tasks: ./tasks/task-get-manifest.yaml
-      vars:
-        name: "kubernetes dashboard"
-        namespace: "kubernetes-dashboard"
-        repo_path: "kubernetes/dashboard"
-        pkg_version: "{{ dashboard.version | default }}"
-        version_prefix: "v"
-        dest: "{{ MANIFEST_FILE }}"
-        urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/aio/deploy/recommended.yaml"]
-        #urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/charts/kubernetes-dashboard.yaml"]
 
-    - name: Configure to run on control-planes only
-      block:    
-        - name: Patch tolerations 
-          ansible.builtin.replace:
-            path: "{{ MANIFEST_FILE }}"
-            regexp: '^\s*(tolerations:)$'
-            replace: |4-
-                      \1
-                        - effect: NoSchedule
-                          key: node-role.kubernetes.io/control-plane
-                          operator: Exists
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
 
-        - name: Patch nodeSelectors
-          ansible.builtin.replace:
-            path: "{{ MANIFEST_FILE }}"
-            regexp: '^\s*(nodeSelector:)$'
-            replace: |4-
-                      \1
-                        node-role.kubernetes.io/control-plane: ""
-
-      when: not _kube.allow_scheduling
-
-- name: Install kubernetes dashboard
+- name: Create kubernetes-dashboard namespace
   kubernetes.core.k8s:
-    apply: yes
-    force: yes
-    definition: "{{ lookup('file', MANIFEST_FILE) | from_yaml_all }}"
+    kind: Namespace
+    name: kubernetes-dashboard
 
-- name: Cleanup manifest file
-  delegate_to: localhost
-  become_user: root
-  ansible.builtin.file:
-    path: "{{ MANIFEST_FILE }}"
-    state: absent
-  when: _cleanup
-  
-- name: Create dashboard ServiceAccount
+  # Notes: Use cluster's domain name and with custom route /dashboard
+- name: Setup ingress
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: kubernetes-dashboard
+    namespace: kubernetes-dashboard
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: "{{ INGRESS_CREATE }}"
+
+- name: Add kubernetes dashboard chart repo
+  kubernetes.core.helm_repository:
+    name: kubernetes-dashboard
+    repo_url: "https://kubernetes.github.io/dashboard/"
+
+- name: Deploy kubernetes dashboard
+  vars:
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
+    version: "{% if dashboard.version is defined and dashboard.version and dashboard.version != 'latest' %}{{ dashboard.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: kubernetes-dashboard
+    atomic: yes
+    chart_ref: kubernetes-dashboard/kubernetes-dashboard
+    chart_version: "{{ version }}"
+    namespace: kubernetes-dashboard
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    wait: yes
+
+- name: Create kubernetes dashboard ServiceAccount
   kubernetes.core.k8s:
     apply: yes
     force: yes
@@ -101,14 +89,3 @@
   vars:
     name: "kubernetes dashboard token"
     command: "kubectl -n kube-system get secret dashboard-admin -o jsonpath='{.data.token}'"
-
-- name: Waiting for kubernetes dashboard to be ready
-  ansible.builtin.shell: kubectl rollout status -n kubernetes-dashboard deployment/kubernetes-dashboard
-
-  # Notes: Use cluster's domain name and with custom route /dashboard
-- name: Setup ingress
-  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
-  vars:
-    name: kubernetes-dashboard
-    namespace: kubernetes-dashboard
-    definition: "{{ INGRESS_TEMPLATE }}"  

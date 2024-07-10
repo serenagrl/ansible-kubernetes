@@ -1,0 +1,26 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Trust ca certificate
+  block:
+    - name: Configure worker node {{ cert_type_name }} certificate directory
+      vars:
+        cert_type_name: shared
+        cert_dir: /usr/local/share/ca-certificates
+        cert_name: "{{ kube.cluster.name }}-ca.crt"
+      ansible.builtin.include_tasks: handle-cert.yaml
+
+    - name: Update certificates
+      ansible.builtin.shell: update-ca-certificates
+
+- name: Configure worker node {{ cert_type_name }} certificate directory
+  vars:
+    cert_type_name: containerd
+    cert_dir: "{{ CR_CERT_DIR }}"
+    cert_name: "{{ kube.cluster.name }}-ca.crt"
+  ansible.builtin.include_tasks: handle-cert.yaml

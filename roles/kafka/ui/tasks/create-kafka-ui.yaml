@@ -1,0 +1,48 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Register DNS entry
+  vars:
+    domain_prefix: kafka
+  ansible.builtin.include_role:
+    name: common/dns-register
+
+- name: Install kafka-ui
+  block:
+    - name: Add kafka-ui chart repo
+      kubernetes.core.helm_repository:
+        name: kafka-ui
+        repo_url: "https://provectus.github.io/kafka-ui-charts"
+
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: kafka-ui
+        certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+    # Notes: Uses own domain names.
+    - name: Setup ingress
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: kafka
+        namespace: kafka
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: no
+
+    - name: Deploying kafka-ui
+      vars:
+        ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+        version: "{% if kafka.ui.version is defined and kafka.ui.version and kafka.ui.version != 'latest' %}{{ kafka.ui.version }}{% endif %}"
+      kubernetes.core.helm:
+        name: kafka-ui
+        atomic: yes
+        chart_ref: kafka-ui/kafka-ui
+        chart_version: "{{ version }}"
+        namespace: kafka
+        create_namespace: yes
+        values: "{{ VALUES_FILE }}"
+        timeout: 10m0s
+        wait: yes

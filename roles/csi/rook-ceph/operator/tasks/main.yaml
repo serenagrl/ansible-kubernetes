@@ -1,0 +1,24 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Add rook-ceph chart repo
+  kubernetes.core.helm_repository:
+    name: rook-release
+    repo_url: "https://charts.rook.io/release"
+
+- name: Deploy rook-ceph operator
+  vars:
+    version: "{% if rook_ceph.operator.version is defined and rook_ceph.operator.version and rook_ceph.operator.version != 'latest' %}{{ rook_ceph.operator.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: rook-ceph-operator
+    atomic: yes
+    chart_ref: rook-release/rook-ceph
+    chart_version: "{{ version }}"
+    namespace: rook-ceph
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    wait: yes

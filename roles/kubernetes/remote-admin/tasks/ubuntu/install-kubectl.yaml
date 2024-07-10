@@ -1,0 +1,46 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Check if kubectl is installed
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.shell: apt list kubectl --installed
+  register: kubectl_result
+
+- name: Install kubectl
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Get latest kubernetes release
+      ansible.builtin.shell: |
+          curl -s "https://api.github.com/repos/kubernetes/kubernetes/releases/latest" | grep tag_name | cut -d '"' -f 4
+      register: release_tag
+
+    - name: Get kubernetes key
+      ansible.builtin.get_url:
+        url:  https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+        dest: /tmp/kubernetes.gpg.key
+        mode: '0644'
+        force: true
+
+    - name: De-armor kubernetes gpg
+      ansible.builtin.shell: gpg --dearmor < /tmp/kubernetes.gpg.key > /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Register kubernetes repository
+      vars:
+          repo_version: "{{ release_tag.stdout.split('.')[:2]|join('.') }}"
+      ansible.builtin.apt_repository:
+        filename: kubernetes
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ repo_version }}/deb/ /"
+        update_cache: yes
+
+    - name: Installing kubectl
+      ansible.builtin.apt:
+        pkg:
+          - kubectl
+        state: latest
+        update_cache: yes
+  when: not ((kubectl_result.stdout_lines | select('search', 'installed') | length > 0) | bool) 

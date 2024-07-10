@@ -12,13 +12,13 @@
   gather_facts: no
 
   roles:
-    - role: vm-ubuntu
-      when: provision_vm
-    - role: nfs/server
+    - role: vm-linux
+      when: provision_vm is defined and provision_vm|bool
+    - role: infrastructure/nfs/server
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "NFS configured."
-      when: _checkpoint
+      when: vm_checkpoint|bool

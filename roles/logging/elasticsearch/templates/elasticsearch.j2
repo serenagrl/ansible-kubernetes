@@ -10,8 +10,16 @@ spec:
     count: 3
     config:
       node.store.allow_mmap: true
-
-{% if not _kube.allow_scheduling %}
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ elasticsearch.storage_size }}
+{% if not kube.allow_scheduling %}
     podTemplate:
       spec:
         tolerations:

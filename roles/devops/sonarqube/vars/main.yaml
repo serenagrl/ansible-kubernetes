@@ -2,3 +2,6 @@ sonarqube:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
   version: latest
+  # Size was reduced for lab environment.
+  # Original manifest value is 20Gi.
+  storage_size: 10Gi

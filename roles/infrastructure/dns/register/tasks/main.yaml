@@ -1,6 +1,12 @@
 - delegate_to: dns_server
   become_user: root
   block:
+    - name: Gathering facts for dns_server
+      delegate_facts: yes
+      ansible.builtin.setup:
+        filter:
+          - ansible_distribution
+
     - name: Create update file
       vars:
         server_name: "{{ in_server_name | default(ansible_hostname) }}"
@@ -12,13 +18,10 @@
         dest: "{{ NSUPDATE_FILE }}"
 
     - name: Register to dns server
-      ansible.builtin.shell: nsupdate -k /etc/bind/rndc.key "{{ NSUPDATE_FILE }}"
+      ansible.builtin.shell: nsupdate -k "{{ KEY_LOCATION[ hostvars.dns_server.ansible_distribution | lower ] }}"/rndc.key "{{ NSUPDATE_FILE }}"
 
     - name: Cleanup manifest
-      delegate_to: localhost
-      become_user: root
       ansible.builtin.file:
         path: "{{ NSUPDATE_FILE }}"
         state: absent
-      when: _cleanup
-
+      when: auto_cleanup

@@ -1,0 +1,3 @@
+MANIFEST_DIR: "{{ temp_dir }}/tekton-triggers"
+MANIFEST_TRIGGER_FILE: "release.yaml"
+MANIFEST_INTERCEPTOR_FILE: "interceptors.yaml"

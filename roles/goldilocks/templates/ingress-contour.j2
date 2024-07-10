@@ -1,0 +1,12 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: goldilocks-httpproxy
+  namespace: goldilocks
+spec:
+  routes:
+    - conditions:
+        - prefix: /goldilocks
+      services:
+        - name: goldilocks-dashboard
+          port: 80

@@ -4,125 +4,56 @@
 # This playbook was written based on my self-learning and may not follow certain
 # best practices or work properly in your environment. Use it at your own risk.
 #
+
 - name: Install kubectl
-  delegate_to: localhost
+  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-kubectl.yaml"
+  when: remote_admin.install_kubectl
+
+- name: Install k9s
+  ansible.builtin.include_tasks: "install-k9s.yaml"
+  when: remote_admin.install_k9s
+
+- name: Install krew
+  ansible.builtin.include_tasks: install-krew.yaml
+  when: remote_admin.install_krew
+
+- name: Install helm
   become_user: root
   block:
-    - name: Get latest kubernetes release
+    - name: Install Helm
+      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-helm.yaml"
+
+    - name: Check if helm diff plugin is installed
       ansible.builtin.shell: |
-          curl -s "https://api.github.com/repos/kubernetes/kubernetes/releases/latest" | grep tag_name | cut -d '"' -f 4
-      register: release_tag
+        helm plugin list diff | grep diff
+      register: helm_plugin_result
+      failed_when: helm_plugin_result.stderr_lines | length > 0 | bool
 
-    - name: Get kubernetes key
-      ansible.builtin.get_url:
-        url:  https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
-        dest: /tmp/kubernetes.gpg.key
-        mode: '0644'
-        force: true
-
-    - name: De-armor kubernetes gpg
-      ansible.builtin.shell: gpg --dearmor < /tmp/kubernetes.gpg.key > /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-
-    - name: Register kubernetes repository
-      vars:
-         release: "{{ release_tag.stdout.split('.')[:2]|join('.') }}"
-      ansible.builtin.apt_repository:
-        filename: kubernetes
-        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ release }}/deb/ /"
-        update_cache: yes
-
-    - name: Installing kubectl
-      ansible.builtin.apt:
-        pkg:
-          - "kubectl"
-        state: latest
-        update_cache: yes
-
-  when: remote_admin.install_kubectl
+    # Prevents warnings when running ansible helm commands.
+    - name: Install helm diff
+      ansible.builtin.shell: |
+        helm plugin install https://github.com/databus23/helm-diff
+      when: helm_plugin_result.stdout_lines | length <= 0 | bool
+  when: remote_admin.install_helm
 
 - delegate_to: localhost
   become_user: root
+  vars:
+    action: "{{ file_stats.stat.exists | ternary('update', 'create') }}"
   block:
     - name: Add kubernetes cluster DNS entry to /etc/hosts
       ansible.builtin.lineinfile:
         path: /etc/hosts
         insertafter: "127.0.0.1 localhost"
-        line: "{{ _kube.cluster.address }} {{ _kube.cluster.name }}"
+        line: "{{ kube.cluster.address }} {{ kube.cluster.name }}"
 
     - name: Check if kube config file exists on ansible controller host
       ansible.builtin.stat:
         path: /root/.kube/config
       register: file_stats
 
-    - name: Download kube config
-      block:
-        - name: Create .kube in home directory
-          ansible.builtin.file:
-            path: /root/.kube
-            state: directory
-            mode: 0700
-
-        - name: Copy admin.conf to home directory kube config
-          delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
-          ansible.builtin.fetch:
-            src: /etc/kubernetes/admin.conf
-            dest: /root/.kube/config
-            flat: yes
-
-        - name: Replace default cluster name with {{ _kube.cluster.name }}
-          ansible.builtin.replace:
-            path: /root/.kube/config
-            regexp: 'kubernetes'
-            replace: "{{ _kube.cluster.name }}"
-
-      when: not file_stats.stat.exists
-
-    - name: Add cluster config to kube config file on ansible controller host
-      block:
-        - name: Get local kube config file
-          ansible.builtin.slurp:
-            src: /root/.kube/config
-          register: local_file
-
-        - name: Add cluster information to kube config
-          vars:
-            cluster_exist: "{{ local_file['content'] | b64decode | regex_search('cluster: ' + _kube.cluster.name) }}"
-            config: "{{ config_file['content'] | b64decode | replace('kubernetes', _kube.cluster.name) }}"
-          block:
-            - name: Get kube config file from control plane
-              delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
-              ansible.builtin.slurp:
-                src: /etc/kubernetes/admin.conf
-              register: config_file
-
-            - name: Add cluster info to ansible controller host .kube config file
-              ansible.builtin.blockinfile:
-                path: /root/.kube/config
-                insertafter: "clusters:"
-                marker: "### {mark} {{ _kube.cluster.name }} configuration"
-                block: "{{ config | regex_search('(?<=clusters:\n)(?s)(.*)(?=contexts)') }}"
-
-            - name: Add context info to ansible controller host .kube config file
-              ansible.builtin.blockinfile:
-                path: /root/.kube/config
-                insertafter: "contexts:"
-                marker: "### {mark} {{ _kube.cluster.name }} context"
-                block: "{{ config | regex_search('(?<=contexts:\n)(?s)(.*)(?=current-)') }}"
-
-            - name: Add user info to ansible controller host .kube config file
-              ansible.builtin.blockinfile:
-                path: /root/.kube/config
-                insertafter: "users:"
-                marker: "### {mark} {{ _kube.cluster.name }} user"
-                block: "{{ config | regex_search('(?<=users:\n)(?s)(.*)') }}"
-
-            - name: Set context to cluster
-              ansible.builtin.shell: |
-                kubectl config use-context {{ _kube.cluster.name }}-admin@{{ _kube.cluster.name }}
-              ignore_errors: yes
-
-          when: not cluster_exist
-      when: file_stats.stat.exists
+    - name: "{{ action }} kube config"
+      ansible.builtin.include_tasks: "{{ action }}-config.yaml"
 
     - name: Add autocomplete and aliases to shell
       ansible.builtin.blockinfile:

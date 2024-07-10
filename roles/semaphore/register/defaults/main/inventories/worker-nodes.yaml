@@ -1,0 +1,7 @@
+# Wk inventory variables.
+INV_WK: "{{ inventory_files | community.general.json_query('results[?contains(source, `kubernetes_worker_nodes`)].content') | b64decode | from_yaml }}"
+INV_WK_VARS:
+  kubernetes_worker_nodes:
+    vars: "{{ (inventory_var_files | community.general.json_query('results[?contains(source, `kubernetes_worker_nodes`)].content') | b64decode | from_yaml) }}"
+
+INVENTORY_WK: "{{ INV_WK | combine(INV_WK_VARS, recursive=true) }}"

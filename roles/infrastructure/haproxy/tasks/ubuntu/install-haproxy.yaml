@@ -1,0 +1,18 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Add Haproxy repository
+  ansible.builtin.apt_repository:
+    repo: "ppa:vbernat/haproxy-{{ haproxy.version }}"
+    state: present
+    update_cache: yes
+
+- name: Installing Haproxy
+  ansible.builtin.apt:
+    name: haproxy
+    state: latest
+    update_cache: yes

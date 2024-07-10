@@ -1,0 +1,16 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: {{ minio_tenant.tenant_name }}-api-httpproxy
+  namespace: {{ minio_tenant.namespace }}
+spec:
+  virtualhost:
+    fqdn: {{ minio_tenant.domain_name }}.{{ kube.cluster.domain }}
+    tls:
+      secretName: {{ minio_tenant.tenant_name }}-ingress-tls
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: minio
+          port: 80

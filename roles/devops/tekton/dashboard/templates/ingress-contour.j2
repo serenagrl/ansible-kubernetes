@@ -1,0 +1,15 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: {{ name }}-httpproxy
+  namespace: {{ namespace }}
+spec:
+  routes:
+    - conditions:
+        - prefix: /tekton
+      services:
+        - name: tekton-dashboard
+          port: 9097
+      pathRewritePolicy:
+        replacePrefix:
+          - replacement: /

@@ -4,17 +4,13 @@ expose:
   type: ingress
   tls:
     enabled: true
-{% if has_issuer %}
     certSource: secret
     secret:
       secretName: "harbor-ingress-tls"
-{% else %}
-    certSource: auto
-{% endif %}
 
   ingress:
     hosts:
-      core: core.harbor.{{ _kube.cluster.domain }}
+      core: core.harbor.{{ kube.cluster.domain }}
     controller: default
     className: "{{ ingress_name }}"
     annotations:
@@ -23,16 +19,14 @@ expose:
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       nginx.ingress.kubernetes.io/proxy-body-size: "0"
 
-externalURL: https://core.harbor.{{ _kube.cluster.domain }}
+externalURL: https://core.harbor.{{ kube.cluster.domain }}
 
 persistence:
   enabled: true
 
-{% if has_issuer %}
 caSecretName: "harbor-ingress-tls"
-{% endif %}
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 portal:
   tolerations:
     - effect: NoSchedule

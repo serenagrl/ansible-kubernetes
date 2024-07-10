@@ -1,0 +1,41 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+  
+- name: Add kyverno chart repo
+  kubernetes.core.helm_repository:
+    name: kyverno
+    repo_url: "https://kyverno.github.io/kyverno/"
+
+- name: Deploy kyverno
+  vars:
+    version: "{% if kyverno.version is defined and kyverno.version and kyverno.version != 'latest' %}{{ kyverno.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: kyverno
+    atomic: yes
+    chart_ref: kyverno/kyverno
+    chart_version: "{{ version }}"
+    namespace: kyverno
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    wait: yes
+
+- name: Install default policies
+  ansible.builtin.include_role:
+    name: devops/kyverno/policies
+  when: kyverno.policies.enabled
+
+- name: Install kyverno plugin to ansible controller host
+  delegate_to: localhost
+  become_user: root
+  ansible.builtin.shell: |
+    export HOME=/root
+    export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+    kubectl krew install kyverno
+  when: kyverno.install_kubectl_plugin|bool and fact_has_plugin_krew|bool

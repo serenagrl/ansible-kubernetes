@@ -1,0 +1,4 @@
+# Tracing environment variables.
+TRACING_VARS:
+  - { name: tracing/jaeger, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tracing/jaeger/vars`)].content') | b64decode | from_yaml }}" }
+  - { name: tracing/open-telemetry, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/tracing/open-telemetry/vars`)].content') | b64decode | from_yaml }}" }

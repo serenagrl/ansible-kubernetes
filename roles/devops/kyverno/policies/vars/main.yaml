@@ -1,0 +1,13 @@
+kyverno:
+  policies:
+    # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+    # releases with breaking changes. Try reducing the version number if errors occur during installation.
+    version: latest
+
+    # Supported values - `baseline`, `restricted`, `privileged`, `custom`
+    # For more info https://kyverno.io/policies/pod-security.
+    # For custom, please modify values template.
+    profile: baseline
+
+    # Supported values - `low`, `medium`, `high`
+    severity: medium

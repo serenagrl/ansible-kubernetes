@@ -1,0 +1,3 @@
+# Loki environment variables.
+LOKI_VARS:
+  - { name: logging/loki, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/loki/vars`)].content') | b64decode | from_yaml }}" }

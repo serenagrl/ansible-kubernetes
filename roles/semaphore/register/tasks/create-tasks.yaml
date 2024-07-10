@@ -1,6 +1,4 @@
 - name: Create Default Setup tasks
-  vars:
-    setup_common_task: "{{ semaphore.project.create.component_environments and semaphore.project.create.component_playbooks }}"
   ansible.builtin.uri:
     url: "{{ SEMAPHORE_URL }}/project/{{ SEMAPHORE_PROJECT_ID }}/templates"
     method: POST
@@ -12,7 +10,7 @@
     body: |
       {
         "project_id": {{ SEMAPHORE_PROJECT_ID }},
-        "inventory_id": {{ item.inv_id }},
+        "inventory_id": {{ item.inv_id | default(SEMAPHORE_DEFAULT_INVENTORY_ID) }},
         "repository_id": {{ SEMAPHORE_REPO_ID }},
         "environment_id": {{ (environment_response | community.general.json_query('json[?name==`' + item.env_name + '`].id')).0 }},
         "view_id": null,
@@ -23,61 +21,65 @@
         "allow_override_args_in_task": false,
         "limit": "",
         "suppress_success_alerts": true,
-        "survey_vars": []
+        "survey_vars": {{ item.surveys | default([]) }}
       }
     status_code: 201 # Created
-  when: item.create
   loop:
-    - { name: "1. Setup DNS Server", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_DNS }}", desc: "Configures a basic BIND DNS server. Optionally, can provision a virtual machine for it." }
-    - { name: "2. Setup Load-Balancers", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_LOAD_BALANCERS }}", desc: "Provisions Load Balancer VMs, install/configure HAProxy and Keepalived." }
-    - { name: "3. Provision Control-Planes VMs", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_SERVERS }}", desc: "Provisions control-plane virtual machines." }
-    - { name: "4. Setup Control-Plane (Primary)", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_PRIMARY }}", desc: "Creates primary control-plane in kubernetes cluster." }
-    - { name: "5. Setup Control-Planes (Secondary)", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_CONTROL_PLANE_OTHER }}", desc: "Join secondary control-planes into kubernetes cluster." }
-    - { name: "6. Provision Worker Nodes VMs", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODE_SERVERS }}", desc: "Provisions worker node virtual machines." }
-    - { name: "7. Setup Worker Nodes", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_WORKER_NODES }}", desc: "Join worker nodes into the kubernetes cluster." }
-    - { name: "8. Setup NFS Server", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_NFS }}", desc: "Configures a basic NFS server. Optionally, can provision a virtual machine for it." }
-    - { name: "9. Setup Basic Components", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs basic kubernetes components." }
-    - { name: "Provision Kubernetes VMs", env_name: "Default Setup Infrastructure", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES_SERVERS }}", desc: "Provisions all the virtual machines for the kubernetes cluster." }
-    - { name: "Setup Kubernetes Cluster", env_name: "Default Setup Kubernetes", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: yes,
-        playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes." }
-    - { name: "Setup Semaphore Project", env_name: "Default Semaphore Project", inv_id: "{{ SEMAPHORE_PROJECT_INVENTORY_ID }}", create: "{{ semaphore.project.create.setup_semaphore_project }}",
+    - { name: "1. Setup Infrastructure Services", env_name: "Setup Infrastructure", surveys: "{{ SETUP_INFRA_SURVEYS + PROVISION_VM_SURVEYS }}",
+        playbook: "{{ PLAYBOOKS.SETUP_INFRASTRUCTURE }}", desc: "Setup and configure supporting infrastructure services servers." }
+    - { name: "2. Setup Kubernetes Cluster", env_name: "Setup Infrastructure", surveys: "{{ SETUP_KUBERNETES_SURVEYS + PROVISION_VM_SURVEYS }}",
+        playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes. Optionally, provisions VM for them." }
+    - { name: "3. Setup Basic Add-Ons", env_name: "Setup Basic Add-Ons",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs basic kubernetes components. (Cert-Manager, Ingress, Dashboard, Monitoring, Metrics Server)" }
+    - { name: "4. Setup CSI", env_name: "Setup Add-On - CSI", surveys: "{{ SETUP_CSI_SURVEYS }}",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the CSI." }
+    - { name: "Setup Semaphore Project", env_name: "Setup Semaphore Project", surveys: "{{ SEMAPHORE_PROJECT_SURVEYS }}",
+        inv_id: "{{ SEMAPHORE_PROJECT_INVENTORY_ID }}",
         playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
       # Miscellaneous
-    - { name: "Setup Component - Gitlab", env_name: "Default Component - Gitlab", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task}}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs Gitlab and Gitlab Runner. (Also installs Minio)." }
-    - { name: "Setup Component - Sonarqube", env_name: "Default Component - Sonarqube", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs Sonarqube." }
-    - { name: "Setup Component - Harbor", env_name: "Default Component - Harbor", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs Harbor container registry." }
-    - { name: "Setup Component - ArgoCD", env_name: "Default Component - ArgoCD", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs ArgoCD." }
-    - { name: "Setup Component - RabbitMQ", env_name: "Default Component - RabbitMQ", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs RabbitMQ Operator and creates a RabbitMQ Cluster." }
-    - { name: "Setup Component - Redis", env_name: "Default Component - Redis", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Creates a Redis cluster or Sentinel." }
-    - { name: "Setup Component - Velero", env_name: "Default Component - Velero", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs Velero." }
-    - { name: "Setup Component - Logging", env_name: "Default Component - Logging", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
-    - { name: "Setup Component - Istio", env_name: "Default Component - Istio", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs Istio" }
-    - { name: "Setup Component - Rook-Ceph", env_name: "Default Component - Rook-Ceph", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs the Rook-Ceph CSI." }
-    - { name: "Setup Component - MSSQL Server", env_name: "Default Component - MSSQL Server", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs Microsoft SQL Server." }
-    - { name: "Setup Component - AWX", env_name: "Default Component - AWX", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs AWX and register the environment for use." }
-    - { name: "Setup Component - Kafka", env_name: "Default Component - Kafka", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs Strimzi and creates a Kafka cluster." }
-    - { name: "Setup Component - Knative", env_name: "Default Component - Knative", inv_id: "{{ SEMAPHORE_DEFAULT_INVENTORY_ID }}", create: "{{ setup_common_task }}",
-        playbook: "{{ PLAYBOOKS.SETUP_COMPONENTS }}", desc: "Installs knative." }
+    - { name: "Setup Add-On - DevOps (Gitlab)", env_name: "Setup Add-On - DevOps (Gitlab)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Gitlab and Gitlab Runner. (Also installs Minio)." }
+    - { name: "Setup Add-On - DevOps (Sonarqube)", env_name: "Setup Add-On - DevOps (Sonarqube)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Sonarqube." }
+    - { name: "Setup Add-On - DevOps (Harbor)", env_name: "Setup Add-On - DevOps (Harbor)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Harbor container registry." }
+    - { name: "Setup Add-On - DevOps (ArgoCD)", env_name: "Setup Add-On - DevOps (ArgoCD)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs ArgoCD." }
+    - { name: "Setup Add-On - DevOps (Tekton)", env_name: "Setup Add-On - DevOps (Tekton)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs tekton." }
+    - { name: "Setup Add-On - DevOps (Minio)", env_name: "Setup Add-On - DevOps (Minio)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs minio." }
+    - { name: "Setup Add-On - DevOps (Kyverno)", env_name: "Setup Add-On - DevOps (Kyverno)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Kyverno." }
+    - { name: "Setup Add-On - Logging (Elastic Stack)", env_name: "Setup Add-On - Logging (Elastic Stack)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
+    - { name: "Setup Add-On - Logging (Fluentd)", env_name: "Setup Add-On - Logging (Fluentd)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
+    - { name: "Setup Add-On - Logging (Loki)", env_name: "Setup Add-On - Logging (Loki)",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs loki." }
+    - { name: "Setup Add-On - AWX", env_name: "Setup Add-On - AWX",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs AWX and register the environment for use." }
+    - { name: "Setup Add-On - Goldilocks", env_name: "Setup Add-On - Goldilocks",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs goldilocks." }
+    - { name: "Setup Add-On - Istio", env_name: "Setup Add-On - Istio",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Istio" }
+    - { name: "Setup Add-On - Kafka", env_name: "Setup Add-On - Kafka",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Strimzi and creates a Kafka cluster." }
+    - { name: "Setup Add-On - Keycloak", env_name: "Setup Add-On - Keycloak",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs keycloak." }
+    - { name: "Setup Add-On - Knative", env_name: "Setup Add-On - Knative",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs knative." }
+    - { name: "Setup Add-On - MetalLB", env_name: "Setup Add-On - MetalLB",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs MetalLB." }
+    - { name: "Setup Add-On - MSSQL Server", env_name: "Setup Add-On - MSSQL Server",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Microsoft SQL Server." }
+    - { name: "Setup Add-On - RabbitMQ", env_name: "Setup Add-On - RabbitMQ",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs RabbitMQ Operator and creates a RabbitMQ Cluster." }
+    - { name: "Setup Add-On - Redis", env_name: "Setup Add-On - Redis",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Creates a Redis cluster or Sentinel." }
+    - { name: "Setup Add-On - Tracing", env_name: "Setup Add-On - Tracing",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs tracing." }
+    - { name: "Setup Add-On - Trivy", env_name: "Setup Add-On - Trivy",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Trivy." }
+    - { name: "Setup Add-On - Velero", env_name: "Setup Add-On - Velero",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Velero." }

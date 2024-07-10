@@ -1,0 +1,8 @@
+ansible_user: root
+ansible_become: yes
+
+# You can also set this in individual host if you are splitting the nodes to different physical servers.
+winrm_host: local_machine
+
+# Indicates whether to automatically register the control-planes to the HAproxy load balancers config file.
+register_to_load_balancer: yes

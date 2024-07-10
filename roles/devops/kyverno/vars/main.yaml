@@ -1,0 +1,20 @@
+kyverno:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  version: latest
+
+  # Determines whether to deploy in H/A mode (Will consume more resources).
+  ha_mode: no
+
+  # Determines whether to install default policies.
+  policies:
+    enabled: yes
+
+  # Determines whether to crease ServiceMonitors for Prometheus metrics scraping.
+  prometheus: yes
+
+  # Determines whether to enable the grafana dashboard.
+  grafana: yes
+
+  # Determines whether to install kyverno cli.
+  install_kubectl_plugin: yes

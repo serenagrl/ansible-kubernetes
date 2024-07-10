@@ -13,7 +13,7 @@ replicas: 1
 # Specify this if connecting to non kubernetes Gitlab and remove the runners.secret value at the bottom
 # runnerRegistrationToken: ""
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
 tolerations:
   - effect: NoSchedule
     key: node-role.kubernetes.io/control-plane
@@ -52,10 +52,10 @@ runners:
       [runners.kubernetes]
         image = "{{ gitlab_runner.image }}"
 
-{% if not _kube.cluster.use_dns_server %}
+{% if not kube.cluster.use_dns_server %}
         [[runners.kubernetes.host_aliases]]
-          ip = "{{ _kube.cluster.address }}"
-          hostnames = ["core.harbor.k8s.local"]
+          ip = "{{ kube.cluster.address }}"
+          hostnames = ["core.harbor.{{ kube.cluster.domain }}"]
 {% endif %}
 
         [runners.kubernetes.volumes]
@@ -66,7 +66,7 @@ runners:
             [runners.kubernetes.volumes.secret.items]
               "ca.crt" = "ca.crt"
 
-{% if not _kube.allow_scheduling %}
+{% if not kube.allow_scheduling %}
         [runners.kubernetes.node_tolerations]
           "node-role.kubernetes.io/control-plane" = "NoSchedule"
 {% endif %}

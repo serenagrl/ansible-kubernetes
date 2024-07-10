@@ -7,7 +7,7 @@
 
 - name: Configure as Load-Balancer with Metallb
   vars:
-    ingress_host: "{{ ingress.metallb.hostname }}.{{ _kube.cluster.domain }}"
+    ingress_host: "{{ ingress.metallb.hostname }}.{{ kube.cluster.domain }}"
     ingress_ip: "{{ ingress_service.resources[0].status.loadBalancer.ingress.0.ip }}"
   block:
     - name: Patch ingress controller service type to LoadBalancer
@@ -39,11 +39,11 @@
             server_name: "{{ ingress.metallb.hostname }}"
             server_ip: "{{ ingress_ip }}"
 
-      when: _kube.cluster.use_dns_server
+      when: kube.cluster.use_dns_server
 
     - name: Add entry to hosts file
       vars:
         in_host_entry: "{{ ingress_ip }} {{ ingress_host }}"
       ansible.builtin.include_role:
         name: common/dns-host-file
-      when: not _kube.cluster.use_dns_server
+      when: not kube.cluster.use_dns_server

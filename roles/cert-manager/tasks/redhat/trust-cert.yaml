@@ -1,0 +1,21 @@
+- delegate_to: "{{ item }}"
+  become_user: root
+  vars:
+    cert_store: "/etc/pki/ca-trust/source/anchors"
+  block:
+    - name: Create shared certificate directory
+      ansible.builtin.file:
+        path: "{{ cert_store }}"
+        state: directory
+
+    - name: Copy ca certificate to shared certificate directory
+      ansible.builtin.copy:
+        src: "{{ CRT_FILE }}"
+        dest: "{{ cert_store }}/{{ kube.cluster.name }}-ca.crt"
+        mode: 0777
+
+    - name: Update certificates
+      ansible.builtin.shell: update-ca-trust
+
+  ignore_errors: yes
+  ignore_unreachable: yes

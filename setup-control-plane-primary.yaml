@@ -8,15 +8,17 @@
 # Configure primary control plane
 - name: Create primary control plane
   hosts: kubernetes_control_planes[0]
-  gather_facts: no
+  gather_facts: yes
 
   roles:
     - role: kubernetes/control-plane-primary
     - role: cni-calico
+    - role: kubernetes/remote-admin
+      when: (setup_remote_admin is not defined) or (setup_remote_admin|bool)
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
         checkpoint_name: "Kubernetes Cluster Created."
-      when: _checkpoint
+      when: vm_checkpoint|bool

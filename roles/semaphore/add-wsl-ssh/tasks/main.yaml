@@ -1,0 +1,44 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Read private ssh key from semaphore server
+  delegate_to: semaphore_server
+  ansible.builtin.slurp:
+    src: ~/.ssh/id_rsa
+  register: private_key_result
+
+- name: Enable ansible controller host user to connect to semaphore provisioned VMs
+  delegate_to: localhost
+  become_user: root
+  block:
+    - name: Temporary store semaphore ssh key on ansible controller host
+      ansible.builtin.copy:
+        dest: "{{ PRIVATE_KEY }}"
+        content: "{{ private_key_result.content | b64decode }}"
+        mode: 0700
+
+    - name: Read ansible controller host ssh user public key
+      ansible.builtin.slurp:
+        src: ~/.ssh/id_rsa.pub
+      register: wsl_key
+
+    - name: Register servers as known hosts to ansible controller hosts
+      ansible.builtin.shell: |
+        ssh-keygen -f /root/.ssh/known_hosts -R {{ hostvars[item].ansible_host }}
+        ssh-keyscan -H {{ hostvars[item].ansible_host }} >> /root/.ssh/known_hosts
+      loop: "{{ servers }}"
+      ignore_errors: yes
+      ignore_unreachable: yes
+
+    - name: Add key to semaphore provisioned VMs
+      ansible.builtin.include_tasks: add-key.yaml
+      loop: "{{ servers }}"
+
+    - name: Cleanup
+      ansible.builtin.file:
+        path: "{{ PRIVATE_KEY }}"
+        state: absent

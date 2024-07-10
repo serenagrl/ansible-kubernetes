@@ -5,7 +5,50 @@ gitlab:
 
   # Make sure minio operator is installed before setting this to yes.
   # Note: You can use the minio role to setup the operator.
-  external_minio: yes
+  external_minio: 
+    enabled: yes
+    # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+    # releases with breaking changes. Try reducing the version number if errors occur during installation.
+    version: latest
+    
+    name: gitlab
+    tenant_name: gitlab-minio
+    namespace: gitlab
+    domain_name: gitlab.minio
+    console_domain_name: console.gitlab.minio
 
+    pools:
+      servers: 2
+      volumes_per_server: 2
+      size: 10Gi
+
+    buckets:
+      - name: git-lfs
+      - name: gitlab-artifacts
+      - name: gitlab-backups
+      - name: gitlab-ci-secure-files
+      - name: gitlab-dependency-proxy
+      - name: gitlab-mr-diffs
+      - name: gitlab-packages
+      - name: gitlab-pages
+      - name: gitlab-terraform-state
+      - name: gitlab-uploads
+      - name: registry
+      - name: runner-cache
+      - name: tmp
+
+  # Original manifest value is 8Gi.
   postgres:
     storage_size: 8Gi
+
+  # Original manifest value is 8Gi.
+  redis:
+    master:
+      storage_size: 8Gi
+    replica:
+      storage_size: 8Gi
+
+  # Size was reduced for lab environment.
+  # Original manifest value is 50Gi.
+  gitaly:
+    storage_size: 10Gi

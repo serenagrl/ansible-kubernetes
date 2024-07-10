@@ -1,0 +1,30 @@
+type_definition:
+  enum_bool: &enum_bool
+    type: "enum"
+    required: false
+    values:
+      - name: "Yes"
+        value: "1"
+      - name: "No"
+        value: "0"
+
+SETUP_INFRA_SURVEYS:
+  - name: setup_dns
+    title: "Setup DNS Server [Yes]"
+    description: "Setup and configure a DNS server VM."
+    <<: *enum_bool
+
+  - name: setup_lb
+    title: "Setup Load Balancers [Yes]"
+    description: "Setup and configure Load Balancer VMs."
+    <<: *enum_bool
+
+  - name: setup_nfs
+    title: "Setup NFS Server (if using csi/nfs) [No]"
+    description: "Setup and configure an NFS server VM."
+    <<: *enum_bool
+
+  - name: setup_minio
+    title: "Setup MinIO Server (Testing only) [No]"
+    description: "Setup and configure a MinIO server VM."
+    <<: *enum_bool

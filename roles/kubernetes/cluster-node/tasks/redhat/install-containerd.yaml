@@ -1,0 +1,24 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+- name: Add containerd repository
+  ansible.builtin.shell: dnf config-manager --add-repo=https://download.docker.com/linux/rhel/docker-ce.repo
+
+- name: Installing containerd
+  vars:
+    release: "{% if containerd.version is defined and containerd.version and containerd.version != 'latest' %}-{{ containerd.version }}{% endif %}"
+  ansible.builtin.dnf:
+    name:
+      - "containerd.io{{ release }}"
+    state: latest
+    update_cache: yes
+
+- name: Set LimitNOFILE
+  ansible.builtin.lineinfile: 
+    path: /usr/lib/systemd/system/containerd.service
+    regexp: 'LimitNOFILE=(.*)$' 
+    line: 'LimitNOFILE=1048576'
+    backrefs: yes

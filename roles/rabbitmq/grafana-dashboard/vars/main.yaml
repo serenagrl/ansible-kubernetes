@@ -1,0 +1,4 @@
+rabbitmq:
+  grafana_dashboards:
+    - { name: "RabbitMQ-Overview",
+        url: "https://grafana.com/api/dashboards/10991/revisions/14/download" }
