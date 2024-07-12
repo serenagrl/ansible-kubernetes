@@ -25,61 +25,61 @@
       }
     status_code: 201 # Created
   loop:
-    - { name: "1. Setup Infrastructure Services", env_name: "Setup Infrastructure", surveys: "{{ SETUP_INFRA_SURVEYS + PROVISION_VM_SURVEYS }}",
+    - { name: "1. Setup Infrastructure Services", env_name: "Infrastructure", surveys: "{{ SETUP_INFRA_SURVEYS + PROVISION_VM_SURVEYS }}",
         playbook: "{{ PLAYBOOKS.SETUP_INFRASTRUCTURE }}", desc: "Setup and configure supporting infrastructure services servers." }
-    - { name: "2. Setup Kubernetes Cluster", env_name: "Setup Infrastructure", surveys: "{{ SETUP_KUBERNETES_SURVEYS + PROVISION_VM_SURVEYS }}",
+    - { name: "2. Setup Kubernetes Cluster", env_name: "Infrastructure", surveys: "{{ SETUP_KUBERNETES_SURVEYS + PROVISION_VM_SURVEYS }}",
         playbook: "{{ PLAYBOOKS.SETUP_KUBERNETES }}", desc: "Setup a Kubernetes Cluster complete with control planes and worker nodes. Optionally, provisions VM for them." }
-    - { name: "3. Setup Basic Add-Ons", env_name: "Setup Basic Add-Ons",
+    - { name: "3. Setup Basic Add-Ons", env_name: "Basic Add-Ons", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs basic kubernetes components. (Cert-Manager, Ingress, Dashboard, Monitoring, Metrics Server)" }
-    - { name: "4. Setup CSI", env_name: "Setup Add-On - CSI", surveys: "{{ SETUP_CSI_SURVEYS }}",
+    - { name: "4. Setup CSI", env_name: "Add-On - CSI", surveys: "{{ SETUP_CSI_SURVEYS }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs the CSI." }
-    - { name: "Setup Semaphore Project", env_name: "Setup Semaphore Project", surveys: "{{ SEMAPHORE_PROJECT_SURVEYS }}",
+    - { name: "Setup Semaphore Project", env_name: "Semaphore Project", surveys: "{{ SEMAPHORE_PROJECT_SURVEYS }}",
         inv_id: "{{ SEMAPHORE_PROJECT_INVENTORY_ID }}",
         playbook: "{{ PLAYBOOKS.SETUP_SEMAPHORE_PROJECT }}", desc: "Creates a new ansible-kubernetes semaphore project. (Suitable for testing new playbook updates)." }
       # Miscellaneous
-    - { name: "Setup Add-On - DevOps (Gitlab)", env_name: "Setup Add-On - DevOps (Gitlab)",
+    - { name: "Setup Add-On - DevOps (Gitlab)", env_name: "Add-On - DevOps (Gitlab)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Gitlab and Gitlab Runner. (Also installs Minio)." }
-    - { name: "Setup Add-On - DevOps (Sonarqube)", env_name: "Setup Add-On - DevOps (Sonarqube)",
+    - { name: "Setup Add-On - DevOps (Sonarqube)", env_name: "Add-On - DevOps (Sonarqube)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Sonarqube." }
-    - { name: "Setup Add-On - DevOps (Harbor)", env_name: "Setup Add-On - DevOps (Harbor)",
+    - { name: "Setup Add-On - DevOps (Harbor)", env_name: "Add-On - DevOps (Harbor)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Harbor container registry." }
-    - { name: "Setup Add-On - DevOps (ArgoCD)", env_name: "Setup Add-On - DevOps (ArgoCD)",
+    - { name: "Setup Add-On - DevOps (ArgoCD)", env_name: "Add-On - DevOps (ArgoCD)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs ArgoCD." }
-    - { name: "Setup Add-On - DevOps (Tekton)", env_name: "Setup Add-On - DevOps (Tekton)",
+    - { name: "Setup Add-On - DevOps (Tekton)", env_name: "Add-On - DevOps (Tekton)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs tekton." }
-    - { name: "Setup Add-On - DevOps (Minio)", env_name: "Setup Add-On - DevOps (Minio)",
+    - { name: "Setup Add-On - DevOps (Minio)", env_name: "Add-On - DevOps (Minio)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs minio." }
-    - { name: "Setup Add-On - DevOps (Kyverno)", env_name: "Setup Add-On - DevOps (Kyverno)",
+    - { name: "Setup Add-On - DevOps (Kyverno)", env_name: "Add-On - DevOps (Kyverno)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Kyverno." }
-    - { name: "Setup Add-On - Logging (Elastic Stack)", env_name: "Setup Add-On - Logging (Elastic Stack)",
+    - { name: "Setup Add-On - Logging (Elastic Stack)", env_name: "Add-On - Logging (Elastic Stack)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
-    - { name: "Setup Add-On - Logging (Fluentd)", env_name: "Setup Add-On - Logging (Fluentd)",
+    - { name: "Setup Add-On - Logging (Fluentd)", env_name: "Add-On - Logging (Fluentd)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Logging components. (Elasticsearch, Kibana, Fluentd)" }
-    - { name: "Setup Add-On - Logging (Loki)", env_name: "Setup Add-On - Logging (Loki)",
+    - { name: "Setup Add-On - Logging (Loki)", env_name: "Add-On - Logging (Loki)", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs loki." }
-    - { name: "Setup Add-On - AWX", env_name: "Setup Add-On - AWX",
+    - { name: "Setup Add-On - AWX", env_name: "Add-On - AWX", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs AWX and register the environment for use." }
-    - { name: "Setup Add-On - Goldilocks", env_name: "Setup Add-On - Goldilocks",
+    - { name: "Setup Add-On - Goldilocks", env_name: "Add-On - Goldilocks", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs goldilocks." }
-    - { name: "Setup Add-On - Istio", env_name: "Setup Add-On - Istio",
+    - { name: "Setup Add-On - Istio", env_name: "Add-On - Istio", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Istio" }
-    - { name: "Setup Add-On - Kafka", env_name: "Setup Add-On - Kafka",
+    - { name: "Setup Add-On - Kafka", env_name: "Add-On - Kafka", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Strimzi and creates a Kafka cluster." }
-    - { name: "Setup Add-On - Keycloak", env_name: "Setup Add-On - Keycloak",
+    - { name: "Setup Add-On - Keycloak", env_name: "Add-On - Keycloak", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs keycloak." }
-    - { name: "Setup Add-On - Knative", env_name: "Setup Add-On - Knative",
+    - { name: "Setup Add-On - Knative", env_name: "Add-On - Knative", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs knative." }
-    - { name: "Setup Add-On - MetalLB", env_name: "Setup Add-On - MetalLB",
+    - { name: "Setup Add-On - MetalLB", env_name: "Add-On - MetalLB", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs MetalLB." }
-    - { name: "Setup Add-On - MSSQL Server", env_name: "Setup Add-On - MSSQL Server",
+    - { name: "Setup Add-On - MSSQL Server", env_name: "Add-On - MSSQL Server", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Microsoft SQL Server." }
-    - { name: "Setup Add-On - RabbitMQ", env_name: "Setup Add-On - RabbitMQ",
+    - { name: "Setup Add-On - RabbitMQ", env_name: "Add-On - RabbitMQ", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs RabbitMQ Operator and creates a RabbitMQ Cluster." }
-    - { name: "Setup Add-On - Redis", env_name: "Setup Add-On - Redis",
+    - { name: "Setup Add-On - Redis", env_name: "Add-On - Redis", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Creates a Redis cluster or Sentinel." }
-    - { name: "Setup Add-On - Tracing", env_name: "Setup Add-On - Tracing",
+    - { name: "Setup Add-On - Tracing", env_name: "Add-On - Tracing", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs tracing." }
-    - { name: "Setup Add-On - Trivy", env_name: "Setup Add-On - Trivy",
+    - { name: "Setup Add-On - Trivy", env_name: "Add-On - Trivy", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Trivy." }
-    - { name: "Setup Add-On - Velero", env_name: "Setup Add-On - Velero",
+    - { name: "Setup Add-On - Velero", env_name: "Add-On - Velero", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Velero." }

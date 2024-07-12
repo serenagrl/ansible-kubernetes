@@ -1,0 +1,11 @@
+VM_CHECKPOINT_SURVEY:
+  - name: vm_checkpoint
+    title: "VM Checkpoint [Inventory Setting]"
+    description: "Create a VM Checkpoint after successful installation."
+    type: "enum"
+    required: false
+    values:
+      - name: "Yes"
+        value: "1"
+      - name: "No"
+        value: "0"
