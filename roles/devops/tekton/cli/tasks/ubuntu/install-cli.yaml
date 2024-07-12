@@ -17,12 +17,12 @@
         update_cache: yes
 
     - name: Get tektoncd cli key
-      ansible.builtin.shell: gpg --no-default-keyring --keyring /etc/apt/keyrings/tektoncd.gpg --keyserver keyserver.ubuntu.com --recv-keys 3EFE0E0A2F2F60AA
+      ansible.builtin.shell: apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3EFE0E0A2F2F60AA
 
     - name: Register tektoncd cli repository
       ansible.builtin.apt_repository:
         filename: tektoncd-cli
-        repo: "deb [signed-by=/etc/apt/keyrings/tektoncd.gpg] http://ppa.launchpad.net/tektoncd/cli/ubuntu eoan main"
+        repo: "deb http://ppa.launchpad.net/tektoncd/cli/ubuntu jammy main"
         update_cache: yes
 
     - name: Installing tektoncd cli
