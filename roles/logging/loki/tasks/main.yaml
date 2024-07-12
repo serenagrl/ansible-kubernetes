@@ -54,24 +54,6 @@
     timeout: 10m0s
     wait: no
 
-- name: Patch grafana agent operator deployment
-  kubernetes.core.k8s:
-    state: patched
-    namespace: "logging"
-    kind: Deployment
-    name: loki-grafana-agent-operator
-    definition: |
-      spec:
-        template:
-          spec:
-            tolerations:
-              - effect: NoSchedule
-                key: node-role.kubernetes.io/control-plane
-                operator: Exists
-            nodeSelector:
-              node-role.kubernetes.io/control-plane: ""
-  when: not kube.allow_scheduling
-
 - name: Waiting for loki deployments to be ready
   ansible.builtin.shell: |
     for d in $(kubectl -n logging get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n logging deployment/$d; done;
