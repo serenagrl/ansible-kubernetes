@@ -296,7 +296,7 @@ The playbooks can be run with the `ansible-playbook` command. i.e.
 ansible-playbook setup-load-balancers.yaml
 ```
 > [!TIP]
-> If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore) and wish to deploy a dedicated Semaphore Server, please refer to [Configure Semaphore UI (Experimental)](docs/configure-semaphore.md) for installation instructions.
+> This project can support [Semaphore UI](https://github.com/semaphoreui/semaphore), please refer to [Configure Semaphore UI (Experimental)](docs/configure-semaphore.md) for installation instructions.
 
 To setup any **(Optional) Infrastructure Services**, run the following playbooks in sequence:
 
