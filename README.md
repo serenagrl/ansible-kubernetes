@@ -1,3 +1,5 @@
+![Kubernetes on Hyper-V (Using Ansible)](docs/images/ansible-kubernetes.jpg)
+
 # Kubernetes on Hyper-V
 A collection of Ansible playbooks and roles to create a Kubernetes cluster on Hyper-V, either for testing/learning purposes or SIT/Proof-of-Concept environments. These playbooks and add-ons were tailored to my lab environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
 
