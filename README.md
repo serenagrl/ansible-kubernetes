@@ -7,7 +7,7 @@ A collection of Ansible playbooks and roles to create a Kubernetes cluster on Hy
 * Playbooks can provision VMs for **Ubuntu 22.04/24.04** or **Red Hat 9.3** Linux.
 * Playbooks default to setup a DNS, 2 HAProxy load balancers and 3 control-plane VMs.
 * The Kubernetes cluster uses **Containerd** as container runtime and **Calico** as CNI.
-* Configure everything in the `/inventories` folder and `roles/vm-linux/setup-vm/vars/main.yaml`.
+* Configure everything in the [`/inventories`](inventories) folder and [`roles/vm-linux/setup-vm/vars/main.yaml`](roles/vm-linux/setup-vm/vars/main.yaml).
 
 ## Hyper-V Host Requirements
 
@@ -23,7 +23,7 @@ A Windows machine or server with sufficient processing power, RAM and disk space
 > systemd=true
 >
 > [user]
-> default = root
+> default=root
 > ```
 > You need to reload the terminal for the changes to take effect.
 
@@ -41,7 +41,7 @@ The required computing resources for each VM is dependent on the number of add-o
 You can pool multiple Windows Hyper-V servers together to distribute the load of hosting the VMs but make sure each Hyper-V host is configured correctly.
 
 > [!CAUTION]
-> VM _Checkpoints_ are created to provide recovery in case of installation failures. **These checkpoints consume additional disk space**. Please perform the necessary housekeeping manually to reclaim the disk space or disable checkpoint creation by setting `vm_checkpoint: no` in the `inventories/group_vars/all.yaml` inventory file.
+> VM _Checkpoints_ are created to provide recovery in case of installation failures. **These checkpoints consume additional disk space**. Please perform the necessary housekeeping manually to reclaim the disk space or disable checkpoint creation by setting `vm_checkpoint: no` in the [`inventories/group_vars/all.yaml`](inventories/group_vars/all.yaml) inventory file.
 
 #### INFRASTRUCTURE SERVICES VMs
 
@@ -134,7 +134,7 @@ Refer [here](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html
 git clone https://github.com/serenagrl/ansible-kubernetes.git
 ```
 
-In the `/inventories/winrm.yaml` file, set the WinRM host IP address and the credentials that was created earlier:
+In the [`/inventories/winrm.yaml`](inventories/winrm.yaml) file, set the WinRM host IP address and the credentials that was created earlier:
 ```yaml
 winrm:
   hosts:
@@ -153,11 +153,11 @@ winrm:
 Refer [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html) for detail documentation.
 
 > [!IMPORTANT]
-> Although optional, it is strongly recommended to use certificates to connect to WinRM. Follow these [steps](docs/configure-winrm-certs.md) if you wish to apply this practice.
+> Although optional, it is strongly recommended to use certificates to connect to WinRM. Please see [Configure WinRM to use Certificates](docs/configure-winrm-certs.md) for more details to apply this practice.
 
 ### 4. Test WinRM Connectivity
 
-Run the `test-winrm-connection.yaml` playbook to verify the WinRM connection.
+Run the [`test-winrm-connection.yaml`](test-winrm-connection.yaml) playbook to verify the WinRM connection.
 ```bash
 ansible-playbook test-winrm-connection.yaml
 ```
@@ -179,18 +179,18 @@ local_machine              : ok=1    changed=1    unreachable=0    failed=0    s
 
 ## Configuring the Playbooks
 
-All basic/startup configurable items for the Infrastructure Services and Kubernetes Cluster are in the inventory files located in the `/inventories` folder. It is recommended to review all the inventory files and make the necessary changes for your lab environment.
+All basic/startup configurable items for the Infrastructure Services and Kubernetes Cluster are in the inventory files located in the [`/inventories`](inventories) folder. It is recommended to review all the inventory files and make the necessary changes for your lab environment.
 
 ### Configuring Inventory Settings
 
-Configure the settings for the Kubernetes Cluster in the `inventories/group_vars/all.yaml` file. Configure the `lab_name` to allow the playbooks to use it as a prefix when auto-generating names for the hosts and VMs for the Infrastructure Services and Kubernetes Cluster. The playbooks will also organize the physical VMs inside a folder based on the `lab_name` for ease of management.
+Configure the settings for the Kubernetes Cluster in the [`inventories/group_vars/all.yaml`](inventories/group_vars/all.yaml) file. Configure the `lab_name` to allow the playbooks to use it as a prefix when auto-generating names for the hosts and VMs for the Infrastructure Services and Kubernetes Cluster. The playbooks will also organize the physical VMs inside a folder based on the `lab_name` for ease of management.
 
 ```yaml
 # Will be used as the prefix for all the hostnames
 lab_name: devops
 ```
 
-The **VM specifications** can be configured in the remaining group variable files in the `/inventories/group_vars` folder. Below is an example of the VM settings in the `inventories/group_vars/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **Please review the other files as well**.
+The **VM specifications** can be configured in the remaining group variable files in the [`/inventories/group_vars`](inventories/group_vars) folder. Below is an example of the VM settings in the [`inventories/group_vars/kubernetes_control_planes.yaml`](inventories/group_vars/kubernetes_control_planes.yaml) file for the Kubernetes control-planes. **Please review the other files as well**.
 ```yaml
 vm:
   specs:
@@ -200,7 +200,7 @@ vm:
     v_cpu: 6
 ```
 
-The **IP addresses** of the VMs can be configured in the host inventory files located in the `/inventories` folder. Below is an example of the `inventories/kubernetes_control_planes.yaml` file for the Kubernetes control-planes. **You should review and change all the other host inventory files accordingly**.
+The **IP addresses** of the VMs can be configured in the host inventory files located in the [`/inventories`](inventories) folder. Below is an example of the [`inventories/kubernetes_control_planes.yaml`](inventories/kubernetes_control_planes.yaml) file for the Kubernetes control-planes. **You should review and change all the other host inventory files accordingly**.
 ```yaml
 kubernetes_control_planes:
   hosts:
@@ -221,7 +221,7 @@ kubernetes_control_planes:
 
 ### Configuring Common VM Settings
 
-Common VM settings are configured in the `roles/vm-linux/setup-vm/vars/main.yaml` file and are applied to all VMs.
+Common VM settings are configured in the [`roles/vm-linux/setup-vm/vars/main.yaml`](roles/vm-linux/setup-vm/vars/main.yaml) file and are applied to all VMs.
 
 Configure the **network settings** for the VMs:
 ```yaml
@@ -287,33 +287,31 @@ The playbooks can be run with the `ansible-playbook` command. i.e.
 ansible-playbook setup-load-balancers.yaml
 ```
 > [!TIP]
-> If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore), you can use the `setup-semaphore.yaml` playbook to deploy and configure a Semaphore Server VM and then use the `setup-semaphore-project.yaml` playbook to create a project on the Semaphore Server based on the cloned version of this repository on its filesystem.
->
-> **Additional steps required to support Semaphore UI** - Share the `D:\Installation Files` and `D:\Virtual Machines` folders on the Windows Hyper-V Host and grant full-control access to the `ansible` user created in the earlier section.
+> If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore), you can use the [`setup-semaphore.yaml`](setup-semaphore.yaml) and [`setup-semaphore-project.yaml`](setup-semaphore-project.yaml) playbooks to deploy a Semaphore VM and create a project on the Semaphore server based on the cloned version of the repository which you have been configuring so far on the file-system. Please see [Configure Semaphore UI (Experimental)](docs/configure-semaphore.md) for detail instructions.
 
 To setup any **(Optional) Infrastructure Services**, run the following playbooks in sequence:
 
 | No. | Name                        | Description                                                 | Remarks |
 |  :-:| ----------------------------| ----------------------------------------------------------- | ------- |
-|  1. | `setup-dns.yaml`            | Provision and configure a VM for BIND (DNS) server.         | **WARNING! Do not set host to existing DNS server!** <br>Set `kube.cluster.use_dns_server:` to `yes` or `no` in `inventories/group_vars/all.yaml` accordingly. |
-|  2. | `setup-load-balancers.yaml` | Provision and configure two VMs for HAProxy and Keepalived. | When deploying load-balancers:<br><ul><li>Set `register_to_load_balancer: yes` in `inventories/group_vars/kubernetes_cluster.yaml`. </li><li>Set `kube.cluster.address` to the desired **virtual ip address** in `inventories/group_vars/all.yaml`. </li></ul>When not deploying load-balancers:<ul><li>Set `register_to_load_balancer: no` in `inventories/group_vars/kubernetes_cluster.yaml`. </li><li>Set `kube.cluster.address` to point to the **ip address of primary control plane** in `inventories/group_vars/all.yaml`.</li></ul> |
-|  3. | `setup-nfs.yaml`            | Install NFS server on infrastructure service VM.            | Run this if you plan to use CSI NFS. Note: You must run this **before** running the csi/nfs role. This does not provision the VM by default. |
-|  4. | `setup-minio.yaml`          | Install Minio on infrastructure service VM.                 | Run this if you plan to test add-ons that requires external S3 storage for backups i.e. **velero** or **csi/longhorn**.  This does not provision the VM by default. |
+|  1. | [`setup-dns.yaml`](setup-dns.yaml)            | Provision and configure a VM for BIND (DNS) server.         | **WARNING! Do not set host to existing DNS server!** <br>Set `kube.cluster.use_dns_server:` to `yes` or `no` in [`inventories/group_vars/all.yaml`](inventories/group_vars/all.yaml) accordingly. |
+|  2. | [`setup-load-balancers.yaml`](setup-load-balancers.yaml) | Provision and configure two VMs for HAProxy and Keepalived. | When deploying load-balancers:<br><ul><li>Set `register_to_load_balancer: yes` in [`inventories/group_vars/kubernetes_cluster.yaml`](inventories/group_vars/kubernetes_cluster.yaml). </li><li>Set `kube.cluster.address` to the desired **virtual ip address** in [`inventories/group_vars/all.yaml`](inventories/group_vars/all.yaml). </li></ul>When not deploying load-balancers:<ul><li>Set `register_to_load_balancer: no` in [`inventories/group_vars/kubernetes_cluster.yaml`](inventories/group_vars/kubernetes_cluster.yaml). </li><li>Set `kube.cluster.address` to point to the **ip address of primary control plane** in [`inventories/group_vars/all.yaml`](inventories/group_vars/all.yaml).</li></ul> |
+|  3. | [`setup-nfs.yaml`](setup-nfs.yaml)            | Install NFS server on infrastructure service VM.            | Run this if you plan to use CSI NFS. Note: You must run this **before** running the csi/nfs role. This does not provision the VM by default. |
+|  4. | [`setup-minio.yaml`](setup-minio.yaml)          | Install Minio on infrastructure service VM.                 | Run this if you plan to test add-ons that requires external S3 storage for backups i.e. **velero** or **csi/longhorn**.  This does not provision the VM by default. |
 
 To setup the **Kubernetes Cluster**, run the following playbooks in sequence:
 
 | No. | Name                               | Description                                                         | Remarks |
 |  :-:| ---------------------------------- | ------------------------------------------------------------------- | ------- |
-|  1. | `setup-control-plane-servers.yaml` | Provision VMs for kubernetes control planes. |-|
-|  2. | `setup-control-plane-primary.yaml` | Create the primary control plane in the kubernetes cluster. |-|
-|  3. | `setup-control-plane-other.yaml`   | Create and join secondary control planes to the kubernetes cluster. |-|
-|  4. | `setup-worker-node-servers.yaml`   | Provisions VMs for the kubernetes worker nodes. | Run this to create worker nodes. |
-|  5. | `setup-worker-nodes.yaml`          | Create and join worker nodes into the kubernetes cluster. | Run this to create worker nodes. |
-|  6. | `setup-add-ons.yaml`               | Install add-on components listed in `add_ons`. | See [Installing and Configuring Add-ons](#installing-and-configuring-add-ons). |
+|  1. | [`setup-control-plane-servers.yaml`](setup-control-plane-servers.yaml) | Provision VMs for kubernetes control planes. |-|
+|  2. | [`setup-control-plane-primary.yaml`](setup-control-plane-primary.yaml) | Create the primary control plane in the kubernetes cluster. |-|
+|  3. | [`setup-control-plane-other.yaml`](setup-control-plane-other.yaml)   | Create and join secondary control planes to the kubernetes cluster. |-|
+|  4. | [`setup-worker-node-servers.yaml`](setup-worker-node-servers.yaml)   | Provisions VMs for the kubernetes worker nodes. | Run this to create worker nodes. |
+|  5. | [`setup-worker-nodes.yaml`](setup-worker-nodes.yaml)          | Create and join worker nodes into the kubernetes cluster. | Run this to create worker nodes. |
+|  6. | [`setup-add-ons.yaml`](setup-add-ons.yaml)               | Install add-on components listed in `add_ons`. | See [Installing and Configuring Add-ons](#installing-and-configuring-add-ons). |
 
 ## Installing and Configuring Add-ons
 
-The `setup-add-ons.yaml` playbook is used to install and configure the add-on stack for the Kubernetes Cluster. It can be executed multiple times to install different add-ons. Each add-on is modularized into ansible roles and you can specify which one to install by listing them in the `add_ons:` collection.
+The [`setup-add-ons.yaml`](setup-add-ons.yaml) playbook is used to install and configure the add-on stack for the Kubernetes Cluster. It can be executed multiple times to install different add-ons. Each add-on is modularized into ansible roles and you can specify which one to install by listing them in the `add_ons:` collection.
 
 The roles folders are structured in the following manner:
 
