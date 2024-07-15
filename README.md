@@ -1,5 +1,3 @@
-![Kubernetes on Hyper-V (Using Ansible)](docs/images/ansible-kubernetes.jpg)
-
 # Kubernetes on Hyper-V
 A collection of Ansible playbooks and roles to create a Kubernetes cluster on Hyper-V, either for testing/learning purposes or SIT/Proof-of-Concept environments. These playbooks and add-ons were tailored to my lab environment and were not intended to be an all-purpose "installer" for Kubernetes. Therefore, please feel free to customize them as you see fit.
 
@@ -87,6 +85,12 @@ Recommendations for **Kubernetes Cluster** VMs are as follows:
 The recommendation for **disk size** is the VM default of **127GB** but when using CSIs such as Longhorn or Rook-ceph, it is recommended to set the disk size to **256GB** to support the pod request limits.
 
 ## Setting Up Your Environment
+
+The environment that you are preparing will somewhat resemble the below diagram. You can also setup everything on a single notebook or PC.
+
+<p align="center">
+  <img src="docs/images/ansible-kubernetes.jpg" alt="Kubernetes on Hyper-V (Using Ansible)"/>
+</p>
 
 It is recommended that you download and install [Visual Studio Code](https://code.visualstudio.com/) and enable the [Ansible VS Code Extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.ansible) from the marketplace to work with the playbooks.
 
