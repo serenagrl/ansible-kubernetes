@@ -34,11 +34,15 @@ Prepare two folders in the Windows Hyper-V host:
 > [!CAUTION]
 > You can set both to point to the same folder but there can be residue seed iso images leftover from provisioning errors. In such cases, you will need to manually clean them up.
 
+Generally, you setup everything on a single server or PC if there are enough computing resources. However, you can also configure the Hyper-V host to be on another machine or pool multiple Windows Hyper-V servers together to distribute the load of hosting the VMs but make sure each Hyper-V host is configured correctly (WinRM and shared folders). The diagram below illustrates the topology.
+
+<p align="center">
+  <img src="docs/images/ansible-kubernetes.jpg" alt="Kubernetes on Hyper-V (Using Ansible)"/>
+</p>
+
 ### Virtual Machine Requirements
 
 The required computing resources for each VM is dependent on the number of add-ons you are planning to install and how much capacity your Windows host can provide. By default, the VMs created are using **Dynamic Memory**. You can change this behavior in **Hyper-V Manager** to prevent the VMs from exceeding the assigned memory limits.
-
-You can pool multiple Windows Hyper-V servers together to distribute the load of hosting the VMs but make sure each Hyper-V host is configured correctly.
 
 > [!CAUTION]
 > VM _Checkpoints_ are created to provide recovery in case of installation failures. **These checkpoints consume additional disk space**. Please perform the necessary housekeeping manually to reclaim the disk space or disable checkpoint creation by setting `vm_checkpoint: no` in the [`inventories/group_vars/all.yaml`](inventories/group_vars/all.yaml) inventory file.
@@ -84,13 +88,7 @@ Recommendations for **Kubernetes Cluster** VMs are as follows:
 
 The recommendation for **disk size** is the VM default of **127GB** but when using CSIs such as Longhorn or Rook-ceph, it is recommended to set the disk size to **256GB** to support the pod request limits.
 
-## Setting Up Your Environment
-
-The environment that you are preparing will somewhat resemble the below diagram. You can also setup everything on a single notebook or PC.
-
-<p align="center">
-  <img src="docs/images/ansible-kubernetes.jpg" alt="Kubernetes on Hyper-V (Using Ansible)"/>
-</p>
+## Setting Up the Environment
 
 It is recommended that you download and install [Visual Studio Code](https://code.visualstudio.com/) and enable the [Ansible VS Code Extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.ansible) from the marketplace to work with the playbooks.
 
@@ -140,7 +138,7 @@ Refer [here](https://docs.ansible.com/ansible/latest/os_guide/windows_setup.html
 git clone https://github.com/serenagrl/ansible-kubernetes.git
 ```
 
-In the [`/inventories/winrm.yaml`](inventories/winrm.yaml) file, set the WinRM host IP address and the credentials that was created earlier:
+In the [`/inventories/winrm.yaml`](inventories/winrm.yaml) file, set the WinRM host IP address and the credentials that was created earlier.
 ```yaml
 winrm:
   hosts:
@@ -160,6 +158,8 @@ Refer [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html
 
 > [!IMPORTANT]
 > Although optional, it is strongly recommended to use certificates to connect to WinRM. Please see [Configure WinRM to use Certificates](docs/configure-winrm-certs.md) for more details to apply this practice.
+
+If you have more than 1 Hyper-V host, duplicate the `local_machine` host section for each host and rename it, and then configure the WinRM connection settings for that host. You can then manually specify the `winrm_host` for each of the VM host in the host files i.e. [`inventories/kubernetes_control_planes.yaml`](inventories/kubernetes_control_planes.yaml).
 
 ### 4. Test WinRM Connectivity
 
