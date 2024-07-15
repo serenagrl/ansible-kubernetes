@@ -83,17 +83,19 @@ ansible-playbook setup-semaphore-project.yaml
 
 You should be able to see the Semaphore project created in the Semaphore portal after the installation has completed.
 
-### 4. Things You Should Know
+### 4. Co-Administrate Semaphore-Created VMs
 
-Using Semaphore will change the deployment architecture as the Semaphore server will be designated as the **Ansible Controller Host** to manage the VMs. The below diagram illustrates the topology.
+Using Semaphore will change the deployment architecture as the Semaphore server will be designated as the **Ansible Controller Host** to manage the VMs. The below diagram illustrates the new topology.
 
 <p align="center">
   <img src="images/ansible-kubernetes-semaphore.jpg" alt="Ansible Kubernetes with Semaphore"/>
 </p>
 
-Only the Semaphore server can run playbooks to communicate with the VMs it created. You will not be able to run the playbooks on the Ubuntu WSL to manipulate the Infrastructure Services or Kubernetes Clusters that are hosted on the VMs that were created by the Semaphore server due to missing SSH configuration. To enable administration of the VMs created by the Semaphore server on the Ubuntu WSL, create a temporary playbook and run the [`semaphore/add-wsl-ssh`](roles/semaphore/add-wsl-ssh) role.
+Only the Semaphore server can run playbooks to communicate with the VMs it created. You will not be able to run the playbooks on your local Ubuntu WSL to manipulate the Infrastructure Services or Kubernetes Clusters that are hosted on the VMs that were created by the Semaphore server due to missing SSH configuration. Depending on your preference, this can be considered OK as you can use the Semaphore server as a bastion server to manage your VMs.
 
-For example:
+However, if you want to enable your local Ubuntu WSL to also run playbooks to target the Semaphore-created VMs, you can create a temporary playbook and run the [`semaphore/add-wsl-ssh`](roles/semaphore/add-wsl-ssh) role in the local Ubuntu WSL.
+
+For example, create a `enable-ssh.yaml` playbook with the following content:
 ```yaml
 - hosts: localhost
   become_user: root
@@ -101,6 +103,11 @@ For example:
 
   roles:
     - role: semaphore/add-wsl-ssh
+```
+
+Then run the playbook that you have just created:
+```bash
+ansible-playbook enable-ssh.yaml
 ```
 
 The Ubuntu WSL should be able run playbooks to target the Semaphore-created VMs after this.
