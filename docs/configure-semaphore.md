@@ -48,7 +48,7 @@ After the installation has completed, open a browser and browse to the IP addres
 
 ### 3. Create the Ansible Kubernetes Semaphore Project
 
-The [`setup-semaphore-project.yaml`](../setup-semaphore-project.yaml) playbook can be used to automatically create a Semaphore project based on the cloned version of the repository in the file-system. It will make a copy of the repository which you have cloned (and configured) in the Ubuntu WSL to the Semaphore server VM.
+The [`setup-semaphore-project.yaml`](../setup-semaphore-project.yaml) playbook can be used to automatically create a Semaphore project based on the cloned version of this repository in the file-system. It will make a copy of this repository which you have cloned (and configured) in the Ubuntu WSL to the Semaphore VM.
 
 The location of the repository on the Semaphore server can be configured in the [`/roles/semaphore/register/vars/main.yaml`](../roles/semaphore/register/vars/main.yaml) variable file.
 ```yaml
@@ -61,7 +61,7 @@ semaphore:
 > [!CAUTION]
 > The automation process is currently not compatible with _ansible-vault_ values and will terminate with errors. If you want to use _ansible-vault_ values for sensitive information, please set them in the repository on the Semaphore server only **after you have created the Semaphore project**.
 
-You can customize the installation of the Semaphore project by changing the values in the [`/roles/semaphore/register/vars/main.yaml`](../roles/semaphore/register/vars/main.yaml) variable file or pass them in the [`setup-semaphore-project.yaml`](../setup-semaphore-project.yaml) playbook as in the below example:
+You can customize the installation of the Semaphore project by passing in the values referred in the [`/roles/semaphore/register/vars/main.yaml`](../roles/semaphore/register/vars/main.yaml) roles variable file to the [`setup-semaphore-project.yaml`](../setup-semaphore-project.yaml) playbook as shown in the below example:
 
 ```yaml
 - name: Creates a new ansible-kubernetes project in Semaphore

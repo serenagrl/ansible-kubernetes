@@ -34,7 +34,9 @@ Prepare two folders in the Windows Hyper-V host:
 > [!CAUTION]
 > You can set both to point to the same folder but there can be residue seed iso images leftover from provisioning errors. In such cases, you will need to manually clean them up.
 
-Generally, you setup everything on a single server or PC if there are enough computing resources. However, you can also configure the Hyper-V host to be on another machine or pool multiple Windows Hyper-V servers together to distribute the load of hosting the VMs but make sure each Hyper-V host is configured correctly (WinRM and shared folders). The diagram below illustrates the topology.
+### Multiple Hyper-V Host Considerations
+
+Generally, you setup everything on a single host or PC if there are enough computing resources. However, you can also configure the Hyper-V host to be on another machine or pool multiple Windows Hyper-V hosts together to distribute the load of hosting the VMs but make sure each Hyper-V host is configured correctly (WinRM and shared folders). The diagram below illustrates the topology.
 
 <p align="center">
   <img src="docs/images/ansible-kubernetes.jpg" alt="Kubernetes on Hyper-V (Using Ansible)"/>
@@ -159,7 +161,8 @@ Refer [here](https://docs.ansible.com/ansible/latest/os_guide/windows_winrm.html
 > [!IMPORTANT]
 > Although optional, it is strongly recommended to use certificates to connect to WinRM. Please see [Configure WinRM to use Certificates](docs/configure-winrm-certs.md) for more details to apply this practice.
 
-If you have more than 1 Hyper-V host, duplicate the `local_machine` host section for each host and rename it, and then configure the WinRM connection settings for that host. You can then manually specify the `winrm_host` for each of the VM host in the host files i.e. [`inventories/kubernetes_control_planes.yaml`](inventories/kubernetes_control_planes.yaml).
+> [!NOTE]
+> If you have more than 1 Hyper-V host, duplicate the `local_machine` host section for each host and rename it, and then configure the WinRM connection settings for that host. You can then manually specify the `winrm_host` for each of the VM host in the host files i.e. [`inventories/kubernetes_control_planes.yaml`](inventories/kubernetes_control_planes.yaml).
 
 ### 4. Test WinRM Connectivity
 
@@ -187,7 +190,7 @@ local_machine              : ok=1    changed=1    unreachable=0    failed=0    s
 
 All basic/startup configurable items for the Infrastructure Services and Kubernetes Cluster are in the inventory files located in the [`/inventories`](inventories) folder. It is recommended to review all the inventory files and make the necessary changes for your lab environment.
 
-### Configuring Inventory Settings
+### 1. Configuring Inventory Settings
 
 Configure the settings for the Kubernetes Cluster in the [`inventories/group_vars/all.yaml`](inventories/group_vars/all.yaml) file. Configure the `lab_name` to allow the playbooks to use it as a prefix when auto-generating names for the hosts and VMs for the Infrastructure Services and Kubernetes Cluster. The playbooks will also organize the physical VMs inside a folder based on the `lab_name` for ease of management.
 
@@ -225,7 +228,7 @@ kubernetes_control_planes:
 > [!TIP]
 > If you do not want the hostnames to be auto-generated, you can manually hard-code them in `ansible_hostname`.
 
-### Configuring Common VM Settings
+### 2. Configuring Common VM Settings
 
 Common VM settings are configured in the [`roles/vm-linux/setup-vm/vars/main.yaml`](roles/vm-linux/setup-vm/vars/main.yaml) file and are applied to all VMs.
 
@@ -293,7 +296,7 @@ The playbooks can be run with the `ansible-playbook` command. i.e.
 ansible-playbook setup-load-balancers.yaml
 ```
 > [!TIP]
-> If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore), you can use the [`setup-semaphore.yaml`](setup-semaphore.yaml) and [`setup-semaphore-project.yaml`](setup-semaphore-project.yaml) playbooks to deploy a Semaphore VM and create a project on the Semaphore server based on the cloned version of the repository which you have been configuring so far on the file-system. Please see [Configure Semaphore UI (Experimental)](docs/configure-semaphore.md) for detail instructions.
+> If you are familiar with [Semaphore UI](https://github.com/semaphoreui/semaphore) and wish to deploy a dedicated Semaphore Server, please refer to [Configure Semaphore UI (Experimental)](docs/configure-semaphore.md) for installation instructions.
 
 To setup any **(Optional) Infrastructure Services**, run the following playbooks in sequence:
 
