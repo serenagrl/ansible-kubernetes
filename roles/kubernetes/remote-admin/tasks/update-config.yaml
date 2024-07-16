@@ -29,3 +29,4 @@
         content: "{{ KUBE_CONFIG_TEMPLATE | to_nice_yaml }}"
         dest: /root/.kube/config
         force: true
+        mode: 0600

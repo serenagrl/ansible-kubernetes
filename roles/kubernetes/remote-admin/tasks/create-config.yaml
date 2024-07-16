@@ -8,7 +8,7 @@
   ansible.builtin.file:
     path: /root/.kube
     state: directory
-    mode: 0700
+    mode: 0600
 
 - name: Copy admin.conf to home directory kube config
   delegate_to: "{{ groups['kubernetes_control_planes'][0] }}"
@@ -22,3 +22,4 @@
     path: /root/.kube/config
     regexp: 'kubernetes'
     replace: "{{ kube.cluster.name }}"
+    mode: 0600
