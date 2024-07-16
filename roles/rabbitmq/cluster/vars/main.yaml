@@ -2,9 +2,12 @@ rabbitmq:
   namespace: rabbitmq
   name: rabbitmq
 
+  # Number of replicas for the RabbitMQ Cluster(Min=3). Set to 1 to deploy single instance RabbitMQ.
+  replicas: 3
+
   # Set to LoadBalancer for testing if you wish to connect from outside the K8s cluster.
   # Otherwise, set it to ClusterIP
-  service_type: ClusterIP 
+  service_type: ClusterIP
 
   # Determine whether tls is enabled
   enable_tls: yes
