@@ -5,37 +5,6 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Install kubectl
-  ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-kubectl.yaml"
-  when: remote_admin.install_kubectl
-
-- name: Install k9s
-  ansible.builtin.include_tasks: "install-k9s.yaml"
-  when: remote_admin.install_k9s
-
-- name: Install krew
-  ansible.builtin.include_tasks: install-krew.yaml
-  when: remote_admin.install_krew
-
-- name: Install helm
-  become_user: root
-  block:
-    - name: Install Helm
-      ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-helm.yaml"
-
-    - name: Check if helm diff plugin is installed
-      ansible.builtin.shell: |
-        helm plugin list diff | grep diff
-      register: helm_plugin_result
-      failed_when: helm_plugin_result.stderr_lines | length > 0 | bool
-
-    # Prevents warnings when running ansible helm commands.
-    - name: Install helm diff
-      ansible.builtin.shell: |
-        helm plugin install https://github.com/databus23/helm-diff
-      when: helm_plugin_result.stdout_lines | length <= 0 | bool
-  when: remote_admin.install_helm
-
 - delegate_to: localhost
   become_user: root
   vars:
@@ -59,3 +28,33 @@
       ansible.builtin.blockinfile:
         path: /root/.bashrc
         block: "{{ ALIASES_TEMPLATE }}"
+
+    - name: Install kubectl
+      ansible.builtin.include_tasks: "{{ hostvars['localhost'].ansible_distribution | lower }}/install-kubectl.yaml"
+      when: remote_admin.install_kubectl
+
+    - name: Install k9s
+      ansible.builtin.include_tasks: "install-k9s.yaml"
+      when: remote_admin.install_k9s
+
+    - name: Install krew
+      ansible.builtin.include_tasks: install-krew.yaml
+      when: remote_admin.install_krew
+
+    - name: Install helm
+      block:
+        - name: Install Helm
+          ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-helm.yaml"
+
+        - name: Check if helm diff plugin is installed
+          ansible.builtin.shell: |
+            helm plugin list diff | grep diff
+          register: helm_plugin_result
+          failed_when: false
+
+        # Prevents warnings when running ansible helm commands.
+        - name: Install helm diff
+          ansible.builtin.shell: |
+            helm plugin install https://github.com/databus23/helm-diff
+          when: helm_plugin_result.stdout == ''
+      when: remote_admin.install_helm
