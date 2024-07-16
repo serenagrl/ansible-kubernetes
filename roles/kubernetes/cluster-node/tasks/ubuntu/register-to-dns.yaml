@@ -11,9 +11,11 @@
         name: infrastructure/dns/register
 
     - name: Installing dns utility package
+      vars:
+        package_name: "{{ (ansible_distribution_version | float >= 24.04) | ternary('systemd-resolved', 'resolvconf') }}"
       ansible.builtin.apt:
         pkg:
-          - resolvconf
+          - "{{ package_name }}"
         state: latest
         update_cache: yes
 
