@@ -14,7 +14,7 @@
     - kubernetes/worker-node
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
-- hosts: kubernetes_cluster, dns_server
+- hosts: kubernetes_cluster
   gather_facts: no
 
   tasks:

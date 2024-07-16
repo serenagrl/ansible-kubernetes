@@ -50,7 +50,7 @@
         # - name: keycloak
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
-- hosts: kubernetes_control_planes, dns_server
+- hosts: kubernetes_control_planes
   gather_facts: no
 
   tasks:
