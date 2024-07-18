@@ -31,7 +31,7 @@ write_files:
         version: 2
         ethernets:
           eth0:
-            link-local: [ ipv4 ]
+            link-local: []
             dhcp4: false
             addresses:
               - {{ ansible_host }}/{{ vm.network.cidr }}
