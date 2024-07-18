@@ -1,0 +1,33 @@
+ansible_user: root
+ansible_become: yes
+
+# You can also set this in individual host if you are splitting the nodes to different physical servers.
+winrm_host: local_machine
+
+# Edge does not support Load Balancer.
+register_to_load_balancer: no
+
+kube:
+  user: k8s-admin
+  pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
+
+  cluster:
+    domain: edge.local
+    name: serena
+    address: 192.168.0.200
+    use_dns_server: no          # Edge does not support
+
+  ingress_type: nginx
+  allow_scheduling: no          # Edge does not support
+
+lab_name: edge-research
+vm:
+  specs:
+    ram_size: 8GB
+    min_ram_size: 4GB
+    disk_size: 127GB
+    v_cpu: 4
+  network:
+    gateway: 192.168.0.1
+    cidr: 24
+    dns: [ 8.8.8.8, 1.1.1.1 ]

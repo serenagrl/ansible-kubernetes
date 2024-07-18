@@ -1,0 +1,56 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Configure Edge Servers
+- name: Create Edge Servers
+  hosts: edge_servers
+  gather_facts: no
+
+  vars:
+    # Specify the distribution to use - k3s, k0s or microk8s
+    edge_distribution: k3s
+
+  roles:
+    - role: vm-linux
+      when: provision_vm is defined and provision_vm|bool
+
+    - role: "kubernetes/edge/{{ edge_distribution }}"
+
+    - role: kubernetes/add-on
+      add_ons:
+        - name: cert-manager
+        - name: ingress
+        - name: dashboard
+        # - name: monitoring       # Nice to have
+        # - name: devops/argocd
+        - name: rabbitmq
+          vars:
+            rabbitmq:
+              replicas: 1          # Edge only runs 1 instance
+              install:
+                topology: no
+
+        - name: metallb            # required for MSSQL Server
+          vars:
+            metallb:
+              addresses: [ 192.168.0.240-192.168.0.250 ]
+
+        - name: database/mssql
+          vars:
+            mssql:
+              version: 2022-latest
+              edition: Developer
+              sa_password: p@ssw0rd
+              service_type: LoadBalancer
+              storage_size: 8Gi
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+  post_tasks:
+    - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "Edge configured."
+      when: vm_checkpoint|bool

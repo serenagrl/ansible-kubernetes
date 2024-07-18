@@ -5,6 +5,9 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
+- name: Gather facts
+  ansible.builtin.setup:
+
 - name: Install dependency packages
   ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-packages.yaml"
 
@@ -35,7 +38,3 @@
     break_system_packages: yes
     name:
       - kubernetes
-
-# - name: "Install {{ kubernetes.distribution }}"
-#   ansible.builtin.include_role:
-#     name: "kubernetes/edge/{{ kubernetes.distribution }}"
