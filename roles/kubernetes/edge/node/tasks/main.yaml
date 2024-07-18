@@ -1,0 +1,41 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install dependency packages
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-packages.yaml"
+
+- name: Install kubectl
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-kubectl.yaml"
+  when: edge_k8s.install_kubectl|bool
+
+- name: Install Helm
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-helm.yaml"
+
+- name : Install helm diff
+  become_user: "{{ kube.user }}"
+  block:
+    - name: Check if helm diff plugin is installed
+      ansible.builtin.shell: |
+        helm plugin list | grep diff
+      register: helm_plugin_result
+      failed_when: false
+
+    # Prevents warnings when running ansible helm commands.
+    - name: Install helm diff
+      ansible.builtin.shell: |
+        helm plugin install https://github.com/databus23/helm-diff
+      when: helm_plugin_result.stdout == ''
+
+- name: Installing kubernetes python module on Ansible host
+  ansible.builtin.pip:
+    break_system_packages: yes
+    name:
+      - kubernetes
+
+# - name: "Install {{ kubernetes.distribution }}"
+#   ansible.builtin.include_role:
+#     name: "kubernetes/edge/{{ kubernetes.distribution }}"

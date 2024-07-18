@@ -1,0 +1,4 @@
+dependencies:
+  - role: kubernetes/edge/node
+    edge_k8s:
+      install_kubectl: no

@@ -1,0 +1,88 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install k0s
+  become_user: root
+  block:
+    - name: Installing k0s
+      ansible.builtin.shell: |
+        curl -sSLf https://get.k0s.sh | sudo sh
+
+    - name: Write out k0s configuration
+      ansible.builtin.shell: |
+        mkdir -p /etc/k0s
+        k0s config create > {{ K0S_CONFIG }}
+
+    - name: k0s config 
+      block: 
+        - name: Add OpenEBS chart
+          ansible.builtin.replace:
+            path: "{{ K0S_CONFIG }}"
+            regexp: '^\s*(charts: null)$'
+            replace: |2-
+                    charts:
+                      - name: openebs
+                        chartname: openebs-internal/openebs
+                        version: "3.9.0"
+                        namespace: openebs
+                        order: 1
+                        values: |
+                          localprovisioner:
+                            hostpathClass:
+                              enabled: true
+                              isDefaultClass: false
+
+        - name: Add OpenEBS repository
+          ansible.builtin.replace:
+            path: "{{ K0S_CONFIG }}"
+            regexp: '^\s*(repositories: null)$'
+            replace: |2-
+                    repositories:
+                      - name: openebs-internal
+                        url: https://openebs.github.io/charts
+
+        - name: Change provider to calico
+          ansible.builtin.replace:
+            path: "{{ K0S_CONFIG }}"
+            regexp: 'provider: kuberouter'
+            replace: 'provider: calico'
+
+        - name: Remove calico section
+          ansible.builtin.lineinfile:
+            path: "{{ K0S_CONFIG }}"
+            regexp: 'calico: null'
+            state: absent
+
+    - name: Installing k0s controller
+      ansible.builtin.shell: |
+        k0s install controller --single --config {{ K0S_CONFIG }}
+        k0s start
+
+    - name: Waiting for k0s service to be running
+      ansible.builtin.shell: |
+        k0s status
+
+    # Note: The sleep is added to wait for the node entry to be available.
+    - name: Waiting for node to be ready
+      ansible.builtin.shell: |
+        sleep 5
+        k0s kubectl wait --for=condition=Ready nodes --all --timeout=600s
+
+    - name: Create .kube in home directory
+      become_user: "{{ kube.user }}"
+      ansible.builtin.file:
+        path: ~/.kube
+        state: directory
+        mode: 0700
+
+    - name: Copy admin.conf to home directory kube config
+      ansible.builtin.copy:
+        src: /var/lib/k0s/pki/admin.conf
+        dest: "/home/{{ kube.user }}/.kube/config"
+        remote_src: yes
+        mode: 0600
+        owner: "{{ kube.user }}"
