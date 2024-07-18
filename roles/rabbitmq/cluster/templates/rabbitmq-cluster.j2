@@ -4,7 +4,7 @@ metadata:
   name: "{{ rabbitmq.name }}"
   namespace: "{{ rabbitmq.namespace }}"
 spec:
-  replicas: "{{ rabbitmq.replicas }}"
+  replicas: {{ rabbitmq.replicas }}
   service:
     type: "{{ rabbitmq.service_type }}"
 
