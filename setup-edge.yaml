@@ -10,10 +10,6 @@
   hosts: edge_servers
   gather_facts: no
 
-  vars:
-    # Specify the distribution to use - k3s, k0s or microk8s
-    edge_distribution: k3s
-
   roles:
     - role: vm-linux
       when: provision_vm is defined and provision_vm|bool
