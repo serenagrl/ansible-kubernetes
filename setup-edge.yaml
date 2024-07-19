@@ -14,7 +14,8 @@
     - role: vm-linux
       when: provision_vm is defined and provision_vm|bool
 
-    - role: "kubernetes/edge/{{ edge_distribution }}"
+    - role: kubernetes/edge/node
+    - role: kubernetes/edge
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
   post_tasks:

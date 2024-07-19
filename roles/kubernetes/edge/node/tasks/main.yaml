@@ -13,7 +13,7 @@
 
 - name: Install kubectl
   ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-kubectl.yaml"
-  when: edge_k8s.install_kubectl|bool
+  when: (edge_k8s.install_kubectl is not defined) or (edge_k8s.install_kubectl|bool)
 
 - name: Install Helm
   ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-helm.yaml"
