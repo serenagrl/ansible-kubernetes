@@ -92,10 +92,3 @@
       become_user: "{{ kube.user }}"
       ansible.builtin.shell: |
         for d in $(kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n kube-system deployment/$d; done;
-
-# Create checkpoints for safety reasons. You can delete the checkpoints later.
-- name: Checkpoint VM
-  ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
-  vars:
-    checkpoint_name: "K0s configured."
-  when: vm_checkpoint|bool

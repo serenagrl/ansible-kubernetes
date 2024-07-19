@@ -33,10 +33,3 @@
 - name: Install calico
   ansible.builtin.include_role:
     name: cni-calico
-
-# Create checkpoints for safety reasons. You can delete the checkpoints later.
-- name: Checkpoint VM
-  ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
-  vars:
-    checkpoint_name: "K3s configured."
-  when: vm_checkpoint|bool

@@ -38,3 +38,16 @@
     break_system_packages: yes
     name:
       - kubernetes
+
+- name: Install k9s
+  become_user: "{{ kube.user }}"
+  block:
+    - name: Installing k9s
+      ansible.builtin.shell: |
+        curl -sS https://webinstall.dev/k9s | bash
+
+    # Cleanup webi residue file.
+    - name: Cleanup file
+      ansible.builtin.file:
+        path: $HOME/Downloads
+        state: absent

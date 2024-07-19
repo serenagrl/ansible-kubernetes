@@ -7,6 +7,12 @@ winrm_host: local_machine
 # Edge does not support Load Balancer.
 register_to_load_balancer: no
 
+# Specify whether to provision the VMs.
+provision_vm: yes
+
+# Will be used as the prefix for all the hostnames
+lab_name: edge-research
+
 kube:
   user: k8s-admin
   pwd: $6$4nadD33.xoBOI.oe$ZO2mBpRvv9fdhj6/nYpCHBYjCzpramCuLsKI8vhl9CSzJiCE.Dlnm2Zj23/1Sw5OmiddkuT./IWqYFRIJo9R6/
@@ -18,9 +24,8 @@ kube:
     use_dns_server: no          # Edge does not support
 
   ingress_type: nginx
-  allow_scheduling: no          # Edge does not support
+  allow_scheduling: yes         # Edge does not support non scheduling.
 
-lab_name: edge-research
 vm:
   specs:
     ram_size: 8GB
