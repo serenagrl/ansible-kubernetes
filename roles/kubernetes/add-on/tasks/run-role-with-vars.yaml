@@ -8,7 +8,7 @@
 - delegate_to: localhost
   become_user: root
   vars:
-    role_var_file: "{{ temp_dir}}/role-var-file"
+    role_var_file: "{{ temp_dir}}/{{ ansible_hostname }}-{{ role.name }}-var-file"
   block:
     - name: Output role parameters to temporary var file
       ansible.builtin.shell: |
