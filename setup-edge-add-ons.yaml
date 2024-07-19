@@ -21,8 +21,6 @@
         - name: ingress
         - name: dashboard
         - name: monitoring       # Nice to have
-        # - name: metrics-server   # Enable for microk8s
-
         - name: devops/argocd
         - name: rabbitmq
           vars:
