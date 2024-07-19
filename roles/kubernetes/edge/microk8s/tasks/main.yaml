@@ -29,6 +29,7 @@
       ansible.builtin.shell: |
         microk8s enable dns
         microk8s enable storage
+        microk8s enable metrics-server
 
 - name: Copy kube config from microk8s
   become_user: "{{ kube.user }}"
