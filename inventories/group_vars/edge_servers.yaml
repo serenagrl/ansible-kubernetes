@@ -11,7 +11,7 @@ register_to_load_balancer: no
 provision_vm: yes
 
 # Specify the distribution to use - k3s, k0s or microk8s
-edge_distribution: microk8s
+edge_distribution: k3s
 
 # Will be used as the prefix for all the hostnames
 lab_name: edge-research
@@ -31,8 +31,8 @@ kube:
 
 vm:
   specs:
-    ram_size: 8GB
-    min_ram_size: 4GB
+    ram_size: 12GB
+    min_ram_size: 8GB
     disk_size: 127GB
     v_cpu: 4
   network:
