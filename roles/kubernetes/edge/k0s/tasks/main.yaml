@@ -34,7 +34,7 @@
                           localprovisioner:
                             hostpathClass:
                               enabled: true
-                              isDefaultClass: false
+                              isDefaultClass: true
 
         - name: Add OpenEBS repository
           ansible.builtin.replace:
@@ -68,27 +68,24 @@
         k0s status
 
     # Note: The sleep is added to wait for the node entry to be available.
-    - name: Waiting for node to be ready
+    - name: Waiting for k0s pods to be ready
       ansible.builtin.shell: |
-        sleep 5
-        k0s kubectl wait --for=condition=Ready nodes --all --timeout=600s
+        for d in $(k0s kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do k0s kubectl rollout status -n kube-system deployment/$d; done;
 
+- name:
+  become_user: "{{ kube.user }}"
+  block:
     - name: Create .kube in home directory
-      become_user: "{{ kube.user }}"
       ansible.builtin.file:
         path: ~/.kube
         state: directory
         mode: 0700
 
     - name: Copy admin.conf to home directory kube config
+      become_user: root
       ansible.builtin.copy:
         src: /var/lib/k0s/pki/admin.conf
         dest: "/home/{{ kube.user }}/.kube/config"
         remote_src: yes
         mode: 0600
         owner: "{{ kube.user }}"
-
-    - name: Waiting for k0s pods to be ready
-      become_user: "{{ kube.user }}"
-      ansible.builtin.shell: |
-        for d in $(kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n kube-system deployment/$d; done;
