@@ -21,6 +21,7 @@
         "allow_override_args_in_task": false,
         "limit": "",
         "suppress_success_alerts": true,
+        "app": "ansible",
         "survey_vars": {{ item.surveys | default([]) }}
       }
     status_code: 201 # Created
