@@ -1,0 +1,48 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install the epal rpm
+  ansible.builtin.dnf:
+    name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+    disable_gpg_check: yes
+    state: present
+
+- name: Upgrade all packages
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+
+- name: Install snapd
+  ansible.builtin.dnf:
+    name: snapd
+    state: latest
+
+- name: Start the snapd service
+  ansible.builtin.service:
+    name: snapd.socket
+    state: started
+    enabled: true
+  register: snapd_service_result
+  until: snapd_service_result.status.ActiveState == "active"
+  retries: 10
+  delay: 5
+
+- name: Start the snapd.seeded service
+  ansible.builtin.service:
+    name: snapd.seeded
+    state: started
+  register: snapd_seeded_service_result
+  until: snapd_seeded_service_result.status.ActiveState == "active"
+  retries: 10
+  delay: 5
+
+- name: Create a symbolic link
+  ansible.builtin.file:
+    src: /var/lib/snapd/snap
+    dest: /snap
+    state: link

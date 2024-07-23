@@ -1,0 +1,3 @@
+k3s:
+  cidr_network: 10.1.0.0/16
+  certificate_san: k3s-cluster

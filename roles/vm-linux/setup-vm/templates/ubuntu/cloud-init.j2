@@ -26,6 +26,7 @@ write_files:
     content: |
       network: {config: disabled}
   - path: /etc/netplan/99-custom.yaml
+    permissions: '0600'
     content: |
       network:
         version: 2

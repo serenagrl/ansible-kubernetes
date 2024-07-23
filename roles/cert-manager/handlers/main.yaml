@@ -1,0 +1,4 @@
+- name: Update certificates
+  become_user: root
+  ansible.builtin.shell: update-ca-certificates
+  listen: "Update certificates"

@@ -95,4 +95,7 @@
       ansible.builtin.include_tasks: "gather-fact.yaml"
       loop: "{{ fact_active_hosts + ['localhost'] }}"
 
+    - name: Flush handlers
+      meta: flush_handlers
+      
   when: cert_mgr.self_signed_ca

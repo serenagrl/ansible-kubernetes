@@ -1,0 +1,26 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+# Configure Edge Servers
+- name: Create Edge Servers
+  hosts: edge_servers
+  gather_facts: no
+
+  roles:
+    - role: vm-linux
+      when: provision_vm is defined and provision_vm|bool
+
+    - role: kubernetes/edge/node
+    - role: kubernetes/edge
+
+# Create checkpoints for safety reasons. You can delete the checkpoints later.
+  post_tasks:
+    - name: Checkpoint VM
+      ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
+      vars:
+        checkpoint_name: "{{ edge_distribution | capitalize }} configured."
+      when: vm_checkpoint|bool

@@ -1,0 +1,35 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Installing k3s
+  ansible.builtin.shell: |
+    curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="--flannel-backend=none --cluster-cidr={{ k3s.cidr_network }} --disable-network-policy --disable=traefik" sh -s - server --cluster-init --tls-san={{ k3s.certificate_san }}
+
+- name: Create .kube in home directory
+  become_user: "{{ kube.user }}"
+  ansible.builtin.file:
+    path: ~/.kube
+    state: directory
+    mode: 0700
+
+- name: Copy k3s config to home directory kube config
+  become_user: root
+  ansible.builtin.copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "/home/{{ kube.user }}/.kube/config"
+    remote_src: yes
+    mode: 0600
+    owner: "{{ kube.user }}"
+
+- name: Waiting for k3s pods to be ready
+  become_user: "{{ kube.user }}"
+  ansible.builtin.shell: |
+    for d in $(kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n kube-system deployment/$d; done;
+
+- name: Install calico
+  ansible.builtin.include_role:
+    name: cni-calico

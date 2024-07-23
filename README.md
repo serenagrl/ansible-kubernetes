@@ -34,7 +34,7 @@ Prepare two folders in the Windows Hyper-V host:
 > [!CAUTION]
 > You can set both to point to the same folder but there can be residue seed iso images leftover from provisioning errors. In such cases, you will need to manually clean them up.
 
-### Multiple Hyper-V Host Considerations
+### Multiple Hyper-V Hosts Considerations
 
 Generally, you setup everything on a single host or PC if there are enough computing resources. However, you can also configure the Hyper-V host to be on another machine or pool multiple Windows Hyper-V hosts together to distribute the load of hosting the VMs but make sure each Hyper-V host is configured correctly (WinRM and shared folders). The diagram below illustrates the topology.
 
@@ -269,7 +269,7 @@ vm:
 > Sometimes the download may take longer due to designated mirrors or connectivity issues. In such cases, manually download the cloud image file, rename it to `ubuntu-cloud.img` and copy it into the location specified in `temp_dir` (i.e. `/var/automate`) in the Ubuntu WSL.
 
 For `redhat`:
-* Please download the **Red Hat Enterprise Linux Guest Image** and specify it in `vm.redhat.kvm_image`.
+* Please download the **Red Hat Enterprise Linux KVM Guest Image** and specify it in `vm.redhat.kvm_image`.
 * Specify the Red Hat Subscription username and password for automatic registration of the VMs to enable the dnf repositories.
 
 ```yaml

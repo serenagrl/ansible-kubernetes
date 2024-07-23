@@ -5,14 +5,18 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Get active nodes in kubernetes cluster
-  kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Node
-  register: nodes_info
+- name: Get inventory names of active nodes in kubernetes cluster
+  block:
+    - name: Get active nodes in kubernetes cluster
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Node
+      register: nodes_info
 
-- name: Set active hosts list to fact
-  vars:
-    active_nodes: "{{ nodes_info.resources | map(attribute='status') | map(attribute='addresses') | community.general.json_query('[*][?type==`Hostname`].address') | map('join', '') }}"
-  ansible.builtin.set_fact:
-    fact_active_hosts: "{{ groups['kubernetes_cluster'] | map('extract', hostvars) | selectattr('ansible_hostname', 'in', active_nodes | string) | map(attribute='inventory_hostname') }}"
+    - name: Set active hosts list to fact
+      vars:
+        active_nodes: "{{ nodes_info.resources | map(attribute='status') | map(attribute='addresses') | community.general.json_query('[*][?type==`Hostname`].address') | map('join', '') }}"
+      ansible.builtin.set_fact:
+        fact_active_hosts: "{{ groups['kubernetes_cluster'] | map('extract', hostvars) | selectattr('ansible_hostname', 'in', active_nodes | string) | map(attribute='inventory_hostname') }}"
+
+  when: fact_active_hosts is not defined or fact_active_hosts == []

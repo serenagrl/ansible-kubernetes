@@ -1,0 +1,4 @@
+# Role launcher
+- name: Run {{ edge_distribution }} role
+  ansible.builtin.include_role:
+    name: kubernetes/edge/{{ edge_distribution }}

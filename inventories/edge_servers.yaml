@@ -1,0 +1,5 @@
+edge_servers:
+  hosts:
+    edge-node:
+      ansible_hostname: edge-node
+      ansible_host: 192.168.0.230

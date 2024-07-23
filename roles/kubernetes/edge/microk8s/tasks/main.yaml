@@ -1,0 +1,54 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install snapd
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-snapd.yaml"
+
+- name: Install microk8s
+  become_user: root
+  block:
+    - name: Installing microk8s
+      ansible.builtin.shell: |
+        snap install microk8s --classic
+
+    - name: Get microk8s kube config
+      ansible.builtin.shell: |
+        microk8s.kubectl config view --raw
+      register: config_result
+
+    - name: Waiting for microk8s to be ready
+      ansible.builtin.shell: |
+        microk8s status --wait-ready
+
+    - name: Waiting for node to be ready
+      ansible.builtin.shell: |
+        microk8s kubectl wait --for=condition=Ready nodes --all --timeout=600s
+
+    - name: Enable microk8s addons
+      ansible.builtin.shell: |
+        microk8s enable dns
+        microk8s enable storage
+        microk8s enable metrics-server
+
+- name: Copy kube config from microk8s
+  become_user: "{{ kube.user }}"
+  block:
+    - name: Create .kube in home directory
+      ansible.builtin.file:
+        path: ~/.kube
+        state: directory
+        mode: 0700
+
+    - name: Write kube config
+      ansible.builtin.copy:
+        content: "{{ config_result.stdout }}"
+        dest: "~/.kube/config"
+
+    - name: Waiting for microk8s pods to be ready
+      ansible.builtin.shell: |
+        for d in $(kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n kube-system deployment/$d; done;
