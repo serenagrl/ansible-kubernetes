@@ -9,6 +9,7 @@ register_to_load_balancer: no
 
 # Specify whether to provision the VMs.
 provision_vm: yes
+vm_checkpoint: yes
 
 # Specify the distribution to use - k3s, k0s or microk8s
 edge_distribution: k3s
@@ -23,7 +24,7 @@ kube:
   cluster:
     domain: edge.local
     name: serena
-    address: 192.168.0.200
+    address: 192.168.0.230
     use_dns_server: no          # Edge does not support
 
   ingress_type: nginx
