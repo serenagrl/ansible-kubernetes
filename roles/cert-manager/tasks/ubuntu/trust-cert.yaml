@@ -8,8 +8,10 @@
         src: "{{ CRT_FILE }}"
         dest: "{{ cert_store }}/{{ kube.cluster.name }}-ca.crt"
         mode: 0777
-      notify: "Update certificates"
 
+    - name: Update certificates
+      ansible.builtin.shell: update-ca-certificates
+      throttle: 1
 
   ignore_errors: yes
   ignore_unreachable: yes
