@@ -25,11 +25,6 @@
     mode: 0600
     owner: "{{ kube.user }}"
 
-- name: Waiting for k3s pods to be ready
-  become_user: "{{ kube.user }}"
-  ansible.builtin.shell: |
-    for d in $(kubectl -n kube-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n kube-system deployment/$d; done;
-
 - name: Install calico
   ansible.builtin.include_role:
     name: cni-calico
