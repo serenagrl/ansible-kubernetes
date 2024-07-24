@@ -9,7 +9,7 @@
 - name: Create Edge Servers
   hosts: edge_servers
   become_user: "{{ kube.user }}"
-  gather_facts: no
+  gather_facts: yes
 
   vars:
     fact_active_hosts: ["{{ inventory_hostname }}"]
