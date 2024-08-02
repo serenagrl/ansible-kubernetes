@@ -13,7 +13,6 @@
   ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-vault.yaml"
 
 - name: Add vault address to VAULT_ADDR
-  become_user: "{{ kube.user }}"
   ansible.builtin.blockinfile:
     path: ~/.bashrc
     marker: "# {mark} VAULT_ADDR"
@@ -23,7 +22,6 @@
   ansible.builtin.shell: . ~/.bashrc
 
 - name: Create vault configuration
-  become_user: root
   ansible.builtin.template:
     src: vault.j2
     dest: /etc/vault.d/vault.hcl
@@ -35,13 +33,11 @@
     name: vault
 
 - name: Configure vault
-  environment:
-    VAULT_ADDR: "{{ VAULT_ADDRESS }}"
   vars:
-    credentials_path: "{{ temp_dir }}/{{ kube.cluster.name }}-vault-transit-credentials"
+    credentials_path: "{{ temp_dir }}/{{ ansible_hostname }}-vault-transit-credentials"
   block:
     - name: Initialize vault
-      shell: |
+      ansible.builtin.shell: |
         vault operator init -key-shares={{ vault.key_shares }} -key-threshold={{ vault.key_threshold }}
       register: key_result
 
@@ -63,32 +59,32 @@
     - name: Unseal vault
       vars:
         key: "{{ key_result.stdout | regex_search('Unseal Key ' + item|string + ': (.+)', '\\1') | first }}"
-      shell: |
+      ansible.builtin.shell: |
         vault operator unseal {{ key }}
       loop: "{{ range(1,vault.key_threshold + 1) }}"
 
     - name: Vault login
       vars:
         token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
-      shell: |
+      ansible.builtin.shell: |
         vault login {{ token }}
 
     - name: Enable transit
-      shell: |
+      ansible.builtin.shell: |
         vault secrets enable transit
 
     - name: Configure transit
-      shell: |
+      ansible.builtin.shell: |
         vault write -f transit/keys/autounseal
 
     - name: Configure policy
-      shell: |
+      ansible.builtin.shell: |
         vault policy write autounseal -<<EOF
         {{ AUTO_UNSEAL_POLICY_TEMPLATE }}
         EOF
 
     - name: Configure transit
-      shell: |
+      ansible.builtin.shell: |
         vault token create -policy=autounseal
       register: auto_unseal_token_result
 
