@@ -1,0 +1,66 @@
+nameOverride: ""
+fullnameOverride: ""
+
+infisical:
+  enabled: true
+  name: "infisical"
+  autoDatabaseSchemaMigration: true
+  fullnameOverride: "infisical"
+
+  image:
+    repository: infisical/infisical
+    tag: "{{ version }}-postgres"
+
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+ingress:
+  enabled: false
+  nginx:
+    enabled: false
+
+postgresql:
+  enabled: true
+  name: "postgresql"
+  fullnameOverride: "postgresql"
+  auth:
+    username: infisical
+    password: root
+    database: infisicalDB
+
+{% if not kube.allow_scheduling %}
+  primary:
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+redis:
+  enabled: true
+  name: "redis"
+  fullnameOverride: "redis"
+  cluster:
+    enabled: false
+  usePassword: true
+  auth:
+    password: "p@ssw0rd"
+  architecture: standalone
+
+{% if not kube.allow_scheduling %}
+  master:
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}

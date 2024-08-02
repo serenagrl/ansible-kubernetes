@@ -1,0 +1,5 @@
+infisical:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  # Note: Infisical chart version is not sync with their app version. This is the app version.
+  version: latest

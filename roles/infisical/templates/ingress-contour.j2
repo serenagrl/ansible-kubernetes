@@ -1,0 +1,21 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: infisical-httpproxy
+  namespace: infisical
+spec:
+  virtualhost:
+    fqdn: infisical.{{ kube.cluster.domain }}
+    tls:
+      secretName: infisical-ingress-tls
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: infisical
+          port: 8080
+    - conditions:
+        - prefix: /ss-webhook
+      services:
+        - name: infisical
+          port: 8080
