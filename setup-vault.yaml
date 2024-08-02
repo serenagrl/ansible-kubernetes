@@ -19,5 +19,5 @@
   post_tasks:
     - ansible.builtin.import_tasks: ./tasks/task-checkpoint-vm.yaml
       vars:
-        checkpoint_name: "Hashicorp vault configured."
+        checkpoint_name: "Vault configured."
       when: vm_checkpoint|bool
