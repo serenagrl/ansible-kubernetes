@@ -6,14 +6,6 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Installing dependencies package
-  ansible.builtin.apt:
-    pkg:
-      - gpg
-      - wget
-    state: latest
-    update_cache: yes
-
 - name: Get vault gpg
   ansible.builtin.get_url:
     url: https://apt.releases.hashicorp.com/gpg
