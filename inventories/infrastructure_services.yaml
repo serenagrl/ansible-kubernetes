@@ -18,3 +18,6 @@ infrastructure_services:
 
     minio_server:
       << : *infra_server
+
+    vault_server:
+      << : *infra_server

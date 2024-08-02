@@ -1,0 +1,106 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Gather facts
+  ansible.builtin.setup:
+
+- name: Install hashicorp vault
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-vault.yaml"
+
+- name: Add vault address to VAULT_ADDR
+  become_user: "{{ kube.user }}"
+  ansible.builtin.blockinfile:
+    path: ~/.bashrc
+    marker: "# {mark} VAULT_ADDR"
+    block: 'export VAULT_ADDR="{{ VAULT_ADDRESS }}"'
+
+- name: Apply changes
+  ansible.builtin.shell: . ~/.bashrc
+
+- name: Create vault configuration
+  become_user: root
+  ansible.builtin.template:
+    src: vault.j2
+    dest: /etc/vault.d/vault.hcl
+
+- name: Start vault service
+  ansible.builtin.systemd:
+    enabled: yes
+    state: restarted
+    name: vault
+
+- name: Configure vault
+  environment:
+    VAULT_ADDR: "{{ VAULT_ADDRESS }}"
+  vars:
+    credentials_path: "{{ temp_dir }}/{{ kube.cluster.name }}-vault-transit-credentials"
+  block:
+    - name: Initialize vault
+      shell: |
+        vault operator init -key-shares={{ vault.key_shares }} -key-threshold={{ vault.key_threshold }}
+      register: key_result
+
+    - name: Store key into file on Ansible controller host
+      delegate_to: localhost
+      become_user: root
+      vars:
+        keys_regex: 'Unseal Key.*\n(?:^.+\n)*'
+        keys: "{{ key_result.stdout | regex_search(keys_regex, multiline=True) }}"
+        token_regex: 'Initial Root Token:.*\n(?:^.+\n)*'
+        token: "{{ key_result.stdout | regex_search(token_regex) }}"
+      ansible.builtin.blockinfile:
+        path: "{{ credentials_path }}"
+        marker: "##### {mark} Vault #####"
+        block: |
+          {{ keys }}{{ token }}
+        create: yes
+
+    - name: Unseal vault
+      vars:
+        key: "{{ key_result.stdout | regex_search('Unseal Key ' + item|string + ': (.+)', '\\1') | first }}"
+      shell: |
+        vault operator unseal {{ key }}
+      loop: "{{ range(1,vault.key_threshold + 1) }}"
+
+    - name: Vault login
+      vars:
+        token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
+      shell: |
+        vault login {{ token }}
+
+    - name: Enable transit
+      shell: |
+        vault secrets enable transit
+
+    - name: Configure transit
+      shell: |
+        vault write -f transit/keys/autounseal
+
+    - name: Configure policy
+      shell: |
+        vault policy write autounseal -<<EOF
+        {{ AUTO_UNSEAL_POLICY_TEMPLATE }}
+        EOF
+
+    - name: Configure transit
+      shell: |
+        vault token create -policy=autounseal
+      register: auto_unseal_token_result
+
+    - name: Store key into file on Ansible controller host
+      delegate_to: localhost
+      become_user: root
+      vars:
+        auto_unseal_token_regex: 'token \s*(.+)'
+        auto_unseal_token: "{{ auto_unseal_token_result.stdout | regex_search(auto_unseal_token_regex, '\\1') | first }}"
+      ansible.builtin.blockinfile:
+        path: "{{ credentials_path }}"
+        marker: "##### {mark} Vault transit auto unseal token #####"
+        block: |
+          {{ auto_unseal_token }}
+        create: yes

@@ -1,0 +1,38 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Installing dependencies package
+  ansible.builtin.apt:
+    pkg:
+      - gpg
+      - wget
+    state: latest
+    update_cache: yes
+
+- name: Get vault gpg
+  ansible.builtin.get_url:
+    url: https://apt.releases.hashicorp.com/gpg
+    dest: /tmp/vault.gpg
+    mode: '0644'
+    force: true
+
+- name: De-armor containerd gpg
+  ansible.builtin.shell: gpg --dearmor < /tmp/vault.gpg > /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+- name: Register vault repository
+  ansible.builtin.apt_repository:
+    filename: hashicorp
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+    update_cache: yes
+
+- name: Installing vault
+  ansible.builtin.apt:
+    pkg:
+      - vault
+    state: latest
+    update_cache: yes
