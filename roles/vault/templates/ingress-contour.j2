@@ -1,0 +1,17 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: vault-httpproxy
+  namespace: vault
+spec:
+  virtualhost:
+    fqdn: vault.{{ kube.cluster.domain }}
+    tls:
+      secretName: vault-ingress-tls
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: vault-active
+          port: 8200
+          protocol: tls

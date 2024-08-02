@@ -1,0 +1,18 @@
+vault:
+  # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
+  # releases with breaking changes. Try reducing the version number if errors occur during installation.
+  version: latest
+  cluster_name: vault-integrated-storage # Hashicorp vault cluster name
+  enable_injector: yes
+  enable_csi: no
+  auto_unseal:
+    type: azure # Supported value [azure, transit]
+    transit:
+      token: <transit-token> # Token from hashicorp vault transit
+    azure:
+      tenant_id: <your-azure-tenant-id> # Microsoft Entra ID's tenant id
+      client_id: <your-azure-client-id> # App registration's client id in Microsoft Entra ID
+      client_secret: <your-azure-client-secret> # App registration's client secret in Microsoft Entra ID
+      vault_name: <your-azure-key-vault-name> # Azure Key Vault's name
+      key_name: <your-azure-key-vault-key-name> # Azure Key Vault's key name
+      subscription_id: <your-azure-subscription-id> # Azure's subscription id

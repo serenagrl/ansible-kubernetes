@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-cluster-cert
+  namespace: vault
+spec:
+  dnsNames:
+    - vault-active.vault.svc.cluster.local
+    - vault-0.vault-internal
+    - vault-1.vault-internal
+    - vault-2.vault-internal
+  issuerRef:
+    kind: ClusterIssuer
+    name: {{ fact_cluster_issuer_name }}
+  secretName: vault-cluster-tls

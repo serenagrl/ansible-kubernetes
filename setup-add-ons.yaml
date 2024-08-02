@@ -48,6 +48,7 @@
         # - name: velero
         # - name: goldilocks
         # - name: keycloak
+        # - name: vault
 
 # Create checkpoints for safety reasons. You can delete the checkpoints later.
 - hosts: kubernetes_control_planes

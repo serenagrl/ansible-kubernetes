@@ -1,0 +1,123 @@
+global:
+  tlsDisable: false
+
+injector:
+  enabled: {{ vault.enable_injector }}
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+server:
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+  auditStorage:
+    enabled: true
+  standalone:
+    enabled: false
+  extraVolumes:
+    - type: secret
+      name: vault-cluster-tls
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: false
+
+      config: |
+        ui = true
+        cluster_name = "{{ vault.cluster_name }}"
+
+        listener "tcp" {
+          tls_disable = 0
+          address = "[::]:8200"
+          cluster_address = "[::]:8201"
+          tls_cert_file = "/vault/userconfig/vault-cluster-tls/tls.crt"
+          tls_key_file = "/vault/userconfig/vault-cluster-tls/tls.key"
+        }
+
+        storage "raft" {
+          path = "/vault/data"
+
+          retry_join {
+            leader_api_addr = "https://vault-0.vault-internal:8200"
+            leader_ca_cert_file = "/vault/userconfig/vault-cluster-tls/ca.crt"
+            leader_client_cert_file = "/vault/userconfig/vault-cluster-tls/tls.crt"
+            leader_client_key_file = "/vault/userconfig/vault-cluster-tls/tls.key"
+          }
+          retry_join {
+            leader_api_addr = "https://vault-1.vault-internal:8200"
+            leader_ca_cert_file = "/vault/userconfig/vault-cluster-tls/ca.crt"
+            leader_client_cert_file = "/vault/userconfig/vault-cluster-tls/tls.crt"
+            leader_client_key_file = "/vault/userconfig/vault-cluster-tls/tls.key"
+          }
+          retry_join {
+            leader_api_addr = "https://vault-2.vault-internal:8200"
+            leader_ca_cert_file = "/vault/userconfig/vault-cluster-tls/ca.crt"
+            leader_client_cert_file = "/vault/userconfig/vault-cluster-tls/tls.crt"
+            leader_client_key_file = "/vault/userconfig/vault-cluster-tls/tls.key"
+          }
+        }
+
+{% if vault.auto_unseal.type == 'transit' %}
+        seal "transit" {
+          address = "http://198.168.0.210:8200"
+          token   = "{{ vault.auto_unseal.transit.token }}"
+          disable_renewal = "false"
+          key_name = "autounseal"
+          mount_path = "transit/"
+        }
+{% elif vault.auto_unseal.type == 'azure' %}
+        seal "azurekeyvault" {
+          tenant_id       = "{{ vault.auto_unseal.azure.tenant_id }}"
+          client_id       = "{{ vault.auto_unseal.azure.client_id }}"
+          client_secret   = "{{ vault.auto_unseal.azure.client_secret }}"
+          vault_name      = "{{ vault.auto_unseal.azure.vault_name }}"
+          key_name        = "{{ vault.auto_unseal.azure.key_name }}"
+          subscription_id = "{{ vault.auto_unseal.azure.subscription_id }}"
+        }
+{% endif %}
+
+        service_registration "kubernetes" {}
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    hosts:
+      - host: vault.{{ kube.cluster.domain }}
+    tls:
+      - secretName: vault-ingress-tls
+        hosts:
+          - vault.{{ kube.cluster.domain }}
+
+csi:
+  enabled: {{ vault.enable_csi }}
+{% if not kube.allow_scheduling %}
+  pod:
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+serverTelemetry:
+  serviceMonitor:
+    enabled: true
+    selectors:
+      release: monitoring
+
+ui:
+  enabled: true

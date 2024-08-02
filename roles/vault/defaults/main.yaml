@@ -1,0 +1,6 @@
+CLUSTER_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'cluster-certificate.j2') | from_yaml }}"
+INGRESS_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'ingress-certificate.j2') | from_yaml }}"
+
+INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + kube.ingress_type + '.yaml' }}"
+INGRESS_TEMPLATE: "{{ (kube.ingress_type == 'nginx') | ternary('', lookup('template', 'ingress-' + kube.ingress_type + '.j2') | from_yaml) }}"
+VALUES_FILE: "{{ lookup('template', 'values-' + kube.ingress_type + '.j2') | from_yaml }}"
