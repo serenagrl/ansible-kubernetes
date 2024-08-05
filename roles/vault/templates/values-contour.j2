@@ -72,7 +72,7 @@ server:
 
 {% if vault.auto_unseal.type == 'transit' %}
         seal "transit" {
-          address = "http://198.168.0.210:8200"
+          address = "{{ vault.auto_unseal.transit.server_url }}"
           token   = "{{ vault.auto_unseal.transit.token }}"
           disable_renewal = "false"
           key_name = "autounseal"

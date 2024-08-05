@@ -5,14 +5,20 @@ vault:
   cluster_name: vault-integrated-storage # Hashicorp vault cluster name
   enable_injector: yes
   enable_csi: no
+
   auto_unseal:
-    type: azure # Supported value [azure, transit]
+    type: transit # Supported value [azure, transit]
+
+    # Transit vault configuration.
     transit:
-      token: <transit-token> # Token from hashicorp vault transit
+      token: <transit-token> # Token from hashicorp vault transit.
+      server_url: "http://{{ hostvars['vault_server'].ansible_host }}:8200" # The url of the transit vault.
+
+    # Azure key vault configuration.
     azure:
-      tenant_id: <your-azure-tenant-id> # Microsoft Entra ID's tenant id
-      client_id: <your-azure-client-id> # App registration's client id in Microsoft Entra ID
-      client_secret: <your-azure-client-secret> # App registration's client secret in Microsoft Entra ID
-      vault_name: <your-azure-key-vault-name> # Azure Key Vault's name
-      key_name: <your-azure-key-vault-key-name> # Azure Key Vault's key name
-      subscription_id: <your-azure-subscription-id> # Azure's subscription id
+      tenant_id: <your-azure-tenant-id> # Microsoft Entra ID's tenant id.
+      client_id: <your-azure-client-id> # App registration's client id in Microsoft Entra ID.
+      client_secret: <your-azure-client-secret> # App registration's client secret in Microsoft Entra ID.
+      vault_name: <your-azure-key-vault-name> # Azure Key Vault's name.
+      key_name: <your-azure-key-vault-key-name> # Azure Key Vault's key name.
+      subscription_id: <your-azure-subscription-id> # Azure's subscription id.
