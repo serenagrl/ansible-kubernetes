@@ -33,6 +33,8 @@
     name: vault
 
 - name: Configure vault
+  environment:
+    VAULT_ADDR: "{{ VAULT_ADDRESS }}"
   vars:
     credentials_path: "{{ temp_dir }}/{{ ansible_hostname }}-vault-transit-credentials"
   block:
