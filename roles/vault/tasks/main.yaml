@@ -65,8 +65,7 @@
     sleep 30
 
 - name: Initialize vault
-  shell: |
-    kubectl exec -n vault vault-0 -- vault operator init -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt"
+  shell: kubectl exec -n vault vault-0 -- vault operator init -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt"
   register: key_result
 
 - name: Store key into file on Ansible controller host
@@ -83,6 +82,20 @@
     block: |
       {{ keys }}{{ token }}
     create: yes
+
+- name: Vault login
+  vars:
+    token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
+  shell: kubectl exec -n vault vault-0 -- vault login -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" {{ token }}
+  register: key_result
+
+- name: Enable kubernetes auth
+  vars:
+    token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
+  shell: |
+    kubectl exec -it -n vault vault-0 -- vault auth enable -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" kubernetes
+    kubernetes_address=$(kubectl exec -it -n vault vault-0 -- printenv KUBERNETES_PORT_443_TCP_ADDR)
+    kubectl exec -it -n vault vault-0 -- vault write -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" auth/kubernetes/config kubernetes_host="https://${kubernetes_address}:443"
 
 - name: Deploy secret operator
   vars:
