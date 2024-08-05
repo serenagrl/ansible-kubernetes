@@ -1,4 +1,5 @@
 # Author: Serena Yeoh
+# Co-Author: Jaryl Lan
 #
 # Disclaimer:
 # This playbook was written based on my self-learning and may not follow certain
@@ -64,24 +65,10 @@
     kubectl wait --for=jsonpath='{.status.phase}'=Running pod vault-0 -n vault
     sleep 30
 
-- name: Initialize vault
-  shell: kubectl exec -n vault vault-0 -- vault operator init -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt"
-  register: key_result
-
-- name: Store key into file on Ansible controller host
-  delegate_to: localhost
-  become_user: root
+- name: "Configure {{ unseal_action }} unseal"
   vars:
-    keys_regex: 'Recovery Key.*\n(?:^.+\n)*'
-    keys: "{{ key_result.stdout | regex_search(keys_regex, multiline=True) }}"
-    token_regex: 'Initial Root Token:.*\n(?:^.+\n)*'
-    token: "{{ key_result.stdout | regex_search(token_regex) }}"
-  ansible.builtin.blockinfile:
-    path: "{{ temp_dir }}/{{ kube.cluster.name }}-credentials"
-    marker: "##### {mark} Vault #####"
-    block: |
-      {{ keys }}{{ token }}
-    create: yes
+    unseal_action: "{{ (vault.unseal.type != 'manual') | ternary('auto', vault.unseal.type) }}"
+  ansible.builtin.include_tasks: "{{ unseal_action }}-unseal.yaml"
 
 - name: Vault login
   vars:

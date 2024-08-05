@@ -1,4 +1,5 @@
 dependencies:
+  - role: common/get-active-nodes
   - role: common/check-dependencies
     vars:
       depends_on:

@@ -50,6 +50,7 @@ server:
         storage "raft" {
           path = "/vault/data"
 
+{% if vault.unseal.type != 'manual' %}
           retry_join {
             leader_api_addr = "https://vault-0.vault-internal:8200"
             leader_ca_cert_file = "/vault/userconfig/vault-cluster-tls/ca.crt"
@@ -68,24 +69,25 @@ server:
             leader_client_cert_file = "/vault/userconfig/vault-cluster-tls/tls.crt"
             leader_client_key_file = "/vault/userconfig/vault-cluster-tls/tls.key"
           }
+{% endif %}
         }
 
-{% if vault.auto_unseal.type == 'transit' %}
+{% if vault.unseal.type == 'transit' %}
         seal "transit" {
-          address = "{{ vault.auto_unseal.transit.server_url }}"
-          token   = "{{ vault.auto_unseal.transit.token }}"
+          address = "{{ vault.unseal.transit.server_url }}"
+          token   = "{{ vault.unseal.transit.token }}"
           disable_renewal = "false"
           key_name = "autounseal"
           mount_path = "transit/"
         }
-{% elif vault.auto_unseal.type == 'azure' %}
+{% elif vault.unseal.type == 'azure' %}
         seal "azurekeyvault" {
-          tenant_id       = "{{ vault.auto_unseal.azure.tenant_id }}"
-          client_id       = "{{ vault.auto_unseal.azure.client_id }}"
-          client_secret   = "{{ vault.auto_unseal.azure.client_secret }}"
-          vault_name      = "{{ vault.auto_unseal.azure.vault_name }}"
-          key_name        = "{{ vault.auto_unseal.azure.key_name }}"
-          subscription_id = "{{ vault.auto_unseal.azure.subscription_id }}"
+          tenant_id       = "{{ vault.unseal.azure.tenant_id }}"
+          client_id       = "{{ vault.unseal.azure.client_id }}"
+          client_secret   = "{{ vault.unseal.azure.client_secret }}"
+          vault_name      = "{{ vault.unseal.azure.vault_name }}"
+          key_name        = "{{ vault.unseal.azure.key_name }}"
+          subscription_id = "{{ vault.unseal.azure.subscription_id }}"
         }
 {% endif %}
 
