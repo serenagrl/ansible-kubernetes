@@ -83,3 +83,17 @@
     block: |
       {{ keys }}{{ token }}
     create: yes
+
+- name: Deploy secret operator
+  vars:
+    version: "{% if vault.secret_operator.version is defined and vault.secret_operator.version and vault.secret_operator.version != 'latest' %}{{ vault.secret_operator.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: secret-operator
+    atomic: yes
+    chart_ref: hashicorp/vault-secrets-operator
+    chart_version: "{{ version }}"
+    namespace: vault
+    create_namespace: yes
+    values: "{{ SECRET_OPERATOR_VALUES_FILE }}"
+    wait: yes
+  when: vault.secret_operator.enabled

@@ -5,6 +5,9 @@ vault:
   cluster_name: vault-integrated-storage # Hashicorp vault cluster name
   enable_injector: yes
   enable_csi: no
+  secret_operator:
+    enabled: yes
+    version: latest
 
   auto_unseal:
     type: transit # Supported value [azure, transit]
