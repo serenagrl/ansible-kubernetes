@@ -84,16 +84,12 @@
     kubernetes_address=$(kubectl exec -it -n vault vault-0 -- printenv KUBERNETES_PORT_443_TCP_ADDR)
     kubectl exec -it -n vault vault-0 -- vault write -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" auth/kubernetes/config kubernetes_host="https://${kubernetes_address}:443"
 
-- name: Deploy secret operator
-  vars:
-    version: "{% if vault.secret_operator.version is defined and vault.secret_operator.version and vault.secret_operator.version != 'latest' %}{{ vault.secret_operator.version }}{% endif %}"
-  kubernetes.core.helm:
-    name: secret-operator
-    atomic: yes
-    chart_ref: hashicorp/vault-secrets-operator
-    chart_version: "{{ version }}"
-    namespace: vault
-    create_namespace: yes
-    values: "{{ SECRET_OPERATOR_VALUES_FILE }}"
-    wait: yes
-  when: vault.secret_operator.enabled
+- name: Deploy secrets operator
+  ansible.builtin.include_role:
+    name: vault/secrets-operator
+  when: vault.enable_secrets_operator
+
+- name: Deploy secrets store csi driver
+  ansible.builtin.include_role:
+    name: vault/secrets-store
+  when: vault.enable_csi

@@ -9,7 +9,7 @@
 - name: Configure {{ vault_follower }}
   block:
     - name: Joining {{ vault_follower }} to raft cluster
-      ansible.builtin.shell: kubectl exec -n vault {{ vault_follower }} -- vault operator raft join -address="https://{{ vault_follower }}.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" -leader-ca-cert="@/vault/userconfig/vault-cluster-tls/ca.crt" https://{{ vault_leader }}.vault-internal:8200
+      ansible.builtin.shell: kubectl exec -n vault {{ vault_follower }} -- vault operator raft join -address="https://{{ vault_follower }}.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" -leader-ca-cert="@/vault/userconfig/vault-cluster-tls/ca.crt" https://vault-0.vault-internal:8200
 
     - name: Unseal {{ vault_follower }}
       vars:

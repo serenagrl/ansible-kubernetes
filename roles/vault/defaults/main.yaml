@@ -4,4 +4,3 @@ INGRESS_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'ingress-certificate.j2') |
 INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + kube.ingress_type + '.yaml' }}"
 INGRESS_TEMPLATE: "{{ (kube.ingress_type == 'nginx') | ternary('', lookup('template', 'ingress-' + kube.ingress_type + '.j2') | from_yaml) }}"
 VALUES_FILE: "{{ lookup('template', 'values-' + kube.ingress_type + '.j2') | from_yaml }}"
-SECRET_OPERATOR_VALUES_FILE: "{{ lookup('template', 'secret-operator-values.j2') | from_yaml }}"

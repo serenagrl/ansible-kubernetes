@@ -1,0 +1,20 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Deploy secret operator
+  vars:
+    version: "{% if secrets_operator.version is defined and secrets_operator.version and secrets_operator.version != 'latest' %}{{ secrets_operator.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: secret-operator
+    atomic: yes
+    chart_ref: hashicorp/vault-secrets-operator
+    chart_version: "{{ version }}"
+    namespace: vault
+    create_namespace: yes
+    values: "{{ SECRETS_OPERATOR_VALUES_FILE }}"
+    wait: yes

@@ -1,0 +1,25 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Add secrets store csi driver chart repo
+  kubernetes.core.helm_repository:
+    name: secrets-store-csi-driver
+    repo_url: "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
+
+- name: Deploy secrets store csi driver
+  vars:
+    version: "{% if secrets_store.version is defined and secrets_store.version and secrets_store.version != 'latest' %}{{ secrets_store.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: secrets-store-csi-driver
+    atomic: yes
+    chart_ref: secrets-store-csi-driver/secrets-store-csi-driver
+    chart_version: "{{ version }}"
+    namespace: vault
+    create_namespace: yes
+    values: "{{ SECRETS_STORE_VALUES_FILE }}"
+    wait: yes

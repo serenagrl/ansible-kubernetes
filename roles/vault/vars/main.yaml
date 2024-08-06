@@ -2,12 +2,9 @@ vault:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
   version: latest
-  cluster_name: vault-integrated-storage # Hashicorp vault cluster name
   enable_injector: yes
   enable_csi: no
-  secret_operator:
-    enabled: yes
-    version: latest
+  enable_secrets_operator: no
 
   unseal:
     type: transit # Supported value [manual, azure, transit]
