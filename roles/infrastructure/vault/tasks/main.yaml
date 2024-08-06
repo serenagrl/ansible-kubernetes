@@ -61,7 +61,7 @@
       vars:
         key: "{{ key_result.stdout | regex_search('Unseal Key ' + item|string + ': (.+)', '\\1') | first }}"
       ansible.builtin.shell: vault operator unseal {{ key }}
-      loop: "{{ range(1,vault.key_threshold + 1) }}"
+      loop: "{{ range(1, vault.key_threshold + 1) }}"
 
     - name: Vault login
       vars:
@@ -96,3 +96,13 @@
         block: |
           {{ auto_unseal_token }}
         create: yes
+
+    - name: Create unseal vault script
+      ansible.builtin.copy:
+        content: "{{ UNSEAL_VAULT_SCRIPT_TEMPLATE }}"
+        dest: "/root/unseal-vault.sh"
+        mode: '0755'
+
+    - name: Enable script to run when system reboots
+      ansible.builtin.shell: |
+        (crontab -l 2>/dev/null || true; echo "@reboot /root/unseal-vault.sh") | crontab -

@@ -1,2 +1,3 @@
+UNSEAL_VAULT_SCRIPT_TEMPLATE: "{{ lookup('template', 'unseal-vault.sh.j2') }}"
 AUTO_UNSEAL_POLICY_TEMPLATE: "{{ lookup('template', 'auto-unseal-policy.j2') }}"
 VAULT_ADDRESS: http://127.0.0.1:8200
