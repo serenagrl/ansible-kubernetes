@@ -81,7 +81,7 @@
     token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
   shell: |
     kubectl exec -it -n vault vault-0 -- vault auth enable -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" kubernetes
-    kubernetes_address=$(kubectl exec -it -n vault vault-0 -- printenv KUBERNETES_PORT_443_TCP_ADDR)
+    kubernetes_address=$(kubectl exec -it -n vault vault-0 -- printenv KUBERNETES_PORT_443_TCP_ADDR | tr -d '\r')
     kubectl exec -it -n vault vault-0 -- vault write -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" auth/kubernetes/config kubernetes_host="https://${kubernetes_address}:443"
 
 - name: Deploy secrets operator
