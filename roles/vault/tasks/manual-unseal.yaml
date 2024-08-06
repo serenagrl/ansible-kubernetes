@@ -33,10 +33,17 @@
       ansible.builtin.shell: kubectl exec -n vault vault-0 -- vault operator unseal -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" {{ key }}
       loop: "{{ range(1, vault.unseal.manual.key_threshold + 1) }}"
 
+    - name: Get vault statefulset info
+      kubernetes.core.k8s_info:
+        name: vault
+        kind: StatefulSet
+        namespace: vault
+      register: vault_result
+
     - name: Join node to raft cluster
       vars:
         vault_follower: "vault-{{ vault_index }}"
       ansible.builtin.include_tasks: "join-raft-cluster.yaml"
-      loop: "{{ range(1, 3) }}"
+      loop: "{{ range(1, vault_result.resources.0.status.replicas|int) }}"
       loop_control:
         loop_var: vault_index
