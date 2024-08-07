@@ -6,11 +6,11 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Deploy secret operator
+- name: Deploy secrets operator
   vars:
     version: "{% if secrets_operator.version is defined and secrets_operator.version and secrets_operator.version != 'latest' %}{{ secrets_operator.version }}{% endif %}"
   kubernetes.core.helm:
-    name: secret-operator
+    name: secrets-operator
     atomic: yes
     chart_ref: hashicorp/vault-secrets-operator
     chart_version: "{{ version }}"
