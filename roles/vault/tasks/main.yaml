@@ -130,7 +130,7 @@
 
     - name: Enable kubernetes auth
       vars:
-        token_review_jwt: "{{ secret_value.resources.0.data.token }}"
+        token_review_jwt: "{{ secret_value.resources.0.data.token | b64decode }}"
         token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
       shell: |
         kubernetes_ca_cert=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[].cluster.certificate-authority-data}' | base64 --decode)
