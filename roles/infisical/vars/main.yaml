@@ -3,3 +3,5 @@ infisical:
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
   # Note: Infisical chart version is not sync with their app version. This is the app version.
   version: latest
+
+  enable_secrets_operator: yes

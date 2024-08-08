@@ -1,0 +1,24 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Add infisical chart repo
+  kubernetes.core.helm_repository:
+    name: infisical-helm-charts
+    repo_url: "https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/"
+
+- name: Deploy infisical secrets operator
+  vars:
+    version: "{% if infisical.secrets_operator.version is defined and infisical.secrets_operator.version and infisical.secrets_operator.version != 'latest' %}{{ infisical.secrets_operator.version }}{% endif %}"
+  kubernetes.core.helm:
+    name: infisical-secrets-operator
+    atomic: yes
+    chart_ref: infisical-helm-charts/secrets-operator
+    chart_version: "{{ version }}"
+    namespace: infisical
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+    wait: yes
