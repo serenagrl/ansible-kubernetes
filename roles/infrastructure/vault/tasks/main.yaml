@@ -42,20 +42,14 @@
       ansible.builtin.shell: vault operator init -key-shares={{ vault.key_shares }} -key-threshold={{ vault.key_threshold }}
       register: key_result
 
-    - name: Store key into file on Ansible controller host
-      delegate_to: localhost
-      become_user: root
+    - ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml
       vars:
         keys_regex: 'Unseal Key.*\n(?:^.+\n)*'
         keys: "{{ key_result.stdout | regex_search(keys_regex, multiline=True) }}"
         token_regex: 'Initial Root Token:.*\n(?:^.+\n)*'
         token: "{{ key_result.stdout | regex_search(token_regex) }}"
-      ansible.builtin.blockinfile:
-        path: "{{ credentials_path }}"
-        marker: "##### {mark} VAULT KEYS & TOKEN #####"
-        block: |
-          {{ keys }}{{ token }}
-        create: yes
+        name: "VAULT KEYS & TOKEN"
+        credentials: "{{ keys }}{{ token }}"
 
     - name: Unseal vault
       vars:
@@ -84,18 +78,12 @@
       ansible.builtin.shell: vault token create -policy=autounseal
       register: auto_unseal_token_result
 
-    - name: Store key into file on Ansible controller host
-      delegate_to: localhost
-      become_user: root
+    - ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml
       vars:
         auto_unseal_token_regex: 'token \s*(.+)'
         auto_unseal_token: "{{ auto_unseal_token_result.stdout | regex_search(auto_unseal_token_regex, '\\1') | first }}"
-      ansible.builtin.blockinfile:
-        path: "{{ credentials_path }}"
-        marker: "##### {mark} VAULT TRANSIT AUTO-UNSEAL TOKEN #####"
-        block: |
-          {{ auto_unseal_token }}
-        create: yes
+        name: "VAULT TRANSIT AUTO-UNSEAL TOKEN"
+        credentials: "{{ auto_unseal_token }}"
 
     - name: Create unseal vault script
       ansible.builtin.copy:

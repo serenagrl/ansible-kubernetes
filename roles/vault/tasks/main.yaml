@@ -76,13 +76,67 @@
   shell: kubectl exec -n vault vault-0 -- vault login -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" {{ token }}
   register: key_result
 
-- name: Enable kubernetes auth
-  vars:
-    token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
-  shell: |
-    kubectl exec -it -n vault vault-0 -- vault auth enable -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" kubernetes
-    kubernetes_address=$(kubectl exec -it -n vault vault-0 -- printenv KUBERNETES_PORT_443_TCP_ADDR | tr -d '\r')
-    kubectl exec -it -n vault vault-0 -- vault write -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" auth/kubernetes/config kubernetes_host="https://${kubernetes_address}:443"
+- name: Configure kubernetes auth
+  block:
+    - name: Create vault-auth ServiceAccount
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: vault-auth
+            namespace: vault
+
+    - name: Create vault-auth Secret
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: vault-auth
+            namespace: vault
+            annotations:
+              kubernetes.io/service-account.name: vault-auth
+          type: kubernetes.io/service-account-token
+
+    - name: Create vault-auth ClusterRoleBinding
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            name: role-tokenreview-binding
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: system:auth-delegator
+          subjects:
+            - kind: ServiceAccount
+              name: vault-auth
+              namespace: vault
+
+    - name: Get vault-auth secret
+      kubernetes.core.k8s_info:
+        kind: Secret
+        name: vault-auth
+        namespace: vault
+      register: secret_value
+
+    - name: Enable kubernetes auth
+      vars:
+        token_review_jwt: "{{ secret_value.resources.0.data.token }}"
+        token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
+      shell: |
+        kubernetes_ca_cert=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[].cluster.certificate-authority-data}' | base64 --decode)
+        kubectl exec -it -n vault vault-0 -- vault auth enable -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" kubernetes
+        kubernetes_address=$(kubectl exec -it -n vault vault-0 -- printenv KUBERNETES_PORT_443_TCP_ADDR | tr -d '\r')
+        kubectl exec -it -n vault vault-0 -- vault write -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" auth/kubernetes/config token_reviewer_jwt="{{ token_review_jwt }}" kubernetes_host="https://${kubernetes_address}:443" kubernetes_ca_cert="${kubernetes_ca_cert}" disable_local_ca_jwt="true"
 
 - name: Deploy secrets operator
   ansible.builtin.include_role:

@@ -12,20 +12,14 @@
       shell: kubectl exec -n vault vault-0 -- vault operator init -key-shares="{{ vault.unseal.manual.key_shares }}" -key-threshold="{{ vault.unseal.manual.key_threshold }}"  -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt"
       register: key_result
 
-    - name: Store key into file on Ansible controller host
-      delegate_to: localhost
-      become_user: root
+    - ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml
       vars:
         keys_regex: 'Unseal Key.*\n(?:^.+\n)*'
         keys: "{{ key_result.stdout | regex_search(keys_regex, multiline=True) }}"
         token_regex: 'Initial Root Token:.*\n(?:^.+\n)*'
         token: "{{ key_result.stdout | regex_search(token_regex) }}"
-      ansible.builtin.blockinfile:
-        path: "{{ temp_dir }}/{{ kube.cluster.name }}-credentials"
-        marker: "##### {mark} Vault #####"
-        block: |
-          {{ keys }}{{ token }}
-        create: yes
+        name: "Vault"
+        credentials: "{{ keys }}{{ token }}"
 
     - name: Unseal vault-0
       vars:

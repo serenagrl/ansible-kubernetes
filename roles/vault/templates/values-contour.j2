@@ -97,6 +97,15 @@ server:
 
 csi:
   enabled: {{ vault.enable_csi }}
+  volumes:
+     - name: tls
+       secret:
+         secretName: vault-cluster-tls
+
+  volumeMounts:
+    - name: tls
+      mountPath: /vault/tls
+      readOnly: true
 {% if not kube.allow_scheduling %}
   pod:
     tolerations:
