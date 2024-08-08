@@ -52,7 +52,7 @@
         token: "{{ key_result.stdout | regex_search(token_regex) }}"
       ansible.builtin.blockinfile:
         path: "{{ credentials_path }}"
-        marker: "##### {mark} Vault #####"
+        marker: "##### {mark} VAULT KEYS & TOKEN #####"
         block: |
           {{ keys }}{{ token }}
         create: yes
@@ -92,7 +92,7 @@
         auto_unseal_token: "{{ auto_unseal_token_result.stdout | regex_search(auto_unseal_token_regex, '\\1') | first }}"
       ansible.builtin.blockinfile:
         path: "{{ credentials_path }}"
-        marker: "##### {mark} Vault transit auto unseal token #####"
+        marker: "##### {mark} VAULT TRANSIT AUTO-UNSEAL TOKEN #####"
         block: |
           {{ auto_unseal_token }}
         create: yes
