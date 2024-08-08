@@ -13,7 +13,7 @@
 
 - name: Deploy secrets store csi driver
   vars:
-    version: "{% if secrets_store.version is defined and secrets_store.version and secrets_store.version != 'latest' %}{{ secrets_store.version }}{% endif %}"
+    version: "{% if vault.secrets_store.version is defined and vault.secrets_store.version and vault.secrets_store.version != 'latest' %}{{ vault.secrets_store.version }}{% endif %}"
   kubernetes.core.helm:
     name: secrets-store-csi-driver
     atomic: yes
