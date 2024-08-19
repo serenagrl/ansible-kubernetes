@@ -14,7 +14,7 @@
   vars:
     version: "{% if infisical.secrets_operator.version is defined and infisical.secrets_operator.version and infisical.secrets_operator.version != 'latest' %}{{ infisical.secrets_operator.version }}{% endif %}"
   kubernetes.core.helm:
-    name: infisical-secrets-operator
+    name: secrets-operator
     atomic: yes
     chart_ref: infisical-helm-charts/secrets-operator
     chart_version: "{{ version }}"
