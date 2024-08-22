@@ -9,7 +9,7 @@
 - name: Configure vault
   block:
     - name: Initialize vault
-      shell: kubectl exec -n vault vault-0 -- vault operator init -key-shares="{{ vault.unseal.manual.key_shares }}" -key-threshold="{{ vault.unseal.manual.key_threshold }}"
+      shell: kubectl exec -n vault vault-0 -- vault operator init -key-shares="{{ vault.unseal.manual.key_shares }}" -key-threshold="{{ vault.unseal.manual.key_threshold }}" -address="https://vault-0.vault-internal:8200"
       register: key_result
 
     - ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml
@@ -24,7 +24,7 @@
     - name: Unseal vault-0
       vars:
         key: "{{ key_result.stdout | regex_search('Unseal Key ' + item|string + ': (.+)', '\\1') | first }}"
-      ansible.builtin.shell: kubectl exec -n vault vault-0 -- vault operator unseal {{ key }}
+      ansible.builtin.shell: kubectl exec -n vault vault-0 -- vault operator unseal -address="https://vault-0.vault-internal:8200" {{ key }}
       loop: "{{ range(1, vault.unseal.manual.key_threshold + 1) }}"
 
     - name: Get vault statefulset info
