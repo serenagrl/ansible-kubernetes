@@ -9,10 +9,10 @@
 - name: Configure {{ vault_follower }}
   block:
     - name: Joining {{ vault_follower }} to raft cluster
-      ansible.builtin.shell: kubectl exec -n vault {{ vault_follower }} -- vault operator raft join -address="https://{{ vault_follower }}.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" -leader-ca-cert="@/vault/userconfig/vault-cluster-tls/ca.crt" https://vault-0.vault-internal:8200
+      ansible.builtin.shell: kubectl exec -n vault {{ vault_follower }} -- vault operator raft join -address="https://{{ vault_follower }}.vault-internal:8200" -leader-ca-cert="@/vault/userconfig/vault-cluster-tls/ca.crt" https://vault-0.vault-internal:8200
 
     - name: Unseal {{ vault_follower }}
       vars:
         key: "{{ key_result.stdout | regex_search('Unseal Key ' + item|string + ': (.+)', '\\1') | first }}"
-      ansible.builtin.shell: kubectl exec -n vault {{ vault_follower }} -- vault operator unseal -address="https://{{ vault_follower }}.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" {{ key }}
+      ansible.builtin.shell: kubectl exec -n vault {{ vault_follower }} -- vault operator unseal -address="https://{{ vault_follower }}.vault-internal:8200" {{ key }}
       loop: "{{ range(1, vault.unseal.manual.key_threshold + 1) }}"

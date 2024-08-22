@@ -7,7 +7,7 @@
 #
 
 - name: Initialize vault
-  shell: kubectl exec -n vault vault-0 -- vault operator init -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt"
+  shell: kubectl exec -n vault vault-0 -- vault operator init
   register: key_result
 
 - ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml

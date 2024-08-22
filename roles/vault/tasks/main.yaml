@@ -73,7 +73,7 @@
 - name: Vault login
   vars:
     token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
-  shell: kubectl exec -n vault vault-0 -- vault login -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" {{ token }}
+  shell: kubectl exec -n vault vault-0 -- vault login {{ token }}
   register: key_result
 
 - name: Configure kubernetes auth
@@ -134,9 +134,9 @@
         token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
       shell: |
         kubernetes_ca_cert=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[].cluster.certificate-authority-data}' | base64 --decode)
-        kubectl exec -it -n vault vault-0 -- vault auth enable -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" kubernetes
+        kubectl exec -it -n vault vault-0 -- vault auth enable kubernetes
         kubernetes_address=$(kubectl exec -it -n vault vault-0 -- printenv KUBERNETES_PORT_443_TCP_ADDR | tr -d '\r')
-        kubectl exec -it -n vault vault-0 -- vault write -address="https://vault-0.vault-internal:8200" -ca-cert="/vault/userconfig/vault-cluster-tls/ca.crt" auth/kubernetes/config token_reviewer_jwt="{{ token_review_jwt }}" kubernetes_host="https://${kubernetes_address}:443" kubernetes_ca_cert="${kubernetes_ca_cert}" disable_local_ca_jwt="true"
+        kubectl exec -it -n vault vault-0 -- vault write auth/kubernetes/config token_reviewer_jwt="{{ token_review_jwt }}" kubernetes_host="https://${kubernetes_address}:443" kubernetes_ca_cert="${kubernetes_ca_cert}" disable_local_ca_jwt="true"
 
 - name: Deploy secrets operator
   ansible.builtin.include_role:
