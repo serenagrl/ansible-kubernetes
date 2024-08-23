@@ -99,6 +99,7 @@
         - { name: "Add-On - Redis", content: "{{ REDIS_VARS }}", checkpoint_name: "Redis Installed." }
         - { name: "Add-On - Tracing", content: "{{ TRACING_VARS }}", checkpoint_name: "Tracing Installed." }
         - { name: "Add-On - Trivy", content: "{{ TRIVY_VARS }}", checkpoint_name: "Trivy installed." }
+        - { name: "Add-On - Vault", content: "{{ VAULT_VARS }}", checkpoint_name: "Vault Installed." }
         - { name: "Add-On - Velero", content: "{{ VELERO_VARS }}", checkpoint_name: "Velero Installed." }
 
     - name: Query all environment records

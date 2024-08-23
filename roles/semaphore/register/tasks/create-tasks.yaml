@@ -82,5 +82,7 @@
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs tracing." }
     - { name: "Setup Add-On - Trivy", env_name: "Add-On - Trivy", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Trivy." }
+    - { name: "Setup Add-On - Vault", env_name: "Add-On - Vault", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Vault." }
     - { name: "Setup Add-On - Velero", env_name: "Add-On - Velero", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Velero." }
