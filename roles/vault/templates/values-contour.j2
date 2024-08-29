@@ -3,6 +3,9 @@ global:
 
 injector:
   enabled: {{ vault.enable_injector }}
+  extraEnvironmentVars:
+    AGENT_INJECT_VAULT_CACERT_BYTES: {{ ca_cert }}
+    AGENT_INJECT_VAULT_ADDR: https://vault-active.vault.svc.cluster.local:8200
 {% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule

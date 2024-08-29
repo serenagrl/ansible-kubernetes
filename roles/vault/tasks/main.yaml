@@ -45,8 +45,17 @@
     name: hashicorp
     repo_url: "https://helm.releases.hashicorp.com"
 
+- name: Get ca cert
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: self-signed-ca
+    namespace: cert-manager
+  register: ca_result
+
 - name: Deploy vault
   vars:
+    ca_cert: "{{ ca_result.resources.0.data['tls.crt'] }}"
     version: "{% if vault.version is defined and vault.version and vault.version != 'latest' %}{{ vault.version }}{% endif %}"
   kubernetes.core.helm:
     name: vault
