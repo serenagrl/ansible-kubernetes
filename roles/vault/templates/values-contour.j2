@@ -117,9 +117,9 @@ server:
 csi:
   enabled: {{ vault.enable_csi }}
   volumes:
-     - name: tls
-       secret:
-         secretName: vault-cluster-tls
+    - name: tls
+      secret:
+        secretName: vault-cluster-tls
 
   volumeMounts:
     - name: tls
