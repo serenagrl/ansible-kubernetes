@@ -74,6 +74,25 @@
     kubectl wait --for=jsonpath='{.status.phase}'=Running pod vault-0 -n vault
     sleep 30
 
+- name: Patch csi agent environment variable
+  kubernetes.core.k8s:
+    api_version: apps/v1
+    kind: DaemonSet
+    name: vault-csi-provider
+    namespace: vault
+    state: patched
+    definition: |
+      spec:
+        template:
+          spec:
+            containers:
+              - name: vault-agent
+                env:
+                  - name: VAULT_ADDR
+                    value: https://vault-active.vault.svc.cluster.local:8200
+                  - name: VAULT_CACERT
+                    value: /vault/tls/ca.crt
+
 - name: "Configure {{ unseal_action }} unseal"
   vars:
     unseal_action: "{{ (vault.unseal.type != 'manual') | ternary('auto', vault.unseal.type) }}"
