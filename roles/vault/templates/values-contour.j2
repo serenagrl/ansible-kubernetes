@@ -2,10 +2,11 @@ global:
   tlsDisable: false
 
 injector:
-  enabled: {{ vault.enable_injector }}
+  enabled: {{ vault.injector.enable }}
   extraEnvironmentVars:
     AGENT_INJECT_VAULT_CACERT_BYTES: {{ ca_cert }}
     AGENT_INJECT_VAULT_ADDR: https://vault-active.vault.svc.cluster.local:8200
+  logLevel: {{ vault.injector.log_level }}
 {% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
@@ -16,6 +17,7 @@ injector:
 {% endif %}
 
 server:
+  logLevel: {{ vault.log_level }}
 {% if not kube.allow_scheduling %}
   tolerations:
     - effect: NoSchedule
@@ -115,7 +117,7 @@ server:
     enabled: false
 
 csi:
-  enabled: {{ vault.enable_csi }}
+  enabled: {{ vault.csi.enable }}
   volumes:
     - name: tls
       secret:
@@ -125,6 +127,11 @@ csi:
     - name: tls
       mountPath: /vault/tls
       readOnly: true
+
+  agent:
+    logLevel: {{ vault.csi.agent.log_level }}
+  
+  debug: {{ vault.csi.debug }}
 {% if not kube.allow_scheduling %}
   pod:
     tolerations:

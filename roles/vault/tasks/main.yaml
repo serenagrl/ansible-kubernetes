@@ -169,9 +169,9 @@
 - name: Deploy secrets operator
   ansible.builtin.include_role:
     name: vault/secrets-operator
-  when: vault.enable_secrets_operator
+  when: vault.secrets_operator.enable
 
 - name: Deploy secrets store csi driver
   ansible.builtin.include_role:
     name: vault/secrets-store
-  when: vault.enable_csi
+  when: vault.csi.enable

@@ -1,3 +1,8 @@
 # Trivy environment variables.
+VAULT_ROOT_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/roles/vault/vars`)].content') | b64decode | from_yaml }}"
+VAULT_SECRETS_OPERATOR_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/roles/vault/secrets-operator/vars`)].content') | b64decode | from_yaml }}"
+VAULT_SECRETS_STORE_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/roles/vault/secrets-store/vars`)].content') | b64decode | from_yaml }}"
+
 VAULT_VARS:
-  - { name: vault, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/roles/vault/vars`)].content') | b64decode | from_yaml }}" }
+  - { name: vault, vars: "{{ VAULT_ROOT_VARS | combine(VAULT_SECRETS_OPERATOR_VARS, recursive=true)
+                                             | combine(VAULT_SECRETS_STORE_VARS, recursive=true) }}" }

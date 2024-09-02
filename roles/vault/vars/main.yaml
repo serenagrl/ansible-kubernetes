@@ -2,12 +2,29 @@ vault:
   # Some releases can be incompatible with the steps in the playbook i.e. pre-release versions or
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
   version: latest
-  enable_injector: yes
-  enable_csi: yes
-  enable_secrets_operator: yes
+
+  injector:
+    enable: yes
+
+    # Supported value: [trace, debug, info, warn, error]
+    log_level: info
+  csi:
+    enable: yes
+    agent:
+      # Supported value: [trace, debug, info, warn, error]
+      log_level: info
+    
+    # Note: may be deprecated after version 0.28.1
+    debug: no
+  secrets_operator:
+    enable: yes
+
+  # Supported value: [trace, debug, info, warn, error]
+  log_level: ""
 
   unseal:
-    type: transit # Supported value [manual, azure, transit]
+    # Supported value [manual, azure, transit]
+    type: transit
 
     # Manual configuration
     manual:
