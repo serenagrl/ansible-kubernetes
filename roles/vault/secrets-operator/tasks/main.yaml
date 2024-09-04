@@ -18,3 +18,25 @@
     create_namespace: yes
     values: "{{ SECRETS_OPERATOR_VALUES_FILE }}"
     wait: yes
+
+- name: Patch secrets operator volume
+  kubernetes.core.k8s:
+    api_version: apps/v1
+    kind: Deployment
+    name: vault-secrets-controller-manager
+    namespace: vault
+    state: patched
+    definition: |
+      spec:
+        template:
+          spec:
+            containers:
+              - name: manager
+                volumeMounts:
+                  - mountPath: /vault/tls/
+                    name: vault-cert
+            volumes:
+              - name: vault-cert
+                secret:
+                  defaultMode: 420
+                  secretName: vault-cluster-tls

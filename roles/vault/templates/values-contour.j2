@@ -4,7 +4,6 @@ global:
 injector:
   enabled: {{ vault.injector.enable }}
   extraEnvironmentVars:
-    AGENT_INJECT_VAULT_CACERT_BYTES: {{ ca_cert }}
     AGENT_INJECT_VAULT_ADDR: https://vault-active.vault.svc.cluster.local:8200
   logLevel: {{ vault.injector.log_level }}
 {% if not kube.allow_scheduling %}
@@ -32,7 +31,9 @@ server:
     enabled: false
   extraEnvironmentVars:
     VAULT_ADDR: https://vault-active.vault.svc.cluster.local:8200
-    VAULT_CACERT: /vault/userconfig/vault-cluster-tls/ca.crt
+    VAULT_CACERT: /vault/tls/ca.crt
+    VAULT_CLIENT_CERT: /vault/tls/tls.crt
+    VAULT_CLIENT_KEY: /vault/tls/tls.key
   volumes:
     - name: cert-store
       secret:
@@ -48,7 +49,7 @@ server:
       mountPath: /etc/ssl/certs/vault-ca.crt
       subPath: vault-ca.crt
     - name: vault-cert
-      mountPath: /vault/userconfig/vault-cluster-tls/
+      mountPath: /vault/tls/
   ha:
     enabled: true
     replicas: 3
@@ -62,10 +63,11 @@ server:
 
         listener "tcp" {
           tls_disable = 0
+          tls_require_and_verify_client_cert = 1
           address = "[::]:8200"
           cluster_address = "[::]:8201"
-          tls_cert_file = "/vault/userconfig/vault-cluster-tls/tls.crt"
-          tls_key_file = "/vault/userconfig/vault-cluster-tls/tls.key"
+          tls_cert_file = "/vault/tls/tls.crt"
+          tls_key_file = "/vault/tls/tls.key"
         }
 
         storage "raft" {
@@ -74,21 +76,21 @@ server:
 {% if vault.unseal.type != 'manual' %}
           retry_join {
             leader_api_addr = "https://vault-0.vault-internal:8200"
-            leader_ca_cert_file = "/vault/userconfig/vault-cluster-tls/ca.crt"
-            leader_client_cert_file = "/vault/userconfig/vault-cluster-tls/tls.crt"
-            leader_client_key_file = "/vault/userconfig/vault-cluster-tls/tls.key"
+            leader_ca_cert_file = "/vault/tls/ca.crt"
+            leader_client_cert_file = "/vault/tls/tls.crt"
+            leader_client_key_file = "/vault/tls/tls.key"
           }
           retry_join {
             leader_api_addr = "https://vault-1.vault-internal:8200"
-            leader_ca_cert_file = "/vault/userconfig/vault-cluster-tls/ca.crt"
-            leader_client_cert_file = "/vault/userconfig/vault-cluster-tls/tls.crt"
-            leader_client_key_file = "/vault/userconfig/vault-cluster-tls/tls.key"
+            leader_ca_cert_file = "/vault/tls/ca.crt"
+            leader_client_cert_file = "/vault/tls/tls.crt"
+            leader_client_key_file = "/vault/tls/tls.key"
           }
           retry_join {
             leader_api_addr = "https://vault-2.vault-internal:8200"
-            leader_ca_cert_file = "/vault/userconfig/vault-cluster-tls/ca.crt"
-            leader_client_cert_file = "/vault/userconfig/vault-cluster-tls/tls.crt"
-            leader_client_key_file = "/vault/userconfig/vault-cluster-tls/tls.key"
+            leader_ca_cert_file = "/vault/tls/ca.crt"
+            leader_client_cert_file = "/vault/tls/tls.crt"
+            leader_client_key_file = "/vault/tls/tls.key"
           }
 {% endif %}
         }
@@ -130,7 +132,7 @@ csi:
 
   agent:
     logLevel: {{ vault.csi.agent.log_level }}
-  
+
   debug: {{ vault.csi.debug }}
 {% if not kube.allow_scheduling %}
   pod:
