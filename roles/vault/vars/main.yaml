@@ -3,6 +3,8 @@ vault:
   # releases with breaking changes. Try reducing the version number if errors occur during installation.
   version: latest
 
+  enable_peer_verification: yes
+
   injector:
     enable: yes
 

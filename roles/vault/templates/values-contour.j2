@@ -32,24 +32,29 @@ server:
   extraEnvironmentVars:
     VAULT_ADDR: https://vault-active.vault.svc.cluster.local:8200
     VAULT_CACERT: /vault/tls/ca.crt
-    VAULT_CLIENT_CERT: /vault/tls/tls.crt
-    VAULT_CLIENT_KEY: /vault/tls/tls.key
+{% if vault.enable_peer_verification %}
+    VAULT_CLIENT_CERT: /vault/client-tls/tls.crt
+    VAULT_CLIENT_KEY: /vault/client-tls/tls.key
+{% endif %}
   volumes:
-    - name: cert-store
+    - name: vault-cluster-tls
       secret:
         secretName: vault-cluster-tls
-        items:
-          - key: ca.crt
-            path: vault-ca.crt
-    - name: vault-cert
+{% if vault.enable_peer_verification %}
+    - name: vault-client-tls
       secret:
-        secretName: vault-cluster-tls
+        secretName: vault-client-tls
+{% endif %}
   volumeMounts:
-    - name: cert-store
-      mountPath: /etc/ssl/certs/vault-ca.crt
-      subPath: vault-ca.crt
-    - name: vault-cert
+    - name: vault-cluster-tls
+      mountPath: /etc/ssl/certs/k8s-cluster-ca.crt
+      subPath: ca.crt
+    - name: vault-cluster-tls
       mountPath: /vault/tls/
+{% if vault.enable_peer_verification %}
+    - name: vault-client-tls
+      mountPath: /vault/client-tls/
+{% endif %}
   ha:
     enabled: true
     replicas: 3
@@ -62,12 +67,15 @@ server:
         cluster_name = "vault-integrated-storage"
 
         listener "tcp" {
-          tls_disable = 0
-          tls_require_and_verify_client_cert = 1
+          tls_disable = false
+          tls_require_and_verify_client_cert = {{ vault.enable_peer_verification | lower }}
           address = "[::]:8200"
           cluster_address = "[::]:8201"
           tls_cert_file = "/vault/tls/tls.crt"
           tls_key_file = "/vault/tls/tls.key"
+{% if vault.enable_peer_verification %}
+          tls_client_ca_file = "/vault/client-tls/ca.crt"
+{% endif %}
         }
 
         storage "raft" {
@@ -77,20 +85,26 @@ server:
           retry_join {
             leader_api_addr = "https://vault-0.vault-internal:8200"
             leader_ca_cert_file = "/vault/tls/ca.crt"
-            leader_client_cert_file = "/vault/tls/tls.crt"
-            leader_client_key_file = "/vault/tls/tls.key"
+  {%- if vault.enable_peer_verification +%}
+            leader_client_cert_file = "/vault/client-tls/tls.crt"
+            leader_client_key_file = "/vault/client-tls/tls.key"
+  {%- endif +%}
           }
           retry_join {
             leader_api_addr = "https://vault-1.vault-internal:8200"
             leader_ca_cert_file = "/vault/tls/ca.crt"
-            leader_client_cert_file = "/vault/tls/tls.crt"
-            leader_client_key_file = "/vault/tls/tls.key"
+  {%- if vault.enable_peer_verification +%}
+            leader_client_cert_file = "/vault/client-tls/tls.crt"
+            leader_client_key_file = "/vault/client-tls/tls.key"
+  {%- endif +%}
           }
           retry_join {
             leader_api_addr = "https://vault-2.vault-internal:8200"
             leader_ca_cert_file = "/vault/tls/ca.crt"
-            leader_client_cert_file = "/vault/tls/tls.crt"
-            leader_client_key_file = "/vault/tls/tls.key"
+  {%- if vault.enable_peer_verification +%}
+            leader_client_cert_file = "/vault/client-tls/tls.crt"
+            leader_client_key_file = "/vault/client-tls/tls.key"
+  {%- endif +%}
           }
 {% endif %}
         }
@@ -121,14 +135,24 @@ server:
 csi:
   enabled: {{ vault.csi.enable }}
   volumes:
-    - name: tls
+    - name: vault-cluster-tls
       secret:
         secretName: vault-cluster-tls
+{% if vault.enable_peer_verification %}
+    - name: vault-client-tls
+      secret:
+        secretName: vault-client-tls
+{% endif %}
 
   volumeMounts:
-    - name: tls
+    - name: vault-cluster-tls
       mountPath: /vault/tls
       readOnly: true
+{% if vault.enable_peer_verification %}
+    - name: vault-client-tls
+      mountPath: /vault/client-tls
+      readOnly: true
+{% endif %}
 
   agent:
     logLevel: {{ vault.csi.agent.log_level }}

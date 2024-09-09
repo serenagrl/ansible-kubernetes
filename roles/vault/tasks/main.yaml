@@ -28,6 +28,12 @@
 
 - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
   vars:
+    name: vault-client
+    certificate_template: "{{ CLIENT_CERTIFICATE_TEMPLATE }}"
+  when: vault.enable_peer_verification
+
+- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
     name: vault-ingress
     certificate_template: "{{ INGRESS_CERTIFICATE_TEMPLATE }}"
 
@@ -72,21 +78,8 @@
     name: vault-csi-provider
     namespace: vault
     state: patched
-    definition: |
-      spec:
-        template:
-          spec:
-            containers:
-              - name: vault-agent
-                env:
-                  - name: VAULT_ADDR
-                    value: https://vault-active.vault.svc.cluster.local:8200
-                  - name: VAULT_CACERT
-                    value: /vault/tls/ca.crt
-                  - name: VAULT_CLIENT_CERT
-                    value: /vault/tls/tls.crt
-                  - name: VAULT_CLIENT_KEY
-                    value: /vault/tls/tls.key
+    template: csi-definition.j2
+  when: vault.csi.enable
 
 - name: "Configure {{ unseal_action }} unseal"
   vars:

@@ -33,10 +33,11 @@
             containers:
               - name: manager
                 volumeMounts:
-                  - mountPath: /vault/tls/
-                    name: vault-cert
+                  - mountPath: /vault/client-tls/
+                    name: vault-client-cert
             volumes:
-              - name: vault-cert
+              - name: vault-client-cert
                 secret:
                   defaultMode: 420
-                  secretName: vault-cluster-tls
+                  secretName: vault-client-tls
+  when: vault.enable_peer_verification
