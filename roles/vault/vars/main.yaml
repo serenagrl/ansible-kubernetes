@@ -5,6 +5,9 @@ vault:
 
   enable_peer_verification: yes
 
+  # Supported value: [ha, standalone]
+  mode: ha
+
   injector:
     enable: yes
 

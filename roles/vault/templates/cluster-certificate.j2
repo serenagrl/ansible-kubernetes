@@ -5,7 +5,7 @@ metadata:
   namespace: vault
 spec:
   dnsNames:
-    - vault-active.vault.svc.cluster.local
+    - {{ VAULT[vault.mode|upper].VAULT_DOMAIN }}
     - vault-0.vault-internal
     - vault-1.vault-internal
     - vault-2.vault-internal

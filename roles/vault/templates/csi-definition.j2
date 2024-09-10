@@ -5,7 +5,7 @@ spec:
         - name: vault-agent
           env:
             - name: VAULT_ADDR
-              value: https://vault-active.vault.svc.cluster.local:8200
+              value: {{ VAULT[vault.mode|upper].VAULT_ADDR }}
             - name: VAULT_CACERT
               value: /vault/tls/ca.crt
 {% if vault.enable_peer_verification %}

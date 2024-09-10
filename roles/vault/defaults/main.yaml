@@ -5,3 +5,13 @@ INGRESS_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'ingress-certificate.j2') |
 INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + kube.ingress_type + '.yaml' }}"
 INGRESS_TEMPLATE: "{{ (kube.ingress_type == 'nginx') | ternary('', lookup('template', 'ingress-' + kube.ingress_type + '.j2') | from_yaml) }}"
 VALUES_FILE: "{{ lookup('template', 'values-' + kube.ingress_type + '.j2') | from_yaml }}"
+
+VAULT:
+  HA:
+    VAULT_ADDR: https://vault-active.vault.svc.cluster.local:8200
+    VAULT_DOMAIN: vault-active.vault.svc.cluster.local
+    VAULT_SERVICE_NAME: vault-active
+  STANDALONE:
+    VAULT_ADDR: https://vault.vault.svc.cluster.local:8200
+    VAULT_DOMAIN: vault.vault.svc.cluster.local
+    VAULT_SERVICE_NAME: vault

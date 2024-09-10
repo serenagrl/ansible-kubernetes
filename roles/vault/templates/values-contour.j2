@@ -4,7 +4,7 @@ global:
 injector:
   enabled: {{ vault.injector.enable }}
   extraEnvironmentVars:
-    AGENT_INJECT_VAULT_ADDR: https://vault-active.vault.svc.cluster.local:8200
+    AGENT_INJECT_VAULT_ADDR: {{ VAULT[vault.mode|upper].VAULT_ADDR }}
   logLevel: {{ vault.injector.log_level }}
 {% if not kube.allow_scheduling %}
   tolerations:
@@ -27,10 +27,8 @@ server:
 {% endif %}
   auditStorage:
     enabled: true
-  standalone:
-    enabled: false
   extraEnvironmentVars:
-    VAULT_ADDR: https://vault-active.vault.svc.cluster.local:8200
+    VAULT_ADDR: {{ VAULT[vault.mode|upper].VAULT_ADDR }}
     VAULT_CACERT: /vault/tls/ca.crt
 {% if vault.enable_peer_verification %}
     VAULT_CLIENT_CERT: /vault/client-tls/tls.crt
@@ -55,8 +53,44 @@ server:
     - name: vault-client-tls
       mountPath: /vault/client-tls/
 {% endif %}
+  standalone:
+    config: |-
+      ui = true
+
+      listener "tcp" {
+        tls_disable = false
+        tls_require_and_verify_client_cert = {{ vault.enable_peer_verification | lower }}
+        address = "[::]:8200"
+        tls_cert_file = "/vault/tls/tls.crt"
+        tls_key_file = "/vault/tls/tls.key"
+{% if vault.enable_peer_verification %}
+        tls_client_ca_file = "/vault/client-tls/ca.crt"
+{% endif %}
+      }
+      storage "file" {
+        path = "/vault/data"
+      }
+
+{% if vault.unseal.type == 'transit' %}
+      seal "transit" {
+        address = "{{ vault.unseal.transit.server_url }}"
+        token   = "{{ vault.unseal.transit.token }}"
+        disable_renewal = "false"
+        key_name = "autounseal"
+        mount_path = "transit/"
+      }
+{% elif vault.unseal.type == 'azure' %}
+      seal "azurekeyvault" {
+        tenant_id       = "{{ vault.unseal.azure.tenant_id }}"
+        client_id       = "{{ vault.unseal.azure.client_id }}"
+        client_secret   = "{{ vault.unseal.azure.client_secret }}"
+        vault_name      = "{{ vault.unseal.azure.vault_name }}"
+        key_name        = "{{ vault.unseal.azure.key_name }}"
+        subscription_id = "{{ vault.unseal.azure.subscription_id }}"
+      }
+{% endif %}
   ha:
-    enabled: true
+    enabled: {{ vault.mode == 'ha' }}
     replicas: 3
     raft:
       enabled: true

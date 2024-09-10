@@ -12,6 +12,6 @@ spec:
     - conditions:
         - prefix: /
       services:
-        - name: vault-active
+        - name: {{ VAULT[vault.mode|upper].VAULT_SERVICE_NAME }}
           port: 8200
           protocol: tls
