@@ -8,6 +8,16 @@
 - name: Verify dependencies
   ansible.builtin.include_tasks: verify-dependencies.yaml
 
+- name: Create projectcontour namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: projectcontour
+
+- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: contour-client
+    certificate_template: "{{ CLIENT_CERTIFICATE_TEMPLATE }}"
+
 - become_user: root
   delegate_to: localhost
   block:
@@ -20,6 +30,15 @@
         version_prefix: "v"
         dest: "{{ MANIFEST_FILE }}"
         urls: ["https://raw.githubusercontent.com/{{ repo_path }}/{{ release }}/examples/render/contour.yaml"]
+
+    - name: Configure client certificate
+      ansible.builtin.replace:
+        path: "{{ MANIFEST_FILE }}"
+        regexp: '^\s*(envoy-client-certificate:)$'
+        replace: |4-
+                  \1
+                    name: contour-client-tls
+                    namespace: projectcontour
 
     - name: Configure to run on control-planes only
       ansible.builtin.replace:
