@@ -4,7 +4,7 @@ global:
 injector:
   enabled: {{ vault.injector.enable }}
   extraEnvironmentVars:
-    AGENT_INJECT_VAULT_ADDR: {{ VAULT[vault.mode|upper].VAULT_ADDR }}
+    AGENT_INJECT_VAULT_ADDR: https://{{ service_name }}.vault.svc.cluster.local:8200
   logLevel: {{ vault.injector.log_level }}
 {% if not kube.allow_scheduling %}
   tolerations:
@@ -28,7 +28,7 @@ server:
   auditStorage:
     enabled: true
   extraEnvironmentVars:
-    VAULT_ADDR: {{ VAULT[vault.mode|upper].VAULT_ADDR }}
+    VAULT_ADDR: https://{{ service_name }}.vault.svc.cluster.local:8200
     VAULT_CACERT: /vault/tls/ca.crt
 {% if vault.enable_peer_verification %}
     VAULT_CLIENT_CERT: /vault/client-tls/tls.crt

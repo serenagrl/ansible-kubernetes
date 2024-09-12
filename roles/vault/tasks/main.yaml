@@ -6,160 +6,164 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Verify dependencies
-  ansible.builtin.include_tasks: verify-dependencies.yaml
-
-- name: Register DNS entry
+- name: Setup vault
   vars:
-    domain_prefix: vault
-  ansible.builtin.include_role:
-    name: common/dns-register
-
-- name: Create vault namespace
-  kubernetes.core.k8s:
-    kind: Namespace
-    name: vault
-
-# Note: The following creation of certificate cannot be used with loop.
-- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
-  vars:
-    name: vault-cluster
-    certificate_template: "{{ CLUSTER_CERTIFICATE_TEMPLATE }}"
-
-- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
-  vars:
-    name: vault-client
-    certificate_template: "{{ CLIENT_CERTIFICATE_TEMPLATE }}"
-  when: vault.enable_peer_verification
-
-- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
-  vars:
-    name: vault-ingress
-    certificate_template: "{{ INGRESS_CERTIFICATE_TEMPLATE }}"
-
-# Notes: Uses own domain name.
-- name: Setup ingress
-  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
-  vars:
-    name: vault
-    namespace: vault
-    in_definition: "{{ INGRESS_TEMPLATE }}"
-    in_create: no
-
-- name: Add hashicorp chart repo
-  kubernetes.core.helm_repository:
-    name: hashicorp
-    repo_url: "https://helm.releases.hashicorp.com"
-
-- name: Deploy vault
-  vars:
-    version: "{% if vault.version is defined and vault.version and vault.version != 'latest' %}{{ vault.version }}{% endif %}"
-  kubernetes.core.helm:
-    name: vault
-    atomic: yes
-    chart_ref: hashicorp/vault
-    chart_version: "{{ version }}"
-    namespace: vault
-    create_namespace: yes
-    values: "{{ VALUES_FILE }}"
-    wait: yes
-
-- name: Waiting for vault deployments to be ready
-  ansible.builtin.shell: |
-    for d in $(kubectl -n vault get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n vault deployment/$d; done;
-    kubectl wait --for=jsonpath='{.status.conditions[?(@.type=="PodReadyToStartContainers")].status}'="True" pod vault-0 -n vault
-    kubectl wait --for=jsonpath='{.status.phase}'=Running pod vault-0 -n vault
-    sleep 30
-
-- name: Patch csi agent environment variable
-  kubernetes.core.k8s:
-    api_version: apps/v1
-    kind: DaemonSet
-    name: vault-csi-provider
-    namespace: vault
-    state: patched
-    template: csi-definition.j2
-  when: vault.csi.enable
-
-- name: "Configure {{ unseal_action }} unseal"
-  vars:
-    unseal_action: "{{ (vault.unseal.type != 'manual') | ternary('auto', vault.unseal.type) }}"
-  ansible.builtin.include_tasks: "{{ unseal_action }}-unseal.yaml"
-
-- name: Vault login
-  vars:
-    token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
-  shell: kubectl exec -n vault vault-0 -- vault login {{ token }}
-  register: key_result
-
-- name: Configure kubernetes auth
+    service_name: "{{ (vault.mode == 'ha') | ternary('vault-active', 'vault') }}"
   block:
-    - name: Create vault-auth ServiceAccount
-      kubernetes.core.k8s:
-        apply: yes
-        force: yes
-        definition:
-          apiVersion: v1
-          kind: ServiceAccount
-          metadata:
-            name: vault-auth
-            namespace: vault
+    - name: Verify dependencies
+      ansible.builtin.include_tasks: verify-dependencies.yaml
 
-    - name: Create vault-auth Secret
-      kubernetes.core.k8s:
-        apply: yes
-        force: yes
-        definition:
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: vault-auth
-            namespace: vault
-            annotations:
-              kubernetes.io/service-account.name: vault-auth
-          type: kubernetes.io/service-account-token
-
-    - name: Create vault-auth ClusterRoleBinding
-      kubernetes.core.k8s:
-        apply: yes
-        force: yes
-        definition:
-          apiVersion: rbac.authorization.k8s.io/v1
-          kind: ClusterRoleBinding
-          metadata:
-            name: role-tokenreview-binding
-          roleRef:
-            apiGroup: rbac.authorization.k8s.io
-            kind: ClusterRole
-            name: system:auth-delegator
-          subjects:
-            - kind: ServiceAccount
-              name: vault-auth
-              namespace: vault
-
-    - name: Get vault-auth secret
-      kubernetes.core.k8s_info:
-        kind: Secret
-        name: vault-auth
-        namespace: vault
-      register: secret_value
-
-    - name: Enable kubernetes auth
+    - name: Register DNS entry
       vars:
-        token_review_jwt: "{{ secret_value.resources.0.data.token | b64decode }}"
+        domain_prefix: vault
+      ansible.builtin.include_role:
+        name: common/dns-register
+
+    - name: Create vault namespace
+      kubernetes.core.k8s:
+        kind: Namespace
+        name: vault
+
+    # Note: The following creation of certificate cannot be used with loop.
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: vault-cluster
+        certificate_template: "{{ CLUSTER_CERTIFICATE_TEMPLATE }}"
+
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: vault-client
+        certificate_template: "{{ CLIENT_CERTIFICATE_TEMPLATE }}"
+      when: vault.enable_peer_verification
+
+    - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: vault-ingress
+        certificate_template: "{{ INGRESS_CERTIFICATE_TEMPLATE }}"
+
+    # Notes: Uses own domain name.
+    - name: Setup ingress
+      ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+      vars:
+        name: vault
+        namespace: vault
+        in_definition: "{{ INGRESS_TEMPLATE }}"
+        in_create: no
+
+    - name: Add hashicorp chart repo
+      kubernetes.core.helm_repository:
+        name: hashicorp
+        repo_url: "https://helm.releases.hashicorp.com"
+
+    - name: Deploy vault
+      vars:
+        version: "{% if vault.version is defined and vault.version and vault.version != 'latest' %}{{ vault.version }}{% endif %}"
+      kubernetes.core.helm:
+        name: vault
+        atomic: yes
+        chart_ref: hashicorp/vault
+        chart_version: "{{ version }}"
+        namespace: vault
+        create_namespace: yes
+        values: "{{ VALUES_FILE }}"
+        wait: yes
+
+    - name: Waiting for vault deployments to be ready
+      ansible.builtin.shell: |
+        for d in $(kubectl -n vault get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n vault deployment/$d; done;
+        kubectl wait --for=jsonpath='{.status.conditions[?(@.type=="PodReadyToStartContainers")].status}'="True" pod vault-0 -n vault
+        kubectl wait --for=jsonpath='{.status.phase}'=Running pod vault-0 -n vault
+        sleep 30
+
+    - name: Patch csi agent environment variable
+      kubernetes.core.k8s:
+        api_version: apps/v1
+        kind: DaemonSet
+        name: vault-csi-provider
+        namespace: vault
+        state: patched
+        template: csi-definition.j2
+      when: vault.csi.enable
+
+    - name: "Configure {{ unseal_action }} unseal"
+      vars:
+        unseal_action: "{{ (vault.unseal.type != 'manual') | ternary('auto', vault.unseal.type) }}"
+      ansible.builtin.include_tasks: "{{ unseal_action }}-unseal.yaml"
+
+    - name: Vault login
+      vars:
         token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
-      shell: |
-        kubernetes_ca_cert=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[].cluster.certificate-authority-data}' | base64 --decode)
-        kubectl exec -it -n vault vault-0 -- vault auth enable kubernetes
-        kubernetes_address=$(kubectl exec -it -n vault vault-0 -- printenv KUBERNETES_PORT_443_TCP_ADDR | tr -d '\r')
-        kubectl exec -it -n vault vault-0 -- vault write auth/kubernetes/config token_reviewer_jwt="{{ token_review_jwt }}" kubernetes_host="https://${kubernetes_address}:443" kubernetes_ca_cert="${kubernetes_ca_cert}" disable_local_ca_jwt="true"
+      shell: kubectl exec -n vault vault-0 -- vault login {{ token }}
+      register: key_result
 
-- name: Deploy secrets operator
-  ansible.builtin.include_role:
-    name: vault/secrets-operator
-  when: vault.secrets_operator.enable
+    - name: Configure kubernetes auth
+      block:
+        - name: Create vault-auth ServiceAccount
+          kubernetes.core.k8s:
+            apply: yes
+            force: yes
+            definition:
+              apiVersion: v1
+              kind: ServiceAccount
+              metadata:
+                name: vault-auth
+                namespace: vault
 
-- name: Deploy secrets store csi driver
-  ansible.builtin.include_role:
-    name: vault/secrets-store
-  when: vault.csi.enable
+        - name: Create vault-auth Secret
+          kubernetes.core.k8s:
+            apply: yes
+            force: yes
+            definition:
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: vault-auth
+                namespace: vault
+                annotations:
+                  kubernetes.io/service-account.name: vault-auth
+              type: kubernetes.io/service-account-token
+
+        - name: Create vault-auth ClusterRoleBinding
+          kubernetes.core.k8s:
+            apply: yes
+            force: yes
+            definition:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                name: role-tokenreview-binding
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: system:auth-delegator
+              subjects:
+                - kind: ServiceAccount
+                  name: vault-auth
+                  namespace: vault
+
+        - name: Get vault-auth secret
+          kubernetes.core.k8s_info:
+            kind: Secret
+            name: vault-auth
+            namespace: vault
+          register: secret_value
+
+        - name: Enable kubernetes auth
+          vars:
+            token_review_jwt: "{{ secret_value.resources.0.data.token | b64decode }}"
+            token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
+          shell: |
+            kubernetes_ca_cert=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[].cluster.certificate-authority-data}' | base64 --decode)
+            kubectl exec -it -n vault vault-0 -- vault auth enable kubernetes
+            kubernetes_address=$(kubectl exec -it -n vault vault-0 -- printenv KUBERNETES_PORT_443_TCP_ADDR | tr -d '\r')
+            kubectl exec -it -n vault vault-0 -- vault write auth/kubernetes/config token_reviewer_jwt="{{ token_review_jwt }}" kubernetes_host="https://${kubernetes_address}:443" kubernetes_ca_cert="${kubernetes_ca_cert}" disable_local_ca_jwt="true"
+
+    - name: Deploy secrets operator
+      ansible.builtin.include_role:
+        name: vault/secrets-operator
+      when: vault.secrets_operator.enable
+
+    - name: Deploy secrets store csi driver
+      ansible.builtin.include_role:
+        name: vault/secrets-store
+      when: vault.csi.enable
