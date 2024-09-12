@@ -75,7 +75,7 @@
         EOF
 
     - name: Create auto-unseal token
-      ansible.builtin.shell: vault token create -orphan -policy=autounseal -period=768h -renewable
+      ansible.builtin.shell: vault token create -orphan -policy=autounseal -period=262800h -renewable
       register: auto_unseal_token_result
 
     - ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml

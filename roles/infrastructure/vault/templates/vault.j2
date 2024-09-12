@@ -1,6 +1,9 @@
 cluster_addr  = "http://127.0.0.1:8201"
 api_addr      = "http://[::]:8200"
 disable_mlock = true
+default_lease_ttl = "262800h"
+max_lease_ttl = "262800h"
+ui = true
 
 listener "tcp" {
   tls_disable = 1
@@ -10,5 +13,3 @@ listener "tcp" {
 storage "raft" {
   path    = "/opt/vault/data"
 }
-
-ui = true
