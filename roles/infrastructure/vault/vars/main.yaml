@@ -1,3 +1,7 @@
 vault:
   key_shares: 1
   key_threshold: 1
+
+  # Default token lease ttl
+  max_lease_ttl: 262800h
+  default_lease_ttl: 262800h
