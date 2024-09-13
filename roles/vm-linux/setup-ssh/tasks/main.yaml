@@ -14,11 +14,26 @@
         port: 22
         msg: Timeout waiting for ssh port availability. You may want to set a higher timeout value.
 
-    - name: Register servers as known hosts to Ansible hosts
-      ansible.builtin.shell: |
-        (
-            flock -x 9      
-            touch /root/.ssh/known_hosts
-            ssh-keygen -f /root/.ssh/known_hosts -R {{ ansible_host }}
-            ssh-keyscan -H {{ ansible_host }} >> /root/.ssh/known_hosts
-        ) 9>"/tmp/ssh.lock"
+    - name: Remove stale entries for {{ ansible_host }} on Ansible Host
+      throttle: 1
+      ansible.builtin.known_hosts:
+        name: "{{ ansible_host }}"
+        path: /root/.ssh/known_hosts
+        state: absent
+
+    - name: Register {{ ansible_host }} as a known host to Ansible Host
+      throttle: 1
+      ansible.builtin.known_hosts:
+        name: "{{ ansible_host }}"
+        key: "{{ lookup('pipe', 'ssh-keyscan -H ' + ansible_host, errors='ignore') }}"
+        path: /root/.ssh/known_hosts
+        state: present
+      failed_when: false
+      register: register_result
+
+    - name: Check SSH registration status
+      ansible.builtin.fail:
+        msg: >
+          Unable to establish connection from Ansible Host to {{ ansible_hostname }} ({{ ansible_host }}).
+          Please check your network connectivity and rerun vm-linux/setup-ssh again."
+      failed_when: register_result.msg is defined and register_result.msg == "No key specified when adding a host"
