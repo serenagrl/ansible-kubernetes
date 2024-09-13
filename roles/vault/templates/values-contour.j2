@@ -66,7 +66,16 @@ server:
 {% if vault.enable_peer_verification %}
         tls_client_ca_file = "/vault/client-tls/ca.crt"
 {% endif %}
+        telemetry {
+          unauthenticated_metrics_access = true
+        }
       }
+
+      telemetry {
+        prometheus_retention_time = "24h"
+        disable_hostname = true
+      }
+
       storage "file" {
         path = "/vault/data"
       }
@@ -110,6 +119,14 @@ server:
 {% if vault.enable_peer_verification %}
           tls_client_ca_file = "/vault/client-tls/ca.crt"
 {% endif %}
+          telemetry {
+            unauthenticated_metrics_access = true
+          }
+        }
+
+        telemetry {
+          prometheus_retention_time = "24h"
+          disable_hostname = true
         }
 
         storage "raft" {
@@ -207,6 +224,24 @@ serverTelemetry:
     enabled: true
     selectors:
       release: monitoring
+{% if vault.mode == 'ha' %}
+      vault-active: "true"
+{% endif %}
+    tlsConfig:
+      serverName: {{ service_name }}.vault.svc.cluster.local
+      ca:
+        secret:
+          name: vault-cluster-tls
+          key: ca.crt
+{% if vault.enable_peer_verification %}
+      cert:
+        secret:
+          name: vault-client-tls
+          key: tls.crt
+      keySecret:
+        name: vault-client-tls
+        key: tls.key
+{% endif %}
 
 ui:
   enabled: true
