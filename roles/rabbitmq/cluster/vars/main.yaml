@@ -22,12 +22,12 @@ rabbitmq:
   export_certs: yes
 
   cert:
-    validity: 8640h
+    validity: 8760h
     ca: rabbitmq-ca.pem
-    cluster: rabbitmq-cert.pem
-    cluster_key: rabbitmq-key.pem
+    client: client-cert.pem
+    client_key: client-key.pem
     ca_crt: rabbitmq-ca.crt
-    cluster_pfx: rabbitmq.pfx
+    client_pfx: client.pfx
 
   tolerations:
     - effect: NoSchedule

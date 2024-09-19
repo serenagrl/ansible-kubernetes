@@ -15,11 +15,19 @@
     kind: Namespace
     state: present
 
-- name: Create RabbitMQ cluster certificate
-  ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
-  vars:
-    name: RabbitMQ Cluster
-    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+- name: Create RabbitMQ certificates
+  block:
+    - name: Create RabbitMQ cluster certificate
+      ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: RabbitMQ Cluster
+        certificate_template: "{{ CLUSTER_CERTIFICATE_TEMPLATE }}"
+
+    - name: Create RabbitMQ client certificate
+      ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+      vars:
+        name: RabbitMQ Client
+        certificate_template: "{{ CLIENT_CERTIFICATE_TEMPLATE }}"
   when: rabbitmq.enable_tls
 
 - name: Create RabbitMQ cluster
@@ -49,17 +57,17 @@
 
     - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
-        name: "RabbitMQ cluster certificate"
-        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.tls\\.crt}'"
+        name: "RabbitMQ client certificate"
+        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-client-tls -o jsonpath='{.data.tls\\.crt}'"
         cert_dir: "{{ CERT_DIR }}"
-        filename: "{{ rabbitmq.cert.cluster }}"
+        filename: "{{ rabbitmq.cert.client }}"
 
     - ansible.builtin.import_tasks: ./tasks/task-extract-cert.yaml
       vars:
-        name: "RabbitMQ cluster certificate key"
-        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-tls-secret -o jsonpath='{.data.tls\\.key}'"
+        name: "RabbitMQ client certificate key"
+        command: "kubectl get -n {{ rabbitmq.namespace }} secret rabbitmq-client-tls -o jsonpath='{.data.tls\\.key}'"
         cert_dir: "{{ CERT_DIR }}"
-        filename: "{{ rabbitmq.cert.cluster_key }}"
+        filename: "{{ rabbitmq.cert.client_key }}"
 
     - become_user: root
       delegate_to: localhost
@@ -70,7 +78,7 @@
             chdir: "{{ CERT_DIR }}"
 
         - name: Create PKCS12 cert for dotnet clients (.pfx)
-          ansible.builtin.shell: "openssl pkcs12 -inkey {{ rabbitmq.cert.cluster_key }} -in {{ rabbitmq.cert.cluster }} -export -out {{ rabbitmq.cert.cluster_pfx }} -passout pass:"
+          ansible.builtin.shell: "openssl pkcs12 -inkey {{ rabbitmq.cert.client_key }} -in {{ rabbitmq.cert.client }} -export -out {{ rabbitmq.cert.client_pfx }} -passout pass:"
           args:
             chdir: "{{ CERT_DIR }}"
 
