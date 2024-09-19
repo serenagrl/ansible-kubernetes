@@ -5,7 +5,7 @@ metadata:
   namespace: vault
 spec:
   dnsNames:
-    - vault-active
+    - {{ service_name }}
   issuerRef:
     kind: ClusterIssuer
     name: {{ fact_cluster_issuer_name }}

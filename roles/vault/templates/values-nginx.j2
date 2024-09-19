@@ -185,7 +185,7 @@ server:
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: HTTPS
 {% if vault.enable_peer_verification %}
-      nginx.ingress.kubernetes.io/proxy-ssl-name: vault-active.vault.svc.cluster.local
+      nginx.ingress.kubernetes.io/proxy-ssl-name: {{ service_name }}.vault.svc.cluster.local
       nginx.ingress.kubernetes.io/proxy-ssl-secret: vault/vault-cluster-tls
       nginx.ingress.kubernetes.io/proxy-ssl-verify: "on"
 {% endif %}
