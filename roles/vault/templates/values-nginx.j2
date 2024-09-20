@@ -56,6 +56,8 @@ server:
   standalone:
     config: |-
       ui = true
+      default_lease_ttl = "{{ vault.default_lease_ttl }}"
+      max_lease_ttl = "{{ vault.max_lease_ttl }}"
 
       listener "tcp" {
         tls_disable = false
@@ -108,6 +110,8 @@ server:
       config: |
         ui = true
         cluster_name = "vault-integrated-storage"
+        default_lease_ttl = "{{ vault.default_lease_ttl }}"
+        max_lease_ttl = "{{ vault.max_lease_ttl }}"
 
         listener "tcp" {
           tls_disable = false

@@ -8,6 +8,10 @@ vault:
   # Supported value: [ha, standalone]
   mode: ha
 
+  # Default token lease ttl
+  max_lease_ttl: 768h
+  default_lease_ttl: 768h
+
   injector:
     enable: yes
 
