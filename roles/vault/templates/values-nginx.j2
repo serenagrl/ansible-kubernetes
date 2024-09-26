@@ -2,7 +2,7 @@ global:
   tlsDisable: false
 
 injector:
-  enabled: {{ vault.injector.enable }}
+  enabled: {{ vault.injector.enabled }}
   extraEnvironmentVars:
     AGENT_INJECT_VAULT_ADDR: https://{{ service_name }}.vault.svc.cluster.local:8200
   logLevel: {{ vault.injector.log_level }}
@@ -201,7 +201,7 @@ server:
           - vault.{{ kube.cluster.domain }}
 
 csi:
-  enabled: {{ vault.csi.enable }}
+  enabled: {{ vault.csi.enabled }}
   volumes:
     - name: vault-cluster-tls
       secret:

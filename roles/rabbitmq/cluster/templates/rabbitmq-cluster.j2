@@ -11,7 +11,7 @@ spec:
   persistence:
     storage: "{{ rabbitmq.storage_size }}"
 
-{%if rabbitmq.enable_tls %}
+{% if rabbitmq.enable_tls %}
   tls:
     secretName: rabbitmq-tls-secret
     caSecretName: rabbitmq-tls-secret
@@ -20,7 +20,7 @@ spec:
 
   rabbitmq:
     additionalConfig: |
-{%if rabbitmq.enable_tls %}
+{% if rabbitmq.enable_tls %}
       ssl_options.verify = verify_peer
       ssl_options.fail_if_no_peer_cert = true
 {% endif %}
@@ -31,4 +31,17 @@ spec:
     {{ rabbitmq.tolerations }}
   affinity:
     {{ rabbitmq.affinity }}
+{% endif %}
+
+{% if rabbitmq.vault.enabled %}
+  secretBackend:
+    vault:
+      role: {{ rabbitmq.vault.role }}
+      annotations:
+        vault.hashicorp.com/service: {{ rabbitmq.vault.service }}
+        vault.hashicorp.com/tls-secret: {{ rabbitmq.vault.tls_secret }}
+        vault.hashicorp.com/ca-cert: {{ rabbitmq.vault.ca }}
+        vault.hashicorp.com/client-cert: {{ rabbitmq.vault.client }}
+        vault.hashicorp.com/client-key: {{ rabbitmq.vault.client_key }}
+      defaultUserPath: {{ rabbitmq.vault.kv_path }}
 {% endif %}

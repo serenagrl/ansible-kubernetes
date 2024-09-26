@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-client-cert
+  namespace: "{{ rabbitmq.namespace }}"
+spec:
+  dnsNames:
+    - vault
+  issuerRef:
+    kind: ClusterIssuer
+    name: {{ fact_cluster_issuer_name }}
+  secretName: {{ vault-client-tls }}

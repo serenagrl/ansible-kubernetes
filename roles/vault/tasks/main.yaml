@@ -6,7 +6,7 @@
 # best practices or work properly in your environment. Use it at your own risk.
 #
 
-- name: Setup vault
+- name: Setup Vault
   vars:
     service_name: "{{ (vault.mode == 'ha') | ternary('vault-active', 'vault') }}"
   block:
@@ -83,7 +83,7 @@
         namespace: vault
         state: patched
         template: csi-definition.j2
-      when: vault.csi.enable
+      when: vault.csi.enabled
 
     - name: "Configure {{ unseal_action }} unseal"
       vars:
@@ -161,9 +161,9 @@
     - name: Deploy secrets operator
       ansible.builtin.include_role:
         name: vault/secrets-operator
-      when: vault.secrets_operator.enable
+      when: vault.secrets_operator.enabled
 
     - name: Deploy secrets store csi driver
       ansible.builtin.include_role:
         name: vault/secrets-store
-      when: vault.csi.enable
+      when: vault.csi.enabled

@@ -1,5 +1,6 @@
-CLUSTER_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'cluster-certificate.j2') | from_yaml }}"
-CLIENT_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'client-certificate.j2') | from_yaml }}"
+RABBITMQ_CLUSTER_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'rabbitmq-cluster-certificate.j2') | from_yaml }}"
+RABBITMQ_CLIENT_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'rabbitmq-client-certificate.j2') | from_yaml }}"
+VAULT_CLIENT_CERTIFICATE_TEMPLATE: "{{ lookup('template', 'vault-client-certificate.j2') | from_yaml }}"
 TEMPLATE: "{{ lookup('template', 'rabbitmq-cluster.j2') | from_yaml }}"
 
 INGRESS_SETUP: "{{ './tasks/task-create-ingress-' + kube.ingress_type + '.yaml' }}"
