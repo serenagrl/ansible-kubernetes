@@ -58,6 +58,7 @@ server:
       ui = true
       default_lease_ttl = "{{ vault.default_lease_ttl }}"
       max_lease_ttl = "{{ vault.max_lease_ttl }}"
+      api_addr      = "https://[::]:8200"
 
       listener "tcp" {
         tls_disable = false
@@ -112,6 +113,9 @@ server:
         cluster_name = "vault-integrated-storage"
         default_lease_ttl = "{{ vault.default_lease_ttl }}"
         max_lease_ttl = "{{ vault.max_lease_ttl }}"
+        cluster_addr  = "https://[::]:8201"
+        api_addr      = "https://[::]:8200"
+        disable_mlock = true
 
         listener "tcp" {
           tls_disable = false
