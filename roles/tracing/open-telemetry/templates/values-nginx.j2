@@ -40,6 +40,12 @@ command:
 
 config:
   exporters:
+    otlphttp/logs:
+      endpoint: "http://loki-gateway.logging.svc.cluster.local/otlp"
+      tls:
+        insecure: true
+      headers:
+        "X-Scope-OrgID": "1"
     otlphttp:
       endpoint: {{ open_telemetry.otlphttp_endpoint }}
     prometheus:
@@ -53,6 +59,15 @@ config:
 
   service:
     pipelines:
+      logs:
+        exporters:
+          - otlphttp/logs
+          - debug
+        processors:
+          - memory_limiter
+          - batch
+        receivers:
+          - otlp
       traces:
         exporters:
           - otlphttp
