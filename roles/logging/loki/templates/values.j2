@@ -17,6 +17,9 @@ loki:
       insecure: true
 {% endif %}
 
+  limits_config:
+    allow_structured_metadata: true
+
   commonConfig:
     replication_factor: {{ loki.replicas }}
 
