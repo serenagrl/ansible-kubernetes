@@ -14,7 +14,7 @@
         path: "{{ DASHBOARDS_TEMP_DIR }}"
         state: directory
 
-    - name: Download rabbitmq grafana dashboard json model
+    - name: Download grafana dashboard json model
       ansible.builtin.get_url:
         url: "{{ item.url }}"
         dest: "{{ DASHBOARDS_TEMP_DIR }}/{{ item.name | replace(' ', '-') | lower }}.json"
