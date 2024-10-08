@@ -24,6 +24,11 @@ jaeger:
   prometheus:
     endpoint: http://monitoring-prometheus.monitoring.svc.cluster.local:9090/prometheus
 
+  grafana:
+    url: "https://{{ kube.cluster.name }}.{{ kube.cluster.domain }}/grafana"
+    username: admin
+    password: <grafana-admin-password>
+
   # Built-in test application
   # Disable this to save resources.
   hotrod:
