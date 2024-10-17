@@ -20,6 +20,12 @@
 
 - name: Setup Ingress
   block:
+    - name: Register DNS entry
+      vars:
+        domain_prefix: otel
+      ansible.builtin.include_role:
+        name: common/dns-register
+
     - ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
       vars:
         name: opentelemetry

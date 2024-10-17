@@ -48,3 +48,22 @@
     create_namespace: yes
     values: "{{ VALUES_FILE }}"
     wait: yes
+
+- name: Create jaeger datasource in grafana
+  ansible.builtin.uri:
+    url: "{{ jaeger.grafana.url }}/api/datasources"
+    user: "{{ jaeger.grafana.username }}"
+    password: "{{ jaeger.grafana.password }}"
+    force_basic_auth: true
+    method: POST
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    body_format: json
+    body:
+      name: Jaeger
+      type: jaeger
+      access: proxy
+      url: http://jaeger-query.tracing.svc.cluster.local/jaeger
+    status_code: 200
+  when: fact_has_addon_grafana|bool
