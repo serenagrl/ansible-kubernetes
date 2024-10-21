@@ -6,6 +6,9 @@ infisical:
   name: "infisical"
   autoDatabaseSchemaMigration: true
   fullnameOverride: "infisical"
+  databaseSchemaMigrationJob:
+    serviceAccountNamespace: infisical
+    serviceAccountName: default
 
   image:
     repository: infisical/infisical
