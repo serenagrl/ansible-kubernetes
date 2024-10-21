@@ -1,0 +1,6 @@
+# Infisical environment variables.
+INFISICAL_ROOT_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/roles/infisical/vars`)].content') | b64decode | from_yaml }}"
+INFISICAL_SECRETS_OPERATOR_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/roles/infisical/secrets-operator/vars`)].content') | b64decode | from_yaml }}"
+
+INFISICAL_VARS:
+  - { name: infisical, vars: "{{ INFISICAL_ROOT_VARS | combine(INFISICAL_SECRETS_OPERATOR_VARS, recursive=true) }}" }

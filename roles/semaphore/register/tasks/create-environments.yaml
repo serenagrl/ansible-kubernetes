@@ -89,6 +89,7 @@
         - { name: "Add-On - AWX", content: "{{ AWX_REG_VARS }}", checkpoint_name: "AWX Installed." }
         - { name: "Add-On - CSI", content: "{{ CSI_VARS }}", is_add_on: no }
         - { name: "Add-On - Goldilocks", content: "{{ GOLDILOCKS_VARS }}", checkpoint_name: "Goldilocks Installed." }
+        - { name: "Add-On - Infisical", content: "{{ INFISICAL_VARS }}", checkpoint_name: "Infisical Installed." }
         - { name: "Add-On - Istio", content: "{{ ISTIO_VARS }}", checkpoint_name: "Istio Installed." }
         - { name: "Add-On - Kafka", content: "{{ KAFKA_VARS }}", checkpoint_name: "Kafka Installed." }
         - { name: "Add-On - Keycloak", content: "{{ KEYCLOAK_VARS }}", checkpoint_name: "Keycloak Installed." }
