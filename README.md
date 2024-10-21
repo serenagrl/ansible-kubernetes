@@ -306,6 +306,7 @@ To setup any **(Optional) Infrastructure Services**, run the following playbooks
 |  2. | [`setup-load-balancers.yaml`](setup-load-balancers.yaml) | Provision and configure two VMs for HAProxy and Keepalived. | When deploying load-balancers:<br><ul><li>Set `register_to_load_balancer: yes` in [`inventories/group_vars/kubernetes_cluster.yaml`](inventories/group_vars/kubernetes_cluster.yaml). </li><li>Set `kube.cluster.address` to the desired **virtual ip address** in [`inventories/group_vars/all.yaml`](inventories/group_vars/all.yaml). </li></ul>When not deploying load-balancers:<ul><li>Set `register_to_load_balancer: no` in [`inventories/group_vars/kubernetes_cluster.yaml`](inventories/group_vars/kubernetes_cluster.yaml). </li><li>Set `kube.cluster.address` to point to the **ip address of primary control plane** in [`inventories/group_vars/all.yaml`](inventories/group_vars/all.yaml).</li></ul> |
 |  3. | [`setup-nfs.yaml`](setup-nfs.yaml)            | Install NFS server on infrastructure service VM.            | Run this if you plan to use CSI NFS. Note: You must run this **before** running the csi/nfs role. This does not provision the VM by default. |
 |  4. | [`setup-minio.yaml`](setup-minio.yaml)          | Install Minio on infrastructure service VM.                 | Run this if you plan to test add-ons that requires external S3 storage for backups i.e. **velero** or **csi/longhorn**.  This does not provision the VM by default. |
+|  5. | [`setup-vault.yaml`](setup-vault.yaml)          | Install Vault on infrastructure service VM.                 | Run this if you plan to auto unseal Vault with Transit secrets engine. Note: You must run this **before** running the vault role.  This does not provision the VM by default. |
 
 To setup the **Kubernetes Cluster**, run the following playbooks in sequence:
 
@@ -527,6 +528,13 @@ Each role contains customizable values in its `/vars/main.yaml` file. You do not
 <tr>
   <td>Automation</td>
   <td>AWX</td>
+</tr>
+<tr>
+  <td rowspan=2>Key Management</td>
+  <td>Hashicorp Vault</td>
+</tr>
+<tr>
+  <td>Infisical</td>
 </tr>
 </table>
 
