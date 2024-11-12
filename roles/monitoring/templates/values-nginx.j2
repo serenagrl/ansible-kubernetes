@@ -16,6 +16,18 @@ alertmanager:
     routePrefix: /alerts
     replicas: {{ monitoring.alertmanager.replicas }}
 
+{% if monitoring.alertmanager.persistence.enabled %}
+    storage:
+      volumeClaimTemplate:
+        metadata:
+          name: alertmanager
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: {{ monitoring.alertmanager.persistence.size }}
+{% endif %}
+
 {% if not kube.allow_scheduling %}
     tolerations:
       - effect: NoSchedule
@@ -52,6 +64,12 @@ grafana:
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
 {% endif %}
+
+  persistence:
+    type: pvc
+    enabled: {{ monitoring.grafana.persistence.enabled }}
+    accessModes: ["ReadWriteOnce"]
+    size: {{ monitoring.grafana.persistence.size }}
 
   grafana.ini:
     server:
@@ -104,6 +122,18 @@ prometheus:
     replicas: {{ monitoring.prometheus.replicas }}
     externalUrl: /prometheus
     routePrefix: /prometheus
+
+{% if monitoring.prometheus.persistence.enabled %}
+    storageSpec:
+      volumeClaimTemplate:
+        metadata:
+          name: prometheus
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: {{ monitoring.prometheus.persistence.size }}
+{% endif %}
 
 {% if not kube.allow_scheduling %}
     tolerations:
