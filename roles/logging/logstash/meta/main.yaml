@@ -3,4 +3,3 @@ dependencies:
     vars:
       depends_on:
         - elasticsearch
-        - filebeat
