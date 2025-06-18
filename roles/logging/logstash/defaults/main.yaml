@@ -1,0 +1,1 @@
+LOGSTASH_CRD_TEMPLATE: "{{ lookup('template', 'logstash.j2') | from_yaml }}"
