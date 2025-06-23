@@ -33,7 +33,7 @@
             "git_url": "{{ local_repo_dir }}",
             "ssh_key_id": {{ SEMAPHORE_KEY_ID }}
           }
-        status_code: 204 # Access Key Created
+        status_code: 201 # Access Key Created
 
     - name: Query local repository record
       ansible.builtin.uri:

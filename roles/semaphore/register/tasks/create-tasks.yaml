@@ -70,6 +70,8 @@
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs keycloak." }
     - { name: "Setup Add-On - Knative", env_name: "Add-On - Knative", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs knative." }
+    - { name: "Setup Add-On - Kube Prometheus Stack", env_name: "Add-On - Kube Prometheus Stack", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
+        playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs Kube Prometheus Stack." }
     - { name: "Setup Add-On - MetalLB", env_name: "Add-On - MetalLB", surveys: "{{ VM_CHECKPOINT_SURVEY }}",
         playbook: "{{ PLAYBOOKS.SETUP_ADD_ONS }}", desc: "Installs MetalLB." }
     - { name: "Setup Add-On - MSSQL Server", env_name: "Add-On - MSSQL Server", surveys: "{{ VM_CHECKPOINT_SURVEY }}",

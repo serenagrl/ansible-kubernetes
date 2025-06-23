@@ -1,0 +1,7 @@
+longhorn:
+  # Create Prometheus ServiceMonitor to scrap metrics (Requires prometheus to be installed)
+  prometheus:
+    grafana_dashboards:
+        # 3rd-party dashboard.
+      - { name: "Longhorn Dashboard",
+          url: "https://grafana.com/api/dashboards/16888/revisions/9/download" }

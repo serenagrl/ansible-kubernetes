@@ -433,13 +433,19 @@ Each role contains customizable values in its `/vars/main.yaml` file. You do not
   <td>AlertManager</td>
 </tr>
 <tr>
-  <td rowspan=3>Logging</td>
+  <td rowspan=5>Logging</td>
   <td>ElasticOperator
   <ul>
     <li>Elasticsearch</li>
     <li>Kibana</li>
   </ul>
   </td>
+</tr>
+<tr>
+  <td>Filebeat</td>
+</tr>
+<tr>
+  <td>Logstash</td>
 </tr>
 <tr>
   <td>FluentD</td>
