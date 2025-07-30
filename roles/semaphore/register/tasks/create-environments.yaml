@@ -4,7 +4,7 @@
   block:
     - name: Search default empty environment
       ansible.builtin.uri:
-        url: "{{ environment_url }}?sort=db-deploy&order=desc" # Default value from https://www.semui.co/api-docs
+        url: "{{ environment_url }}?sort=name&order=desc" # Default value from https://www.semui.co/api-docs
         method: GET
         return_content: true
         headers:
@@ -71,7 +71,7 @@
             "json": {{ item.is_add_on | default(true) | ternary(add_on_vars_to_use, item.content) | to_nice_json(sort_keys=false, indent=2) | to_json }},
             "env": "{}"
           }
-        status_code: 204 # Created
+        status_code: 201 # Created
       loop:
         - { name: "Infrastructure", content: "{{ INFRA_VARS }}", is_add_on: no }
         - { name: "Basic Add-Ons", content: "{{ BASIC_ADD_ONS_VARS }}" }
@@ -83,7 +83,7 @@
         - { name: "Add-On - DevOps (Tekton)", content: "{{ TEKTON_VARS }}", checkpoint_name: "Tekton Installed." }
         - { name: "Add-On - DevOps (Minio)", content: "{{ MINIO_VARS }}", checkpoint_name: "Minio Installed." }
         - { name: "Add-On - DevOps (Kyverno)", content: "{{ KYVERNO_VARS }}", checkpoint_name: "Kyverno installed." }
-        - { name: "Add-On - Logging (Elastic Stack)", content: "{{ ELASTIC_STACK_VARS }}", checkpoint_name: "Elastic Stack Installed." }
+        - { name: "Add-On - Logging (Elastic Stack)", content: "{{ ELASTIC_VARS }}", checkpoint_name: "Elastic Stack Installed." }
         - { name: "Add-On - Logging (Fluentd)",  content: "{{ FLUENTD_VARS }}", checkpoint_name: "Fluentd Installed." }
         - { name: "Add-On - Logging (Loki)", content: "{{ LOKI_VARS }}", checkpoint_name: "Loki Installed." }
         - { name: "Add-On - AWX", content: "{{ AWX_REG_VARS }}", checkpoint_name: "AWX Installed." }
@@ -93,6 +93,7 @@
         - { name: "Add-On - Kafka", content: "{{ KAFKA_VARS }}", checkpoint_name: "Kafka Installed." }
         - { name: "Add-On - Keycloak", content: "{{ KEYCLOAK_VARS }}", checkpoint_name: "Keycloak Installed." }
         - { name: "Add-On - Knative", content: "{{ KNATIVE_VARS }}", checkpoint_name: "Knative Installed." }
+        - { name: "Add-On - Kube Prometheus Stack", content: "{{ KUBE_PROMETHEUS_STACK_VARS }}", checkpoint_name: "Kube Prometheus Stack Installed." }
         - { name: "Add-On - MetalLB", content: "{{ METALLB_VARS }}", checkpoint_name: "Metallb installed." }
         - { name: "Add-On - MSSQL Server", content: "{{ MSSQL_VARS }}", checkpoint_name: "MSSQL Server Installed." }
         - { name: "Add-On - RabbitMQ", content: "{{ RABBITMQ_VARS }}", checkpoint_name: "RabbitMQ Installed." }

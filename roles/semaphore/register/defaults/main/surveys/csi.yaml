@@ -7,6 +7,8 @@ SETUP_CSI_SURVEYS:
     values:
       - name: "Longhorn (Recommended)"
         value: "longhorn"
+      - name: "Longhorn - configure monitoring only"
+        value: "longhorn/monitoring"
       - name: "Rook Ceph (High resource consumption)"
         value: "rook-ceph"
       - name: "NFS (Less resource consumption)"

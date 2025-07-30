@@ -3,5 +3,4 @@ BASIC_ADD_ONS_VARS:
   - { name: cert-manager, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/cert-manager/vars`)].content') | b64decode | from_yaml }}" }
   - { name: ingress, vars: "{{ var_files | community.general.json_query('results[?contains(source, `/ingress/nginx/vars`)].content') | b64decode | from_yaml }}" }
   - { name: dashboard }
-  - { name: monitoring }
   - { name: metrics-server }
