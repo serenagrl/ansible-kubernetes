@@ -1,0 +1,1 @@
+FILEBEAT_CRD_TEMPLATE: "{{ lookup('template', 'filebeat.j2') | from_yaml }}"

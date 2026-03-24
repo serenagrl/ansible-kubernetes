@@ -1,0 +1,76 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Install filebeat
+  vars:
+    has_version_specified: "{{ (filebeat.version is defined and filebeat.version and filebeat.version != 'latest') | bool }}"
+    release: "{{ has_version_specified | ternary(filebeat.version, release_tag.stdout) }}"
+  block:
+    - name: Get filebeat version
+      ansible.builtin.shell: |
+        curl -s https://api.github.com/repos/elastic/beats/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d 'v' -f2-
+      register: release_tag
+      when: not has_version_specified
+
+    - name: Create filebeat ServiceAccount
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: filebeat
+            namespace: logging
+
+    - name: Create filebeat ServiceAccount
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            name: filebeat-autodiscover
+          rules:
+            - apiGroups:
+                - ""
+              resources:
+                - nodes
+                - namespaces
+                - events
+                - pods
+              verbs:
+                - get
+                - list
+                - watch
+
+    - name: Create filebeat ClusterRoleBinding
+      kubernetes.core.k8s:
+        apply: yes
+        force: yes
+        definition:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            name: filebeat-autodiscover-binding
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: filebeat-autodiscover
+          subjects:
+          - kind: ServiceAccount
+            name: filebeat
+            namespace: logging
+
+    - name: Install filebeat ({{ release }})
+      kubernetes.core.k8s:
+        template: 'filebeat.j2'
+
+- name: Waiting for filebeat to be ready
+  ansible.builtin.shell: kubectl wait --for=jsonpath='{.status.health}'=green beat filebeat -n logging --timeout=180s

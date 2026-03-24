@@ -1,0 +1,21 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
+- name: Create ServiceMonitor
+  kubernetes.core.k8s:
+    template: service-monitor.j2
+
+- name: Install Longhorn grafana dashboard
+  ansible.builtin.include_role:
+    name: monitoring/grafana-dashboard
+  vars:
+    dashboards: "{{ longhorn.prometheus.grafana_dashboards }}"
+    namespace: longhorn-system

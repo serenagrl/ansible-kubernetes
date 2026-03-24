@@ -1,0 +1,66 @@
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: filebeat
+  namespace: logging
+spec:
+  type: filebeat
+  version: {{ release }}
+  config:
+    output.logstash:
+      hosts: ["logstash-ls-beats:5044"]
+    filebeat.inputs:
+    - type: filestream
+      id: container-filestream-id
+      paths:
+        - /var/log/containers/*.log
+      parsers:
+        - container:
+            stream: all
+      prospector:
+        scanner:
+          fingerprint.enabled: true
+          fingerprint.offset: 0
+          fingerprint.length: 64
+          symlinks: true
+    processors:
+    - add_kubernetes_metadata:
+        host: ${NODE_NAME}
+        matchers:
+          - logs_path:
+              logs_path: "/var/log/containers/"
+    logging.level: warning
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccount: filebeat
+        automountServiceAccountToken: true
+        securityContext:
+          runAsUser: 0
+        containers:
+          - name: filebeat
+            env:
+              - name: NODE_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+            volumeMounts:
+              - name: varlogcontainers
+                mountPath: /var/log/containers
+              - name: varlogpods
+                mountPath: /var/log/pods
+        volumes:
+          - name: varlogcontainers
+            hostPath:
+              path: /var/log/containers
+          - name: varlogpods
+            hostPath:
+              path: /var/log/pods
+{% if not kube.allow_scheduling %}
+        tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/control-plane
+            operator: Exists
+        nodeSelector:
+          node-role.kubernetes.io/control-plane: ""
+{% endif %}

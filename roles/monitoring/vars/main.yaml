@@ -5,6 +5,17 @@ monitoring:
 
   alertmanager:
     replicas: 1
+    persistence:
+      enabled: no
+      size: 1Gi
 
   prometheus:
     replicas: 1
+    persistence:
+      enabled: no
+      size: 5Gi
+
+  grafana:
+    persistence:
+      enabled: yes
+      size: 1Gi

@@ -14,3 +14,11 @@
 
 - ansible.builtin.include_role:
     name: logging/kibana
+
+- ansible.builtin.include_role:
+    name: logging/filebeat
+  when: elastic_stack.install.filebeat
+
+- ansible.builtin.include_role:
+    name: logging/logstash
+  when: elastic_stack.install.logstash

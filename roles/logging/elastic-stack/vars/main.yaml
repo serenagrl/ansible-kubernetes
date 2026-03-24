@@ -1,0 +1,4 @@
+elastic_stack:
+  install:
+    filebeat: yes
+    logstash: yes

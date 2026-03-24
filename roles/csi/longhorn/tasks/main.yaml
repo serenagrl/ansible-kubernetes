@@ -51,17 +51,10 @@
     for d in $(kubectl -n longhorn-system get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n longhorn-system deployment/$d; done;
     for d in $(kubectl -n longhorn-system get daemonset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n longhorn-system daemonset/$d; done;
 
-- name: Create ServiceMonitor
-  kubernetes.core.k8s:
-    template: service-monitor.j2
-  when: longhorn.prometheus.enabled|bool and fact_has_addon_prometheus|bool
-
-- name: Install Longhorn grafana dashboard
+- name: Configure Longhorn monitoring
   ansible.builtin.include_role:
-    name: monitoring/grafana-dashboard
-  vars:
-    dashboards: "{{ longhorn.prometheus.grafana_dashboards }}"
-    namespace: longhorn-system
+    name: csi/longhorn/monitoring
+  when: longhorn.prometheus.enabled|bool and fact_has_addon_prometheus|bool
 
 - name: Configure local minio backupstore
   kubernetes.core.k8s:
@@ -74,3 +67,6 @@
   ansible.builtin.include_role:
     name: csi/longhorn/create-disk
   when: longhorn.disk.create
+
+- debug: msg="Prometheus not found, please install prometheus and resetup the ServiceMonitor."
+  when: longhorn.prometheus.enabled|bool and not fact_has_addon_prometheus|bool

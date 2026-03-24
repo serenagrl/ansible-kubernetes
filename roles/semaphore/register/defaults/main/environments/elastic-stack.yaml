@@ -2,6 +2,12 @@
 ELASTIC_OPERATOR_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/elastic-operator/vars`)].content') | b64decode | from_yaml }}"
 ELASTICSEARCH_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/elasticsearch/vars`)].content') | b64decode | from_yaml }}"
 KIBANA_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/kibana/vars`)].content') | b64decode | from_yaml }}"
-ELASTIC_STACK_VARS:
-  - { name: logging/elastic-stack, vars: "{{ ELASTIC_OPERATOR_VARS | combine(ELASTICSEARCH_VARS, recursive=true)
-                                                                    | combine(KIBANA_VARS, recursive=true) }}" }
+FILEBEAT_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/filebeat/vars`)].content') | b64decode | from_yaml }}"
+LOGSTASH_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/logstash/vars`)].content') | b64decode | from_yaml }}"
+ELASTIC_STACK_VARS: "{{ var_files | community.general.json_query('results[?contains(source, `/logging/elastic-stack/vars`)].content') | b64decode | from_yaml }}"
+ELASTIC_VARS:
+  - { name: logging/elastic-stack, vars: "{{ ELASTIC_STACK_VARS | combine(ELASTIC_OPERATOR_VARS, recursive=true)
+                                                                | combine(ELASTICSEARCH_VARS, recursive=true)
+                                                                | combine(KIBANA_VARS, recursive=true)
+                                                                | combine(FILEBEAT_VARS, recursive=true)
+                                                                | combine(LOGSTASH_VARS, recursive=true) }}" }

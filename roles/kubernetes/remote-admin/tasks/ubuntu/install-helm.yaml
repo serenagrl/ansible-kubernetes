@@ -13,7 +13,8 @@
   block:
     - name: Get helm gpg
       ansible.builtin.get_url:
-        url: https://baltocdn.com/helm/signing.asc
+        # url: https://baltocdn.com/helm/signing.asc
+        url: https://packages.buildkite.com/helm-linux/helm-debian/gpgkey
         dest: /tmp/helm.gpg
         mode: '0644'
         force: true
@@ -24,7 +25,8 @@
     - name: Register helm repository
       ansible.builtin.apt_repository:
         filename: helm
-        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+        # repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main"
+        repo: "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main"
         update_cache: yes
 
     - name: Installing helm
