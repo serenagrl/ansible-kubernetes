@@ -4,15 +4,15 @@ fullnameOverride: ""
 infisical:
   enabled: true
   name: "infisical"
-  autoDatabaseSchemaMigration: true
   fullnameOverride: "infisical"
-  databaseSchemaMigrationJob:
-    serviceAccountNamespace: infisical
-    serviceAccountName: default
 
   image:
     repository: infisical/infisical
-    tag: "{{ version }}-postgres"
+    tag: "{{ version }}"
+
+  extraEnv:
+    - name: ALLOW_INTERNAL_IP_CONNECTIONS
+      value: "true"
 
 {% if not kube.allow_scheduling %}
   tolerations:

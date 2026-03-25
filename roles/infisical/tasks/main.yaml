@@ -67,43 +67,6 @@
   ansible.builtin.shell: |
     for d in $(kubectl -n infisical get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n infisical statefulset/$d; done;
 
-# Note: As off 02/08/2024, infisical helm chart does not support tolerations for the jobs and deployments. Therefore,
-# the following workarounds are required.
-- name: Patch infisical resources to support tolerations (workaround)
-  block:
-    - name: Recreate jobs with tolerations
-      ansible.builtin.shell: |
-        kubectl get jobs -n infisical -o json |\
-        jq .items[] |\
-        jq 'del(.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration")' |\
-        jq 'del(.metadata.creationTimestamp)' |\
-        jq 'del(.metadata.generation)' |\
-        jq 'del(.metadata.resourceVersion)' |\
-        jq 'del(.metadata.uid)' |\
-        jq 'del(.spec.selector)' |\
-        jq 'del(.spec.template.metadata)' |\
-        jq 'del(.status)' |\
-        jq '.spec.template.spec += {"nodeSelector":{"node-role.kubernetes.io/control-plane":""},"tolerations":[{"effect": "NoSchedule", "key": "node-role.kubernetes.io/control-plane", "operator": "Exists"}]}' |\
-        kubectl replace --force -f -
-
-    - name: Patch deployment with tolerations
-      kubernetes.core.k8s:
-        state: patched
-        namespace: infisical
-        kind: Deployment
-        name: infisical
-        definition: |
-          spec:
-            template:
-              spec:
-                tolerations:
-                  - effect: NoSchedule
-                    key: node-role.kubernetes.io/control-plane
-                    operator: Exists
-                nodeSelector:
-                  node-role.kubernetes.io/control-plane:
-  when: not kube.allow_scheduling
-
 - name: Waiting for infisical pods to be ready
   ansible.builtin.shell: |
     for d in $(kubectl -n infisical get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n infisical deployment/$d; done;
