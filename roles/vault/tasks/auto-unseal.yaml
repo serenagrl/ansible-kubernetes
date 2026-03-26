@@ -1,0 +1,20 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Initialize vault
+  shell: kubectl exec -n vault vault-0 -- vault operator init -address="https://vault-0.vault-internal:8200"
+  register: key_result
+
+- ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml
+  vars:
+    keys_regex: 'Recovery Key.*\n(?:^.+\n)*'
+    keys: "{{ key_result.stdout | regex_search(keys_regex, multiline=True) }}"
+    token_regex: 'Initial Root Token:.*\n(?:^.+\n)*'
+    token: "{{ key_result.stdout | regex_search(token_regex) }}"
+    name: "Vault"
+    credentials: "{{ keys }}{{ token }}"

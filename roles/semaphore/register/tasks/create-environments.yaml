@@ -89,6 +89,7 @@
         - { name: "Add-On - AWX", content: "{{ AWX_REG_VARS }}", checkpoint_name: "AWX Installed." }
         - { name: "Add-On - CSI", content: "{{ CSI_VARS }}", is_add_on: no }
         - { name: "Add-On - Goldilocks", content: "{{ GOLDILOCKS_VARS }}", checkpoint_name: "Goldilocks Installed." }
+        - { name: "Add-On - Infisical", content: "{{ INFISICAL_VARS }}", checkpoint_name: "Infisical Installed." }
         - { name: "Add-On - Istio", content: "{{ ISTIO_VARS }}", checkpoint_name: "Istio Installed." }
         - { name: "Add-On - Kafka", content: "{{ KAFKA_VARS }}", checkpoint_name: "Kafka Installed." }
         - { name: "Add-On - Keycloak", content: "{{ KEYCLOAK_VARS }}", checkpoint_name: "Keycloak Installed." }
@@ -100,6 +101,7 @@
         - { name: "Add-On - Redis", content: "{{ REDIS_VARS }}", checkpoint_name: "Redis Installed." }
         - { name: "Add-On - Tracing", content: "{{ TRACING_VARS }}", checkpoint_name: "Tracing Installed." }
         - { name: "Add-On - Trivy", content: "{{ TRIVY_VARS }}", checkpoint_name: "Trivy installed." }
+        - { name: "Add-On - Vault", content: "{{ VAULT_VARS }}", checkpoint_name: "Vault Installed." }
         - { name: "Add-On - Velero", content: "{{ VELERO_VARS }}", checkpoint_name: "Velero Installed." }
 
     - name: Query all environment records

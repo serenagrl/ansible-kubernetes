@@ -1,0 +1,13 @@
+#!/bin/bash
+export VAULT_ADDR="{{ VAULT_ADDRESS }}"
+export VAULT_SKIP_VERIFY=true
+
+until curl -fs -o /dev/null {{ VAULT_ADDRESS }}/v1/sys/init; do
+  echo "Waiting for Vault to start..."
+  sleep 1
+done
+
+{% for i in range(1, vault.key_threshold + 1) %}
+{% set unseal_key = key_result.stdout | regex_search('Unseal Key ' + i|string + ': (.+)', '\\1') | first %}
+vault operator unseal {{ unseal_key }}
+{% endfor %}

@@ -21,13 +21,24 @@ rabbitmq:
   # Determine whether certs should be exported for application used.
   export_certs: yes
 
+  # Integration with vault.
+  vault:
+    enabled: no
+    role: "rabbitmq-role"
+    kv_path: "kv/credentials/rabbitmq/rabbitmq"
+    service: https://vault-active.vault.svc.cluster.local:8200
+    tls_secret: vault-client-tls
+    ca: /vault/tls/ca.crt
+    client: /vault/tls/tls.crt
+    client_key: /vault/tls/tls.key
+
   cert:
-    validity: 8640h
+    validity: 8760h
     ca: rabbitmq-ca.pem
-    cluster: rabbitmq-cert.pem
-    cluster_key: rabbitmq-key.pem
+    client: client-cert.pem
+    client_key: client-key.pem
     ca_crt: rabbitmq-ca.crt
-    cluster_pfx: rabbitmq.pfx
+    client_pfx: client.pfx
 
   tolerations:
     - effect: NoSchedule

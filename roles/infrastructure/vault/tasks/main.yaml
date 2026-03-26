@@ -1,0 +1,96 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Gather facts
+  ansible.builtin.setup:
+
+- name: Install hashicorp vault
+  ansible.builtin.include_tasks: "{{ ansible_distribution | lower }}/install-vault.yaml"
+
+- name: Add vault address to VAULT_ADDR
+  ansible.builtin.blockinfile:
+    path: ~/.bashrc
+    marker: "# {mark} VAULT_ADDR"
+    block: 'export VAULT_ADDR="{{ VAULT_ADDRESS }}"'
+
+- name: Apply changes
+  ansible.builtin.shell: . ~/.bashrc
+
+- name: Create vault configuration
+  ansible.builtin.template:
+    src: vault.j2
+    dest: /etc/vault.d/vault.hcl
+
+- name: Start vault service
+  ansible.builtin.systemd:
+    enabled: yes
+    state: restarted
+    name: vault
+
+- name: Configure vault
+  environment:
+    VAULT_ADDR: "{{ VAULT_ADDRESS }}"
+  vars:
+    credentials_path: "{{ temp_dir }}/{{ ansible_hostname }}-vault-transit-credentials"
+  block:
+    - name: Initialize vault
+      ansible.builtin.shell: vault operator init -key-shares={{ vault.key_shares }} -key-threshold={{ vault.key_threshold }}
+      register: key_result
+
+    - ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml
+      vars:
+        keys_regex: 'Unseal Key.*\n(?:^.+\n)*'
+        keys: "{{ key_result.stdout | regex_search(keys_regex, multiline=True) }}"
+        token_regex: 'Initial Root Token:.*\n(?:^.+\n)*'
+        token: "{{ key_result.stdout | regex_search(token_regex) }}"
+        name: "VAULT KEYS & TOKEN"
+        credentials: "{{ keys }}{{ token }}"
+
+    - name: Unseal vault
+      vars:
+        key: "{{ key_result.stdout | regex_search('Unseal Key ' + item|string + ': (.+)', '\\1') | first }}"
+      ansible.builtin.shell: vault operator unseal {{ key }}
+      loop: "{{ range(1, vault.key_threshold + 1) }}"
+
+    - name: Vault login
+      vars:
+        token: "{{ key_result.stdout | regex_search('Initial Root Token: (.+)', '\\1') | first }}"
+      ansible.builtin.shell: vault login {{ token }}
+
+    - name: Enable transit
+      ansible.builtin.shell: vault secrets enable transit
+
+    - name: Configure transit
+      ansible.builtin.shell: vault write -f transit/keys/autounseal
+
+    - name: Configure policy
+      ansible.builtin.shell: |
+        vault policy write autounseal -<<EOF
+        {{ AUTO_UNSEAL_POLICY_TEMPLATE }}
+        EOF
+
+    - name: Create auto-unseal token
+      ansible.builtin.shell: vault token create -orphan -policy=autounseal -period=262800h -renewable
+      register: auto_unseal_token_result
+
+    - ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml
+      vars:
+        auto_unseal_token_regex: 'token \s*(.+)'
+        auto_unseal_token: "{{ auto_unseal_token_result.stdout | regex_search(auto_unseal_token_regex, '\\1') | first }}"
+        name: "VAULT TRANSIT AUTO-UNSEAL TOKEN"
+        credentials: "{{ auto_unseal_token }}"
+
+    - name: Create unseal vault script
+      ansible.builtin.copy:
+        content: "{{ UNSEAL_VAULT_SCRIPT_TEMPLATE }}"
+        dest: "/root/unseal-vault.sh"
+        mode: '0755'
+
+    - name: Enable script to run when system reboots
+      ansible.builtin.shell: |
+        (crontab -l 2>/dev/null || true; echo "@reboot /root/unseal-vault.sh") | crontab -

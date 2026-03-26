@@ -1,0 +1,43 @@
+# Author: Serena Yeoh
+# Co-Author: Jaryl Lan
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Configure vault
+  block:
+    - name: Initialize vault
+      shell: kubectl exec -n vault vault-0 -- vault operator init -key-shares="{{ vault.unseal.manual.key_shares }}" -key-threshold="{{ vault.unseal.manual.key_threshold }}" -address="https://vault-0.vault-internal:8200"
+      register: key_result
+
+    - ansible.builtin.import_tasks: ./tasks/task-store-credentials.yaml
+      vars:
+        keys_regex: 'Unseal Key.*\n(?:^.+\n)*'
+        keys: "{{ key_result.stdout | regex_search(keys_regex, multiline=True) }}"
+        token_regex: 'Initial Root Token:.*\n(?:^.+\n)*'
+        token: "{{ key_result.stdout | regex_search(token_regex) }}"
+        name: "Vault"
+        credentials: "{{ keys }}{{ token }}"
+
+    - name: Unseal vault-0
+      vars:
+        key: "{{ key_result.stdout | regex_search('Unseal Key ' + item|string + ': (.+)', '\\1') | first }}"
+      ansible.builtin.shell: kubectl exec -n vault vault-0 -- vault operator unseal -address="https://vault-0.vault-internal:8200" {{ key }}
+      loop: "{{ range(1, vault.unseal.manual.key_threshold + 1) }}"
+
+    - name: Get vault statefulset info
+      kubernetes.core.k8s_info:
+        name: vault
+        kind: StatefulSet
+        namespace: vault
+      register: vault_result
+
+    - name: Join node to raft cluster
+      vars:
+        vault_follower: "vault-{{ vault_index }}"
+      ansible.builtin.include_tasks: "join-raft-cluster.yaml"
+      loop: "{{ range(1, vault_result.resources.0.status.replicas|int) }}"
+      loop_control:
+        loop_var: vault_index

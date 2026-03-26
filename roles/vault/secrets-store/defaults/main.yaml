@@ -1,0 +1,1 @@
+SECRETS_STORE_VALUES_FILE: "{{ lookup('template', 'secrets-store-values.j2') | from_yaml }}"

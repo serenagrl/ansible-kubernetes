@@ -20,3 +20,7 @@
 - name: Setup and configure MinIO Server VM
   ansible.builtin.import_playbook: setup-minio.yaml
   when: (setup_minio is defined and setup_minio|bool)
+
+- name: Setup and configure Vault Server VM
+  ansible.builtin.import_playbook: setup-vault.yaml
+  when: (setup_vault is defined and setup_vault|bool)

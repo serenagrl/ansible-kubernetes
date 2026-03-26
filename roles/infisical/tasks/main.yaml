@@ -1,0 +1,77 @@
+# Author: Serena Yeoh
+#
+# Disclaimer:
+# This playbook was written based on my self-learning and may not follow certain
+# best practices or work properly in your environment. Use it at your own risk.
+#
+
+- name: Verify dependencies
+  ansible.builtin.include_tasks: verify-dependencies.yaml
+
+- name: Register DNS entry
+  vars:
+    domain_prefix: infisical
+  ansible.builtin.include_role:
+    name: common/dns-register
+
+- name: Create infisical namespace
+  kubernetes.core.k8s:
+    kind: Namespace
+    name: infisical
+
+- ansible.builtin.include_tasks: ./tasks/task-create-certificate.yaml
+  vars:
+    name: infisical
+    certificate_template: "{{ CERTIFICATE_TEMPLATE }}"
+
+# Notes: Uses own domain name.
+- name: Setup ingress
+  ansible.builtin.include_tasks: "{{ INGRESS_SETUP }}"
+  vars:
+    name: infisical
+    namespace: infisical
+    in_definition: "{{ INGRESS_TEMPLATE }}"
+    in_create: no
+
+- name: Generate auth secret and encryption key
+  ansible.builtin.shell: |
+    openssl rand -base64 32
+    openssl rand -hex 16
+  register: secret_key_output
+
+- name: Create secret
+  vars:
+    auth_key: "{{ secret_key_output.stdout_lines[0] }}"
+    encryption_key: "{{ secret_key_output.stdout_lines[1] }}"
+  kubernetes.core.k8s:
+    template: secret.j2
+
+- name: Add infisical chart repo
+  kubernetes.core.helm_repository:
+    name: infisical-helm-charts
+    repo_url: "https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/"
+
+- name: Deploy infisical
+  vars:
+    ingress_name: "{{ ingress_class.resources[0].metadata.name }}"
+    ingress_host: "{{ ingress_host_result.stdout | default(kube.cluster.name + '.' + kube.cluster.domain, true) }}"
+    version: "{{ (infisical.version is defined and infisical.version and infisical.version != 'latest') | ternary('v' + infisical.version, 'latest') }}"
+  kubernetes.core.helm:
+    name: infisical
+    chart_ref: infisical-helm-charts/infisical-standalone
+    namespace: infisical
+    create_namespace: yes
+    values: "{{ VALUES_FILE }}"
+
+- name: Waiting for statefulsets to be ready
+  ansible.builtin.shell: |
+    for d in $(kubectl -n infisical get statefulset -o json | jq -r .items[].metadata.name); do kubectl rollout status -n infisical statefulset/$d; done;
+
+- name: Waiting for infisical pods to be ready
+  ansible.builtin.shell: |
+    for d in $(kubectl -n infisical get deployment -o json | jq -r .items[].metadata.name); do kubectl rollout status -n infisical deployment/$d; done;
+
+- name: Deploy secrets operator
+  ansible.builtin.include_role:
+    name: infisical/secrets-operator
+  when: infisical.enable_secrets_operator

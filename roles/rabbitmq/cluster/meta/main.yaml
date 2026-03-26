@@ -5,3 +5,4 @@ dependencies:
         - cert-mgr
         - ingress
         - prometheus
+        - vault

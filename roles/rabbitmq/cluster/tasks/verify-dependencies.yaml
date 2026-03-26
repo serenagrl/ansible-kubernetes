@@ -17,3 +17,9 @@
     msg: Dependency check failed. Please make sure ingress is installed.
   failed_when: not fact_has_addon_ingress|bool
   changed_when: false
+
+- name: Check if vault is installed
+  ansible.builtin.fail:
+    msg: Dependency check failed. Please make sure vault is installed.
+  failed_when: rabbitmq.vault.enabled|bool and not fact_has_addon_vault|bool
+  changed_when: false

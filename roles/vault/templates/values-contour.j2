@@ -1,0 +1,255 @@
+global:
+  tlsDisable: false
+
+injector:
+  enabled: {{ vault.injector.enabled }}
+  extraEnvironmentVars:
+    AGENT_INJECT_VAULT_ADDR: https://{{ service_name }}.vault.svc.cluster.local:8200
+  logLevel: {{ vault.injector.log_level }}
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+server:
+  logLevel: {{ vault.log_level }}
+{% if not kube.allow_scheduling %}
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+{% endif %}
+  auditStorage:
+    enabled: true
+  extraEnvironmentVars:
+    VAULT_ADDR: https://{{ service_name }}.vault.svc.cluster.local:8200
+    VAULT_CACERT: /vault/tls/ca.crt
+{% if vault.enable_peer_verification %}
+    VAULT_CLIENT_CERT: /vault/client-tls/tls.crt
+    VAULT_CLIENT_KEY: /vault/client-tls/tls.key
+{% endif %}
+  volumes:
+    - name: vault-cluster-tls
+      secret:
+        secretName: vault-cluster-tls
+{% if vault.enable_peer_verification %}
+    - name: vault-client-tls
+      secret:
+        secretName: vault-client-tls
+{% endif %}
+  volumeMounts:
+    - name: vault-cluster-tls
+      mountPath: /etc/ssl/certs/{{ kube.cluster.name }}-ca.crt
+      subPath: ca.crt
+    - name: vault-cluster-tls
+      mountPath: /vault/tls/
+{% if vault.enable_peer_verification %}
+    - name: vault-client-tls
+      mountPath: /vault/client-tls/
+{% endif %}
+  standalone:
+    config: |-
+      ui = true
+      default_lease_ttl = "{{ vault.default_lease_ttl }}"
+      max_lease_ttl = "{{ vault.max_lease_ttl }}"
+      api_addr      = "https://[::]:8200"
+
+      listener "tcp" {
+        tls_disable = false
+        tls_require_and_verify_client_cert = {{ vault.enable_peer_verification | lower }}
+        address = "[::]:8200"
+        tls_cert_file = "/vault/tls/tls.crt"
+        tls_key_file = "/vault/tls/tls.key"
+{% if vault.enable_peer_verification %}
+        tls_client_ca_file = "/vault/client-tls/ca.crt"
+{% endif %}
+        telemetry {
+          unauthenticated_metrics_access = true
+        }
+      }
+
+      telemetry {
+        prometheus_retention_time = "24h"
+        disable_hostname = true
+      }
+
+      storage "file" {
+        path = "/vault/data"
+      }
+
+{% if vault.unseal.type == 'transit' %}
+      seal "transit" {
+        address = "{{ vault.unseal.transit.server_url }}"
+        token   = "{{ vault.unseal.transit.token }}"
+        disable_renewal = "false"
+        key_name = "autounseal"
+        mount_path = "transit/"
+      }
+{% elif vault.unseal.type == 'azure' %}
+      seal "azurekeyvault" {
+        tenant_id       = "{{ vault.unseal.azure.tenant_id }}"
+        client_id       = "{{ vault.unseal.azure.client_id }}"
+        client_secret   = "{{ vault.unseal.azure.client_secret }}"
+        vault_name      = "{{ vault.unseal.azure.vault_name }}"
+        key_name        = "{{ vault.unseal.azure.key_name }}"
+        subscription_id = "{{ vault.unseal.azure.subscription_id }}"
+      }
+{% endif %}
+  ha:
+    enabled: {{ vault.mode == 'ha' }}
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: true
+
+      config: |
+        ui = true
+        cluster_name = "vault-integrated-storage"
+        default_lease_ttl = "{{ vault.default_lease_ttl }}"
+        max_lease_ttl = "{{ vault.max_lease_ttl }}"
+        cluster_addr  = "https://[::]:8201"
+        api_addr      = "https://[::]:8200"
+        disable_mlock = true
+
+        listener "tcp" {
+          tls_disable = false
+          tls_require_and_verify_client_cert = {{ vault.enable_peer_verification | lower }}
+          address = "[::]:8200"
+          cluster_address = "[::]:8201"
+          tls_cert_file = "/vault/tls/tls.crt"
+          tls_key_file = "/vault/tls/tls.key"
+{% if vault.enable_peer_verification %}
+          tls_client_ca_file = "/vault/client-tls/ca.crt"
+{% endif %}
+          telemetry {
+            unauthenticated_metrics_access = true
+          }
+        }
+
+        telemetry {
+          prometheus_retention_time = "24h"
+          disable_hostname = true
+        }
+
+        storage "raft" {
+          path = "/vault/data"
+
+{% if vault.unseal.type != 'manual' %}
+          retry_join {
+            leader_api_addr = "https://vault-0.vault-internal:8200"
+            leader_ca_cert_file = "/vault/tls/ca.crt"
+  {%- if vault.enable_peer_verification +%}
+            leader_client_cert_file = "/vault/tls/tls.crt"
+            leader_client_key_file = "/vault/tls/tls.key"
+  {%- endif +%}
+          }
+          retry_join {
+            leader_api_addr = "https://vault-1.vault-internal:8200"
+            leader_ca_cert_file = "/vault/tls/ca.crt"
+  {%- if vault.enable_peer_verification +%}
+            leader_client_cert_file = "/vault/tls/tls.crt"
+            leader_client_key_file = "/vault/tls/tls.key"
+  {%- endif +%}
+          }
+          retry_join {
+            leader_api_addr = "https://vault-2.vault-internal:8200"
+            leader_ca_cert_file = "/vault/tls/ca.crt"
+  {%- if vault.enable_peer_verification +%}
+            leader_client_cert_file = "/vault/tls/tls.crt"
+            leader_client_key_file = "/vault/tls/tls.key"
+  {%- endif +%}
+          }
+{% endif %}
+        }
+
+{% if vault.unseal.type == 'transit' %}
+        seal "transit" {
+          address = "{{ vault.unseal.transit.server_url }}"
+          token   = "{{ vault.unseal.transit.token }}"
+          disable_renewal = "false"
+          key_name = "autounseal"
+          mount_path = "transit/"
+        }
+{% elif vault.unseal.type == 'azure' %}
+        seal "azurekeyvault" {
+          tenant_id       = "{{ vault.unseal.azure.tenant_id }}"
+          client_id       = "{{ vault.unseal.azure.client_id }}"
+          client_secret   = "{{ vault.unseal.azure.client_secret }}"
+          vault_name      = "{{ vault.unseal.azure.vault_name }}"
+          key_name        = "{{ vault.unseal.azure.key_name }}"
+          subscription_id = "{{ vault.unseal.azure.subscription_id }}"
+        }
+{% endif %}
+
+        service_registration "kubernetes" {}
+  ingress:
+    enabled: false
+
+csi:
+  enabled: {{ vault.csi.enabled }}
+  volumes:
+    - name: vault-cluster-tls
+      secret:
+        secretName: vault-cluster-tls
+{% if vault.enable_peer_verification %}
+    - name: vault-client-tls
+      secret:
+        secretName: vault-client-tls
+{% endif %}
+
+  volumeMounts:
+    - name: vault-cluster-tls
+      mountPath: /vault/tls
+      readOnly: true
+{% if vault.enable_peer_verification %}
+    - name: vault-client-tls
+      mountPath: /vault/client-tls
+      readOnly: true
+{% endif %}
+
+  agent:
+    logLevel: {{ vault.csi.agent.log_level }}
+
+  debug: {{ vault.csi.debug }}
+{% if not kube.allow_scheduling %}
+  pod:
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    nodeSelector:
+      node-role.kubernetes.io/control-plane: ""
+{% endif %}
+
+serverTelemetry:
+  serviceMonitor:
+    enabled: true
+    selectors:
+      release: monitoring
+{% if vault.mode == 'ha' %}
+      vault-active: "true"
+{% endif %}
+    tlsConfig:
+      serverName: {{ service_name }}.vault.svc.cluster.local
+      ca:
+        secret:
+          name: vault-cluster-tls
+          key: ca.crt
+{% if vault.enable_peer_verification %}
+      cert:
+        secret:
+          name: vault-client-tls
+          key: tls.crt
+      keySecret:
+        name: vault-client-tls
+        key: tls.key
+{% endif %}
+
+ui:
+  enabled: true
